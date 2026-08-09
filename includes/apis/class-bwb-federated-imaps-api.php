@@ -429,24 +429,23 @@ class BWB_Federated_Imaps_API_Controller {
                 break;
         }
 
+        // Cleanup records for features that were removed from the newly imported GeoJSON payload
         if ( ! empty( $imported_fids ) ) {
+            // Safely generate %s placeholder string for SQL NOT IN (...) clause (e.g. "%s,%s,%s")
             $fids_placeholders = implode( ',', array_fill( 0, count( $imported_fids ), '%s' ) );
-            if ( $layer_type === 'entries' || $layer_type === 'network' ) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table record cleanup.
-                $wpdb->query( 
-                    $wpdb->prepare( 
-                        "DELETE FROM %i WHERE fid NOT IN ($fids_placeholders)", 
-                        array_merge( array( $table_name ), $imported_fids ) 
-                    ) 
-                );
+
+            if ( 'entries' === $layer_type || 'network' === $layer_type ) {
+                $sql        = "DELETE FROM %i WHERE fid NOT IN ($fids_placeholders)";
+                $query_args = array_merge( array( $table_name ), $imported_fids );
+
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $fids_placeholders strictly contains safe %s string sequences and parameters match placeholders.
+                $wpdb->query( $wpdb->prepare( $sql, $query_args ) );
             } else {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table record cleanup.
-                $wpdb->query( 
-                    $wpdb->prepare( 
-                        "DELETE FROM %i WHERE layer_type = %s AND fid NOT IN ($fids_placeholders)", 
-                        array_merge( array( $table_name, $layer_type ), $imported_fids ) 
-                    ) 
-                );
+                $sql        = "DELETE FROM %i WHERE layer_type = %s AND fid NOT IN ($fids_placeholders)";
+                $query_args = array_merge( array( $table_name, $layer_type ), $imported_fids );
+
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $fids_placeholders strictly contains safe %s string sequences and parameters match placeholders.
+                $wpdb->query( $wpdb->prepare( $sql, $query_args ) );
             }
         }
 
@@ -576,26 +575,25 @@ class BWB_Federated_Imaps_API_Controller {
     }
 
     /**
-     * DELETE Route Callback: Deletes a selected row safely
+     * DELETE Route Callback: Deletes a selected layer safely
      */
     public function handle_delete_layer($data) {
         global $wpdb;
         $layer_type = sanitize_text_field( $data['layer_type'] );
-        $fid = sanitize_text_field( $data['fid'] );
 
-        if ( empty( $layer_type ) || empty( $fid ) ) {
+        if ( empty( $layer_type ) ) {
             return new WP_Error( 'missing_params', 'Missing required parameters.', array( 'status' => 400 ) );
         }
 
         if ( $layer_type === 'entries' ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table truncation on custom database layers is safely evicted from the object cache via manual invalidation routines below.
-            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_entries_data_nav_entries' ) );
+            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_entries_data' ) );
         } elseif ( $layer_type === 'network' ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table truncation on custom database layers is safely evicted from the object cache via manual invalidation routines below.
             $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_network_data' ) );
         } else {
             $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
-            // // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The dynamic table name is safe, built with core prefix, and its storage context is flushed via custom cache routines.
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The dynamic table name is safe, built with core prefix, and its storage context is flushed via custom cache routines.
             $result = $wpdb->delete( $table_name, array( 'layer_type' => $layer_type ) );
         }
 
@@ -606,10 +604,12 @@ class BWB_Federated_Imaps_API_Controller {
         // Forcefully invalidate the 24-hour transient cache data in order to updated frontend.
         wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );
         wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
-        return new WP_REST_Response( array('success' => true, 
-            'message' => "Layer with fid '$fid' deleted successfully." 
-        ), 200 ); 
+        return new WP_REST_Response( array(
+            'success' => true, 
+            'message' => "Layer '$layer_type' deleted successfully."
+        ), 200 );
     }
+    
     /**
      * Generates standardized, translatable WP_Error API responses.
      */

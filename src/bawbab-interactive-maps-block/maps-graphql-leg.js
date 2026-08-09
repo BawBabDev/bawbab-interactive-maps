@@ -7,7 +7,7 @@ import { MapLegend, LayerToggler } from './components/map-controls';
 import { MapSearch } from './components/map-search';
 import { __ } from '@wordpress/i18n';
 
-export default function FoulkewaysMap({ locations: propsLocations = [],  zoom = 16, tilt = 0 , onMarkerClick, width = '100%', height = 'stretch' }) {
+export default function Map({ locations: propsLocations = [],  zoom = 16, tilt = 0 , onMarkerClick, width = '100%', height = 'stretch' }) {
 
     const { formatCoords } = useCoordinateFormatter();
 
@@ -137,7 +137,8 @@ export default function FoulkewaysMap({ locations: propsLocations = [],  zoom = 
                 const apiRootLink = document.querySelector('link[rel="https://api.w.org"]');
                 const apiRoot = apiRootLink ? apiRootLink.href : '/wp-json/';
                 
-                const response = await fetch(`${apiRoot}foulkeways/v1/map-locations`);
+                // UPDATED: Pointed to the new REST API namespace
+                const response = await fetch(`${apiRoot}bwb-imaps-federated-api/v1/map-locations`);
                 if (response.ok) {
                     const data = await response.json();
                     setLocations(data.locations || []);
@@ -150,7 +151,7 @@ export default function FoulkewaysMap({ locations: propsLocations = [],  zoom = 
         };
 
         fetchGlobalSettings();
-    }, []); 
+    }, []);
 
     // Determine the map's default center based on the first location
     // Fallback to estate coordinates if the list is empty

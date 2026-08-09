@@ -33,13 +33,13 @@ class BWB_TinyMCE_Veditor_Button {
         $js_path = $plugin_dir_path . '/assets/tinymce-buttons.js';
         
         if ( file_exists( $js_path ) ) {
-            $plugin_array['foulkeways_map_buttons'] = $plugin_dir_url . '/assets/tinymce-buttons.js';
+            $plugin_array['map_buttons'] = $plugin_dir_url . '/assets/tinymce-buttons.js';
         }
         return $plugin_array;
     }
 
     public static function register_tinymce_buttons( $buttons ) {
-        array_push( $buttons, 'insert_foulkeways_map', 'foulkeways_map_visibility' );
+        array_push( $buttons, 'insert_map', 'map_visibility' );
         return $buttons;
     }
 

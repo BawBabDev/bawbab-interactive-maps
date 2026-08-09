@@ -1,8 +1,8 @@
 import { Button, SelectControl, Flex, FlexItem, Dashicon, __experimentalText as Text,ExternalLink } from '@wordpress/components';
 import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { useSpatialDataImporter } from '../hooks/useSpatialDataImporter';
-import { useNotify } from './Notices';
+import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
+import { useNotify } from '../Notices';
 
 /**
  * Uploader Component
@@ -101,7 +101,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
     return (
         <div className="tab-content">
             <Text variant="title.small" display="block" style={{ marginBottom: '5px' }}>
-                {__('GIS Layer Manager', 'foulkeways-interactive-map')}
+                {__('GIS Layer Manager', 'bawbab-interactive-maps')}
             </Text>
             <Text variant="caption" display="block" style={{ color: '#666', marginBottom: '20px' }}>
                 {__('Sync spatial geometries while preserving custom descriptions and page links.', 'bawbab-interactive-maps')}
@@ -119,7 +119,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                 <SelectControl 
                     label={
                         <Flex align="center" justify="flex-start" expanded={false} height="12px">
-                            {__('Target Layer', 'foulkeways-interactive-map')}
+                            {__('Target Layer', 'bawbab-interactive-maps')}
                             <span className="pulsating-dot-inline" />
                         </Flex>
                     } 
@@ -129,9 +129,8 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                         { label: 'Buildings', value: 'buildings' },
                         { label: 'Paths (Display Only)', value: 'paths' },
                         { label: 'Land Use', value: 'land_use' },
-                        // WIP: Navigation Topologies
-                        //{ label: 'Navigation - Entries & Doors (Points)', value: 'entries' },
-                        //{ label: 'Navigation - Routable Network (Lines)', value: 'network' },
+                        { label: 'Navigation - Entries & Doors (Points)', value: 'entries' },
+                        { label: 'Navigation - Routable Network (Lines)', value: 'network' },
                     ]}
                     onChange={(val) => {
                         // console.log("🎯 Layer Type changed to:", val);
@@ -165,7 +164,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                                 onClick={() => document.getElementById('geojson-import-input').click()}
                                 style={{ width: '100%', justifyContenht: 'center' }}
                             >
-                                {pendingFile ? __('Change File', 'foulkeways-interactive-map') : __('Select GeoJSON', 'bawbab-interactive-maps')}
+                                {pendingFile ? __('Change File', 'bawbab-interactive-maps') : __('Select GeoJSON', 'bawbab-interactive-maps')}
                             </Button>
                         </FlexItem>
                         <FlexItem style={{ flex: 1 }}>
@@ -176,7 +175,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                                 onClick={handleManualUpload}
                                 style={{ width: '100%', justifyContent: 'center' }}
                             >
-                                {isUploading ? __('Syncing...', 'foulkeways-interactive-map') : __('Update Layer', 'bawbab-interactive-maps')}
+                                {isUploading ? __('Syncing...', 'bawbab-interactive-maps') : __('Update Layer', 'bawbab-interactive-maps')}
                             </Button>
                         </FlexItem>
                     </Flex>
@@ -198,7 +197,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                     <Flex align="center" gap={2} style={{ marginBottom: '10px' }}>
                         <Dashicon icon="warning" style={{ color: '#d63638' }} />
                         <Text variant="title.small" style={{ color: '#d63638', fontWeight: '600' }}>
-                            {__('Danger Zone', 'foulkeways-interactive-map')}
+                            {__('Danger Zone', 'bawbab-interactive-maps')}
                         </Text>
                     </Flex>
                     

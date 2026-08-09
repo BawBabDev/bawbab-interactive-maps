@@ -27,7 +27,7 @@ export const UnitSpecs = ({ specs }) => {
                         <span className="fa-icon">{ICONS.area}</span>
                         <span className="spec-number">{sq_ft || '--'}</span>
                     </div>
-                    <span className="spec-label">{__('Area (sq ft)', 'foulkeways')}</span>
+                    <span className="spec-label">{__('Area (sq ft)', 'bawbab-interactive-maps')}</span>
                 </div>
             </div>
 
@@ -38,7 +38,7 @@ export const UnitSpecs = ({ specs }) => {
                         <span className="fa-icon">{ICONS.shower}</span>
                         <span className="spec-number">{valBaths > 0 ? `x${showerCount}` : '--'}</span>
                     </div>
-                    <span className="spec-label">{__('Shower', 'foulkeways')}</span>
+                    <span className="spec-label">{__('Shower', 'bawbab-interactive-maps')}</span>
                 </div>
 
                 <div className="spec-item">
@@ -46,7 +46,7 @@ export const UnitSpecs = ({ specs }) => {
                         <span className="fa-icon">{ICONS.sink}</span>
                         <span className="spec-number">{valBaths > 0 ? `x${sinkCount}` : '--'}</span>
                     </div>
-                    <span className="spec-label">{__('Bathroom', 'foulkeways')}</span>
+                    <span className="spec-label">{__('Bathroom', 'bawbab-interactive-maps')}</span>
                 </div>
             </div>
 
@@ -59,7 +59,7 @@ export const UnitSpecs = ({ specs }) => {
                             {!fireplace && <span className="no-sign"></span>}
                         </div>
                     </div>
-                    <span className="spec-label">{__('Fireplace', 'foulkeways')}</span>
+                    <span className="spec-label">{__('Fireplace', 'bawbab-interactive-maps')}</span>
                 </div>
 
                 <div className={`spec-item ${!sunroom ? 'is-disabled' : ''}`}>
@@ -69,7 +69,7 @@ export const UnitSpecs = ({ specs }) => {
                             {!sunroom && <span className="no-sign"></span>}
                         </div>
                     </div>
-                    <span className="spec-label">{__('Sunroom', 'foulkeways')}</span>
+                    <span className="spec-label">{__('Sunroom', 'bawbab-interactive-maps')}</span>
                 </div>
             </div>
         </div>

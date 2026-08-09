@@ -40,7 +40,7 @@ export const ExcerptText = ({ selectedLoc, wpData }) => {
             {hasWpContent && wpData?.link && (
                 <div className="wp-link-container" style={{ marginTop: '15px' }}>
                     <a href={wpData.link} target="_blank" rel="noopener noreferrer" className="sidebar-wp-link">
-                        {__('Read full details on website', 'foulkeways-interactive-map')} <span>&rarr;</span>
+                        {__('Read full details on website', 'bawbab-interactive-maps')} <span>&rarr;</span>
                     </a>
                 </div>
             )}

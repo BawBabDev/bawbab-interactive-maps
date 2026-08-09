@@ -1,19 +1,19 @@
-# Bawbab Interactive Maps
+# Bawbab Interactive Maps – User Guide
 
-Contributors:       Bawbab Technologies, marcellus89, @corentinsanchez  
-Tags:               Mapping, Campus, Facility, Business location, Real estate  
+Contributors:       Bawbab Technologies  
+Tags:               block  
 Tested up to:       7.0  
 Stable tag:         0.1.0  
 License:            GPL-2.0-or-later  
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
-Bawbab Interative Maps is an Interactive mapping plugin for campuses and facilities.
+Bawbab Interactive Maps WordPress Plugin.
 
 # Introduction
 
-Welcome to the **Bawbab Interactive Maps** user guide.
+Welcome to the **Interactive Campus Map Plugin** user guide.
 
-This guide explains how to configure, manage, and customize the Interactive Maps plugin for WordPress.
+This guide explains how to configure, manage, and customize the Interactive Campus Map plugin for WordPress.
 
 The plugin has been designed to provide an intuitive way to present campuses, residential communities, healthcare facilities, business parks, educational institutions, or any other location-based environment through an interactive digital map.
 
@@ -239,7 +239,7 @@ As the platform evolves, additional customization options and new interactive fe
 
 # 1. Plugin Management
 
-The Bawbab Interactive Map is installed and managed like any standard WordPress plugin. This section explains how to activate, update, and manage the plugin safely.
+The Interactive Campus Map plugin is installed and managed like any standard WordPress plugin. This section explains how to activate, update, and manage the plugin safely.
 
 ## Activating or Deactivating the Plugin
 
@@ -278,7 +278,7 @@ To install a new version:
 2. Select **Upload Plugin** **<span style="color:#0b00ffff">(3)</span>**.
 3. Choose the plugin ZIP file provided by our team.
 4. Click **Install** **<span style="color:#0b00ffff">(4)</span>**.
-5. WordPress will detect if the plugin already exists and will install or replace it with the latest version **<span style="color:#0b00ffff">(5)</span>**..
+5. WordPress will detect if the plugin already exists and will install or replace it with the latest version **<span style="color:#0b00ffff">(5)</span>**.
 6. Reactivate the plugin if required.
 
 Our team will provide updated plugin versions whenever new features, improvements, or bug fixes are available.
@@ -775,11 +775,15 @@ Although both methods produce the same interactive map, the insertion and custom
 
 If your website uses the Classic WordPress Editor, the map can be inserted using a shortcode.
 
+<p align="center">
+    <img src="screenshots/classic-editor.png" width="100%">
+</p>
+
 ## Adding the Map to a Page
 
 Open the page where you would like the interactive map to appear.
 
-In the editor toolbar, click the **Map** icon.
+In the editor toolbar, click the **Map** icon **<span style="color:#0b00ffff">(1)</span>**.
 
 The plugin automatically inserts the required shortcode into your page.
 
@@ -808,7 +812,7 @@ This is accomplished using the **Map Visibility** toolbar button.
 
 ## The Map Visibility Toolbar
 
-The **Map Visibility** button provides two options:
+The **Map Visibility** button **<span style="color:#0b00ffff">(2)</span>** provides two options:
 
 * **Include Section on Map**
 * **Exclude Section on Map**
@@ -854,7 +858,7 @@ These tools make it possible to maintain a single WordPress page while presentin
 
 The **Feature Editor** provides an additional level of customization.
 
-Any custom information entered in the **Feature Editor**—such as custom descriptions, images, videos, or display titles—takes precedence over the content imported from the linked WordPress page.
+Any custom information entered in the **Feature Editor** — such as custom descriptions, images, videos, or display titles — takes precedence over the content imported from the linked WordPress page.
 
 In other words:
 
@@ -876,11 +880,16 @@ All other page content remains fully customizable using the visibility controls 
 
 If your website uses the Gutenberg editor, the map can be inserted as a native WordPress block.
 
+<p align="center">
+    <img src="screenshots/gutenberg-editor.png" width="100%">
+</p>
+
+
 ## Adding the Map
 
 Open the desired page in the Gutenberg editor.
 
-Click **Add Block** and search for the Interactive Campus Map block.
+Click **Add Block** and search for the Interactive Campus Map block **<span style="color:#0b00ffff">(1)</span>**.
 
 Insert the block into your page just like any other Gutenberg block.
 
@@ -888,7 +897,7 @@ This provides a more integrated editing experience than using shortcodes.
 
 ## Block Settings
 
-When the map block is selected, several display options become available.
+When the map block is selected, several display options become available **<span style="color:#0b00ffff">(2)</span>**.
 
 Depending on your version of the plugin, you can configure:
 
@@ -902,7 +911,7 @@ These settings allow the embedded map to better match the layout of your page.
 
 Unlike the Classic Editor, Gutenberg does not rely on shortcodes to control which content appears inside the map.
 
-Instead, visibility is managed using CSS classes assigned directly to individual blocks.
+Instead, visibility is managed using CSS classes assigned directly to individual blocks **<span style="color:#0b00ffff">(3)</span>**.
 
 ## Including Content
 
@@ -940,9 +949,54 @@ The behavior is identical to the Classic Editor:
 
 This provides the same flexibility as the shortcode system while taking advantage of Gutenberg's block-based editing interface.
 
+## Linking a Page Directly to a Location on the Map
+
+In addition to displaying information from linked WordPress pages, it is also possible to create links that open the interactive map and automatically focus on a specific location.
+
+This is useful for adding **"View on Map"** buttons or links anywhere on your website, allowing visitors to jump directly to a particular residential unit or amenity.
+
+The plugin supports two types of URL parameters:
+
+### Linking to a Unit
+
+To focus the map on a specific unit, append the `unit` parameter to the URL of the page containing the interactive map.
+
+**Example:**
+
+```text
+https://yourwebsite.com/campus-map/?unit=D-7
+```
+
+The plugin will search for the unit with the corresponding unit code, automatically center the map on that location, and open its information panel.
+
+### Linking to an Amenity or Named Location
+
+To focus the map on a named location or amenity, use the `location` parameter.
+
+**Example:**
+
+```text
+https://yourwebsite.com/campus-map/?location=Fitness%20Center
+```
+
+The plugin searches for the corresponding named feature and automatically centers the map on it.
+
+> **Note:** Spaces and special characters in the location name must be URL encoded. For example, a space becomes `%20`.
+
+### Typical Use Cases
+
+This feature can be used to:
+
+* Add **"View on Map"** buttons throughout your website.
+* Link directly from accommodation pages to the corresponding unit.
+* Create links to amenities such as the Fitness Center, Dining Hall, Library, or other points of interest.
+* Share direct links with visitors that immediately open the relevant location on the map.
+
+This functionality provides a simple way to connect the rest of your website with the interactive map, improving navigation and making it easier for visitors to find the information they are looking for.
+
 # 5. Troubleshooting & Frequently Asked Questions
 
-This section addresses the most common questions and issues you may encounter while using the Bawbab Interactive Maps.
+This section addresses the most common questions and issues you may encounter while using the Interactive Campus Map plugin.
 
 If your issue is not covered below, please contact our support team for assistance.
 
@@ -1158,9 +1212,9 @@ You can contact us using the following email addresses:
 **Corentin Sanchez Trenado**
 Email: **[corentins@bawbab.com](mailto:corentins@bawbab.com)**
 
-**Marcellus Oketch**
+**Marcellus Otieno**
 Email: **[oketchmarcellus@bawbab.com](mailto:oketchmarcellus@bawbab.com)**
 
-We will be happy to answer your questions and provide guidance to help you get the most out of the Bawbab Interactive Maps.
+We will be happy to answer your questions and provide guidance to help you get the most out of the Interactive Campus Map plugin.
 
 

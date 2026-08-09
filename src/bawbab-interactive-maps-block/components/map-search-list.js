@@ -126,9 +126,9 @@ const SearchList = ({ spatialFeatures, locations, onSelect, isOpen, onCloseMenu 
             ref={menuRef} 
             className={`nav-menu ${isOpen ? 'mobile-open' : ''}`}
         >
-            <NavItem title={__('Apartments', 'foulkeways')} type="apartments" groups={categories.apartments} />
-            <NavItem title={__('Cottages', 'foulkeways')} type="cottages" groups={categories.cottages} />
-            <NavItem title={__('Amenities', 'foulkeways')} type="amenities" groups={categories.amenities} isAmenities />
+            <NavItem title={__('Apartments', 'bawbab-interactive-maps')} type="apartments" groups={categories.apartments} />
+            <NavItem title={__('Cottages', 'bawbab-interactive-maps')} type="cottages" groups={categories.cottages} />
+            <NavItem title={__('Amenities', 'bawbab-interactive-maps')} type="amenities" groups={categories.amenities} isAmenities />
         </div>
     );
 };

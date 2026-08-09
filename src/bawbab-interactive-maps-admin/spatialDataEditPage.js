@@ -102,7 +102,7 @@ const EditPage = () => {
         if (cottages.length > 0) {
             result.push({
                 type: 'group',
-                title: __('Cottages', 'foulkeways'),
+                title: __('Cottages', 'bawbab-interactive-maps'),
                 items: cottages.sort((a, b) => {
                     const nameA = a.properties.name || '';
                     const nameB = b.properties.name || '';
@@ -121,13 +121,13 @@ const EditPage = () => {
         });
 
         if (amenities.length > 0) {
-            result.push({ type: 'group', title: __('Amenities', 'foulkeways'), items: amenities.sort((a, b) => a.properties.name.localeCompare(b.properties.name)) });
+            result.push({ type: 'group', title: __('Amenities', 'bawbab-interactive-maps'), items: amenities.sort((a, b) => a.properties.name.localeCompare(b.properties.name)) });
         }
 
         if (unnamed.length > 0) {
             result.push({
                 type: 'group',
-                title: __('Unnamed Features', 'foulkeways'),
+                title: __('Unnamed Features', 'bawbab-interactive-maps'),
                 items: unnamed.sort((a, b) => {
                     const labelA = `${a.properties.layer_type}-${a.properties.fid}`;
                     const labelB = `${b.properties.layer_type}-${b.properties.fid}`;
@@ -196,7 +196,7 @@ const EditPage = () => {
 
                 console.log(`📡 [EditPage] Sending POST to /update-spatial-meta for [${compositeKey}]`, payload);
 
-                const response = await fetch('/wp-json/foulkeways/v1/update-spatial-meta', {
+                const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/update-spatial-meta', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -225,7 +225,7 @@ const EditPage = () => {
 
     const renderFeatureItem = (f) => {
         const isActive = activeFeature?.properties.fid === f.properties.fid && activeFeature?.properties.layer_type === f.properties.layer_type;
-        let itemLabel = f.properties.code ? `${__('Unit', 'foulkeways')} ${f.properties.code}` : f.properties.name;
+        let itemLabel = f.properties.code ? `${__('Unit', 'bawbab-interactive-maps')} ${f.properties.code}` : f.properties.name;
         if (!itemLabel) itemLabel = `${f.properties.layer_type} #${f.properties.fid}`;
         
         return (
@@ -264,7 +264,7 @@ const EditPage = () => {
 
     // --- LOAD MAP SETTINGS ON MOUNT ---
     useEffect(() => {
-        const settings = window.foulkewaysSettings;
+        const settings = window.Settings;
         if (settings?.googleApiKey && settings?.googleMapId) {
             setGoogleApiKey(settings.googleApiKey);
             setGoogleMapId(settings.googleMapId);
@@ -275,7 +275,7 @@ const EditPage = () => {
         } else {
             apiFetch({ path: '/wp/v2/settings' })
                 .then((response) => {
-                    const data = response.foulkeways_map_data;
+                    const data = response.map_data;
                     if (data) {
                         const key = data.googleApiKey || '';
                         const id = data.googleMapId || '';
@@ -291,9 +291,9 @@ const EditPage = () => {
                         setNavBackground(bg);
                         setColorTheme(theme);
 
-                        if (!window.foulkewaysSettings) window.foulkewaysSettings = {};
-                        window.foulkewaysSettings = {
-                            ...window.foulkewaysSettings,
+                        if (!window.Settings) window.Settings = {};
+                        window.Settings = {
+                            ...window.Settings,
                             googleApiKey: key,
                             googleMapId: id,
                             mapType: type,
@@ -344,7 +344,7 @@ const EditPage = () => {
     const categories = useMemo(() => {
         const cats = new Set(features.map(f => f.properties.category).filter(Boolean));
         return [
-            { label: __('All Categories', 'foulkeways'), value: 'all' },
+            { label: __('All Categories', 'bawbab-interactive-maps'), value: 'all' },
             ...Array.from(cats).map(cat => ({ label: formatLabel(cat), value: cat }))
         ];
     }, [features]);
@@ -356,18 +356,18 @@ const EditPage = () => {
             <NoticeList notices={notices} onRemove={removeNotice} style={{ marginBottom: '20px', flexShrink: 0 }}/>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', flexShrink: 0 }}>
-                <h1 className="wp-heading-inline" style={{ margin: 0 }}>{ __('Edit Map Features', 'foulkeways') }</h1>
+                <h1 className="wp-heading-inline" style={{ margin: 0 }}>{ __('Edit Map Features', 'bawbab-interactive-maps') }</h1>
             </div>
 
             <div style={{ flex: 1, minHeight: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', display: 'flex', overflow: 'hidden' }}>
                 <div style={{ flex: '0 0 350px', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <div style={{ padding: '15px', borderBottom: '1px solid #f0f0f0', background: '#f9f9f9', flexShrink: 0 }}>
-                        <SearchControl value={ searchQuery } onChange={ setSearchQuery } placeholder={__('Search units...', 'foulkeways')} />
+                        <SearchControl value={ searchQuery } onChange={ setSearchQuery } placeholder={__('Search units...', 'bawbab-interactive-maps')} />
                         <div style={{ marginTop: '10px' }}>
-                            <SelectControl label={__('Category', 'foulkeways')} value={filterCategory} options={categories} onChange={(val) => setFilterCategory(val)} __nextHasNoMarginBottom />
+                            <SelectControl label={__('Category', 'bawbab-interactive-maps')} value={filterCategory} options={categories} onChange={(val) => setFilterCategory(val)} __nextHasNoMarginBottom />
                             <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <CheckboxControl label={__('Has Fireplace', 'foulkeways')} checked={filterFireplace} onChange={setFilterFireplace} />
-                                <CheckboxControl label={__('Has Sunroom', 'foulkeways')} checked={filterSunroom} onChange={setFilterSunroom} />
+                                <CheckboxControl label={__('Has Fireplace', 'bawbab-interactive-maps')} checked={filterFireplace} onChange={setFilterFireplace} />
+                                <CheckboxControl label={__('Has Sunroom', 'bawbab-interactive-maps')} checked={filterSunroom} onChange={setFilterSunroom} />
                             </div>
                         </div>
                     </div>
@@ -413,7 +413,7 @@ const EditPage = () => {
                             <div style={{ marginTop: '40px', borderTop: '20px solid #f0f0f0', paddingTop: '30px', marginLeft: '-20px', marginRight: '-20px', paddingLeft: '20px', paddingRight: '20px' }}>
                                 <h2 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Dashicon icon="location-alt" />
-                                    {__('Location Preview', 'foulkeways')}
+                                    {__('Location Preview', 'bawbab-interactive-maps')}
                                 </h2>
                                 <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                                     <BawBabIMaps 
@@ -437,9 +437,9 @@ const EditPage = () => {
                             <div style={{ background: '#fff', padding: '40px', borderRadius: '50%', marginBottom: '20px', border: '1px solid #e0e0e0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.02)' }}>
                                 <Dashicon icon="edit" size={60} />
                             </div>
-                            <h2 style={{ color: '#1d2327', fontWeight: '500', marginBottom: '8px' }}>{__('No Feature Selected', 'foulkeways')}</h2>
+                            <h2 style={{ color: '#1d2327', fontWeight: '500', marginBottom: '8px' }}>{__('No Feature Selected', 'bawbab-interactive-maps')}</h2>
                             <p style={{ maxWidth: '300px', textAlign: 'center', margin: 0, fontSize: '13px' }}>
-                                {__('Select a unit or amenity from the left sidebar or directly on the map to begin editing its details.', 'foulkeways')}
+                                {__('Select a unit or amenity from the left sidebar or directly on the map to begin editing its details.', 'bawbab-interactive-maps')}
                             </p>
                         </div>
                     )}

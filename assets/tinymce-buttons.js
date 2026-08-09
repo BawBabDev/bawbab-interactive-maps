@@ -1,17 +1,17 @@
 (function () {
-    tinymce.PluginManager.add('foulkeways_map_buttons', function (editor) {
+    tinymce.PluginManager.add('map_buttons', function (editor) {
         
         // 1. Map Insert Button (Location Pin)
-        editor.addButton('insert_foulkeways_map', {
-            title: 'Insert Foulkeways Map',
+        editor.addButton('insert_map', {
+            title: 'Insert Map',
             icon: 'dashicons-location-alt',
             onclick: function () {
-                editor.insertContent('[foulkeways_map height="650px"]');
+                editor.insertContent('[map height="650px"]');
             }
         });
 
         // 2. Map Visibility Dropdown Menu
-        editor.addButton('foulkeways_map_visibility', {
+        editor.addButton('map_visibility', {
             type: 'menubutton',
             text: 'Map Visibility',
             icon: 'dashicons-visibility',

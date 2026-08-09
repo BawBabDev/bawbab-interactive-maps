@@ -16,7 +16,7 @@ import { useMapDimensions } from '../hooks/useMapDimensions';
 import { useMapLayers } from '../hooks/useMapLayers';
 import { SpatialFeaturesRenderer } from './spatialFeaturesRenderer';
 import { MIN_MAP_ZOOM, MAX_MAP_TILT, OVERLAY_PAD, SPATIAL_DATA_ENDPOINT,  FLOOR_AWARE_LAYERS,FLOOR_LAYER_Z_INDEX, 
-    ACTIVE_FLOOR_Z_INDEX_BOOST,normalizeSpatialFeature } from '../constants/mapConstants';
+    ACTIVE_FLOOR_Z_INDEX_BOOST, FLOOR_OVERLAY_Z_INDEX, normalizeSpatialFeature } from '../constants/mapConstants';
 import { useMapUrlParams } from '../hooks/useMapUrlParams';
 
 

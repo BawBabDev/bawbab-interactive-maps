@@ -92,7 +92,7 @@ export const MapLegend = ({ mapDimensions }) => {
                 ) : (
                     <>
                         <span style={{ color: '#333', fontSize: '13px', fontWeight: '800', marginLeft: '5px' }}>
-                            {__('Legend', 'foulkeways')}
+                            {__('Legend', 'bawbab-interactive-maps')}
                         </span>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} 
@@ -169,7 +169,7 @@ export const LayerToggler = ({ visibleLayers, layerOpacity, onToggle, onOpacityC
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: isOpen ? 'auto' : '40px', padding: isOpen ? '0' : '11px' }}>
                 {!isOpen ? <LayersIcon /> : (
                     <>
-                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#333' }}>{__('Layers', 'foulkeways')}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#333' }}>{__('Layers', 'bawbab-interactive-maps')}</span>
                         <button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '4px', display: 'flex' }}>
                             <CloseIcon />
                         </button>
@@ -295,7 +295,7 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
                 ) : (
                     <button
                         onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
-                        title={__('Close floor selector', 'foulkeways')}
+                        title={__('Close floor selector', 'bawbab-interactive-maps')}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px', display: 'flex', alignItems: 'center' }}
                     >
                         <CloseIcon />
@@ -321,7 +321,7 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
                                 key={floorValue}
                                 ref={isActive ? activeRef : null}
                                 onClick={() => onFloorChange(floorValue)}
-                                title={isGround ? __('Ground floor', 'foulkeways') : floorValue > 0 ? `${__('Floor', 'foulkeways')} +${floorValue}` : `${__('Basement', 'foulkeways')} ${floorValue}`}
+                                title={isGround ? __('Ground floor', 'bawbab-interactive-maps') : floorValue > 0 ? `${__('Floor', 'bawbab-interactive-maps')} +${floorValue}` : `${__('Basement', 'bawbab-interactive-maps')} ${floorValue}`}
                                 style={{
                                     width: '100%',
                                     aspectRatio: '1',

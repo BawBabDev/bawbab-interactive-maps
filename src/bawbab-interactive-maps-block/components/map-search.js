@@ -6,10 +6,10 @@ export const MapSearch = ({ spatialFeatures, locations, onSelect, navBackgroundP
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isBurgerOpen, setIsBurgerOpen] = useState(false);
-    const mapSettings = window.foulkewaysSettings || {};
+    const mapSettings = window.Settings || {};
     const colorTheme = mapSettings.colorTheme;
-    const mapLogo = logoProp || window.foulkewaysSettings?.mapLogo || '';
-    const navBackground = navBackgroundProp || window.foulkewaysSettings?.navBackground || '';
+    const mapLogo = logoProp || window.Settings?.mapLogo || '';
+    const navBackground = navBackgroundProp || window.Settings?.navBackground || '';
 
     // Flat list for global search input
     const allNamedFeatures = useMemo(() => {
@@ -48,11 +48,11 @@ export const MapSearch = ({ spatialFeatures, locations, onSelect, navBackgroundP
                     {mapLogo ? (
                         <img 
                             src={mapLogo} 
-                            alt={__('Map Logo', 'foulkeways')} 
+                            alt={__('Map Logo', 'bawbab-interactive-maps')}
                             style={{ maxHeight: '40px', width: 'auto', display: 'block' }} 
                         />
                     ) : (
-                        <strong>{__('Explore the campus map', 'foulkeways')}</strong>
+                        <strong>{__('Explore the campus map', 'bawbab-interactive-maps')}</strong>
                     )}
                 </div>
 
@@ -67,7 +67,7 @@ export const MapSearch = ({ spatialFeatures, locations, onSelect, navBackgroundP
                 <div className="nav-search-section">
                     <input 
                         type="text" 
-                        placeholder={__('Search Name or Code...', 'foulkeways')}
+                        placeholder={__('Search Name or Code...', 'bawbab-interactive-maps')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}

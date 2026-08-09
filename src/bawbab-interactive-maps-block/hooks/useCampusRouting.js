@@ -24,8 +24,8 @@ export const useCampusRouting = () => {
         
         try {
             console.log("📡 [useCampusRouting] Fetching navigation graph data from database...");
-            const response = await fetch('/wp-json/foulkeways/v1/get-navigation-graph');
-            if (!response.ok) throw new Error(__('Failed to load network graph maps.', 'foulkeways-interactive-map'));
+            const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/get-navigation-graph');
+            if (!response.ok) throw new Error(__('Failed to load network graph maps.', 'bawbab-interactive-maps'));
             
             const data = await response.json();
             
@@ -165,7 +165,7 @@ export const useCampusRouting = () => {
         });
 
         if (!nearestNetworkNodeKey || !adjList[nearestNetworkNodeKey]) {
-            setError(__('No structural network path lines could be aligned nearby.', 'foulkeways-interactive-map'));
+            setError(__('No structural network path lines could be aligned nearby.', 'bawbab-interactive-maps'));
             return null;
         }
 
@@ -211,7 +211,7 @@ export const useCampusRouting = () => {
         }
         
         if (distances[endKey] === Infinity) {
-            setError(__('No routing connection possible between targets.', 'foulkeways-interactive-map'));
+            setError(__('No routing connection possible between targets.', 'bawbab-interactive-maps'));
             return null;
         }
         

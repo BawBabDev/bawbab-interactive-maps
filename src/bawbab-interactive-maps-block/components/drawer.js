@@ -5,7 +5,7 @@ import { UnitSpecs } from './drawer-unit-specs';
 import { useWpLinkedContent } from '../hooks/useWpLinkedContent';
 import { SidebarHeader } from './sidebarHeader';
 import { MediaCarousel } from './mediaCarousel';
-//import { ContentRenderer } from './contentRenderer';
+import { CampusNavigation } from './campusNavigation';
 import { FloorPlanBlock } from './floorPlanBlock';
 import { ExcerptText } from './excerptText';
 
@@ -77,6 +77,15 @@ const DrawingSidebar = ({ isOpen, selectedLoc, onClose, onImageClick, mapDimensi
 
                             {/* TEXT EXCERPTS AND CONTEXTUAL CONTENT CONTAINER */}
                             <ExcerptText selectedLoc={selectedLoc} wpData={wpData} />
+
+                            {/* INTEGRATED DECOUPLED CAMPUS NAVIGATION CORE CONTROLLERS */}
+                            <CampusNavigation 
+                                destinationFeature={selectedLoc?.type === 'spatial' ? selectedLoc : { geometry: selectedLoc?.geometry, properties: selectedLoc }}
+                                manualOriginNode={selectedLoc?.manualOriginNode || null} 
+                                onTriggerOriginPick={selectedLoc?.onTriggerOriginPick}   
+                                onRouteGenerated={onRouteGenerated}
+                                onRouteCleared={onRouteCleared}
+                            />
                         </div>
                     )}
                 </div>

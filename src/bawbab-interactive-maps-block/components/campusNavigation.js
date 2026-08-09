@@ -30,7 +30,7 @@ export const CampusNavigation = ({
             const graphData = await fetchGraph();
             if (graphData) {
                 setGraphEntries(graphData.entries);
-                window.foulkewaysNavigationGraphEntries = graphData.entries;
+                window.NavigationGraphEntries = graphData.entries;
                 
                 const doors = findIntersectingDoors(destinationFeature, graphData.entries);
                 setMatchingDoors(doors);

@@ -33,7 +33,7 @@ export const useSpatialDataImporter = () => {
         formData.append('layer_type', layerType);
 
         try {
-            const response = await fetch('/wp-json/foulkeways/v1/spatial-data-importer', {
+            const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/spatial-data-importer', {
                 method: 'POST',
                 headers: { 'X-WP-Nonce': window.wpApiSettings?.nonce || '' },
                 body: formData,
@@ -96,7 +96,7 @@ export const useSpatialDataImporter = () => {
         setMessage(prev => prev === null ? null : null);
 
         try {
-            const response = await fetch(`/wp-json/foulkeways/v1/delete-layer/${layerType}`, {
+            const response = await fetch(`/wp-json/bwb-imaps-federated-api/v1/delete-layer/${layerType}`, {
                 method: 'DELETE',
                 headers: { 'X-WP-Nonce': window.wpApiSettings?.nonce || '' },
             });

@@ -29,7 +29,7 @@
         "assets/",
         "build/",
         "includes/",
-        "foulkeways-interactive-map.php",
+        "bawbab-interactive-maps.php",
         "*.txt",
 		"*.php",
 		"languages/",

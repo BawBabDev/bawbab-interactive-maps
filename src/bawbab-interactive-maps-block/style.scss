@@ -4,19 +4,19 @@
 .map-theme-yellow { --map-primary: #d97706; --map-accent: #fffbeb; --map-header-bg: #fef3c7; --map-text-dark: #451a03; --map-border: #f7e8b5; }
 
 /* --- GENERAL STYLE --- */
-.foulkeways-map-shortcode-container, .foulkeways-map-container {
+.map-shortcode-container, .map-container {
     position: relative;     /* Required for z-index to take effect */
     z-index: 1;             /* Sets the widget's global elevation relative to the site */
     isolation: isolate;     /* Forcefully creates a brand new CSS stacking context */
 }
 
 /* The following styles get applied both on the front of your site and in the editor. */
-.wp-block-create-block-foulkeways-interactive-map { background-color: #21759b; color: #fff; padding: 2px; }
-.foulkeways-editor-map-wrapper { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-.wp-block-create-block-foulkeways-interactive-map { border: 1px dotted #f00; }
+.wp-block-create-block-interactive-map { background-color: #21759b; color: #fff; padding: 2px; }
+.editor-map-wrapper { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+.wp-block-create-block-interactive-map { border: 1px dotted #f00; }
 
 /* Ensure the Google Map container has height in the editor */
-.foulkeways-editor-map-wrapper > div { min-height: 400px; }
+.editor-map-wrapper > div { min-height: 400px; }
 
 /* --- SIDEBAR STYLES --- */
 .map-sidebar { width: 0; left: 0; top: 0; height: 100%; position: absolute; background: #fff; z-index: 600; overflow-y: auto; scrollbar-width: none; transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1); -ms-overflow-style: none; }

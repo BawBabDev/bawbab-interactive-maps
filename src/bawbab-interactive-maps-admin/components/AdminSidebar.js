@@ -7,7 +7,7 @@ import { useState } from '@wordpress/element';
 import { MapsTab } from './tabs/mapsTab';
 import { LocationsTab } from './tabs/locationsTab';
 import { SettingsTab } from './tabs/settingsTab';
-import { SpatialDataUploader } from './SpatialDataUploader';
+import { SpatialDataUploader } from './tabs/SpatialDataUploader';
 import { InfoTab } from './tabs/infoTab';
 
 const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, locations, addLocation, removeLocation, 
@@ -21,9 +21,6 @@ const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, 
         { name: 'settings', title: (<div className="tab-label"><Dashicon icon="admin-settings" /><span>{__('Settings', 'bawbab-interactive-maps')}</span></div>) },
         { name: 'info', title: (<div className="tab-label"><Dashicon icon="info" /><span>{__('Info', 'bawbab-interactive-maps')}</span></div>) },
     ];
-
-    // const [showApiKey, setShowApiKey] = useState(false);
-    // const [showMapId, setShowMapId] = useState(false);
 
     return (
         <div className="wrap">

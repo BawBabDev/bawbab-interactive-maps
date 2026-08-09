@@ -11,7 +11,7 @@ import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 /**
  * MainSettingsPage Component
  * 
- * Root administration core panel orchestrated around the foulkeways interactive mapping systems.
+ * Root administration core panel orchestrated around the interactive mapping systems.
  * Provides high-level asynchronous data persistence interfacing with native core WP Options APIs.
  */
 const MainSettingsPage = () => {
