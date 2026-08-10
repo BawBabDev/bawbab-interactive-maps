@@ -1,12 +1,164 @@
 import { 
-    Button, TextControl, TextareaControl, Flex, Dashicon, CheckboxControl,
-    Modal, ComboboxControl, ToggleControl, PanelBody, __experimentalText as Text 
+    Button, ButtonGroup, FlexItem, TextControl, TextareaControl, Flex, Dashicon,
+    Modal, ComboboxControl, ToggleControl, SelectControl, __experimentalText as Text 
 } from '@wordpress/components';
-import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
+import { useState, useEffect, useMemo } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
-const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChanges, isSaving }) => {
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
+const formatFieldLabel = (str) => {
+    if (!str) return '';
+    return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+const createKeySlug = (label) => {
+    return (label || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s_]/g, '')
+        .replace(/\s+/g, '_');
+};
+
+/**
+ * PropertyInputControl
+ * Renders True 3-State Controls (Yes / No / Unset) for Booleans,
+ * and input boxes perfectly baseline-aligned with clear (X) buttons for Numbers/Text.
+ */
+const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onClear }) => {
+    const lowerKey = propKey.toLowerCase();
+    const displayLabel = label || formatFieldLabel(propKey);
+
+    const isValueBool = typeof value === 'boolean' || value === 'true' || value === 'false';
+    const isValueNumber = typeof value === 'number' || (!isNaN(Number(value)) && value !== '' && lowerKey !== 'code' && lowerKey !== 'fid');
+
+    const resolvedType = (schemaType && schemaType !== 'text') ? schemaType : (
+        (lowerKey === 'baths' || lowerKey === 'bathrooms' || lowerKey === 'bath') ? 'bathrooms' :
+        isValueBool ? 'boolean' :
+        isValueNumber ? 'number' : 'text'
+    );
+
+    // 1. TRUE 3-STATE SEGMENTED CONTROL FOR BOOLEANS (Yes / No / Unset)
+    if (resolvedType === 'boolean') {
+        const isNullOrUnset = value === null || value === undefined || value === '';
+        const isTrue = !isNullOrUnset && (value === true || value === 'true' || value === 1 || value === '1');
+        const isFalse = !isNullOrUnset && !isTrue;
+
+        return (
+            <Flex align="center" justify="space-between" style={{ height: '36px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '500', color: isNullOrUnset ? '#757575' : '#1d2327' }}>
+                    {displayLabel}
+                </span>
+
+                {/* NATIVE WORDPRESS BUTTON GROUP (TRUE 3-STATE CONTROL) */}
+                <ButtonGroup>
+                    <Button
+                        isSmall
+                        variant={isTrue ? 'primary' : 'secondary'}
+                        onClick={() => onChange(true)}
+                    >
+                        {__('Yes', TEXT_DOMAIN)}
+                    </Button>
+                    <Button
+                        isSmall
+                        variant={isFalse ? 'destructive' : 'secondary'}
+                        onClick={() => onChange(false)}
+                    >
+                        {__('No', TEXT_DOMAIN)}
+                    </Button>
+                    <Button
+                        isSmall
+                        variant={isNullOrUnset ? 'tertiary' : 'secondary'}
+                        onClick={onClear}
+                        style={{
+                            background: isNullOrUnset ? '#e0e0e0' : undefined,
+                            color: isNullOrUnset ? '#333' : undefined
+                        }}
+                    >
+                        {__('Unset', TEXT_DOMAIN)}
+                    </Button>
+                </ButtonGroup>
+            </Flex>
+        );
+    }
+
+    // HELPER: Renders Label above, and Input + Clear (X) Button aligned on the exact same row below
+    const renderAlignedControl = (inputNode) => (
+        <div>
+            <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
+                {displayLabel}
+            </label>
+            <Flex align="center" gap={2}>
+                <FlexItem style={{ flex: 1 }}>
+                    {inputNode}
+                </FlexItem>
+                <FlexItem style={{ flexShrink: 0 }}>
+                    <Button 
+                        isDestructive 
+                        icon="no-alt" 
+                        isSmall 
+                        onClick={onClear}
+                        label={__('Clear Value', TEXT_DOMAIN)}
+                        showTooltip
+                        style={{ height: '32px', minWidth: '32px', padding: 0 }}
+                    />
+                </FlexItem>
+            </Flex>
+        </div>
+    );
+
+    // 2. Bathroom Stepper Input (0.5 steps)
+    if (resolvedType === 'bathrooms') {
+        return renderAlignedControl(
+            <TextControl
+                type="number"
+                step="0.5"
+                min="0"
+                max="20"
+                value={value !== null && value !== undefined && value !== '' ? String(value) : ''}
+                onChange={(newVal) => onChange(newVal !== '' ? parseFloat(newVal) : null)}
+                style={{ height: '32px' }}
+                __nextHasNoMarginBottom
+            />
+        );
+    }
+
+    // 3. Numeric Stepper Input (0.5 steps)
+    if (resolvedType === 'number') {
+        return renderAlignedControl(
+            <TextControl
+                type="number"
+                step="0.5"
+                value={value !== null && value !== undefined && value !== '' ? String(value) : ''}
+                onChange={(newVal) => onChange(newVal !== '' ? Number(newVal) : null)}
+                style={{ height: '32px' }}
+                __nextHasNoMarginBottom
+            />
+        );
+    }
+
+    // 4. Default Text Control
+    return renderAlignedControl(
+        <TextControl
+            value={value !== null && value !== undefined ? String(value) : ''}
+            onChange={(newVal) => onChange(newVal)}
+            style={{ height: '32px' }}
+            __nextHasNoMarginBottom
+        />
+    );
+};
+
+const DataEditor = ({ 
+    building, 
+    draft = {}, 
+    globalSchema = [], 
+    updateDraft, 
+    onUpdate, 
+    onCancel, 
+    hasChanges, 
+    isSaving 
+}) => {
     if (!building || !building.properties) return null;
 
     const [localProps, setLocalProps] = useState(building.properties);
@@ -15,6 +167,14 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
 
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+
+    // Dynamic property state
+    const [newPropLabel, setNewPropLabel] = useState('');
+    const [newPropValue, setNewPropValue] = useState('');
+    const [newPropType, setNewPropType] = useState('text');
+    const [showAddPropModal, setShowAddPropModal] = useState(false);
+
+    const derivedSlugKey = createKeySlug(newPropLabel);
 
     useEffect(() => {
         apiFetch({ path: '/wp/v2/pages?per_page=100&_fields=id,title' })
@@ -35,19 +195,70 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
 
     const getValue = (key, dbValue) => {
         if (draft && draft.hasOwnProperty(key)) return draft[key];
-        return dbValue !== null && dbValue !== undefined ? dbValue : '';
+        if (dbValue !== null && dbValue !== undefined) return dbValue;
+        if (localProps.custom_attributes && localProps.custom_attributes[key] !== undefined) {
+            return localProps.custom_attributes[key];
+        }
+        return '';
     };
 
+    const mergedCustomAttributes = useMemo(() => {
+        let baseAttrs = localProps.custom_attributes || {};
+        if (typeof baseAttrs === 'string') {
+            try { baseAttrs = JSON.parse(baseAttrs); } catch (e) { baseAttrs = {}; }
+        }
+
+        const draftAttrs = draft.custom_attributes || {};
+        const combined = { ...baseAttrs, ...draftAttrs };
+
+        globalSchema.forEach(schemaItem => {
+            if (!combined.hasOwnProperty(schemaItem.key)) {
+                combined[schemaItem.key] = null;
+            }
+        });
+
+        return combined;
+    }, [localProps.custom_attributes, draft.custom_attributes, globalSchema]);
+
+    const updateCustomAttr = (key, value) => {
+        updateDraft({
+            custom_attributes: {
+                ...(draft.custom_attributes || localProps.custom_attributes || {}),
+                [key]: value
+            }
+        });
+    };
+
+    const clearCustomAttrValue = (key) => {
+        updateCustomAttr(key, null);
+    };
+
+    const handleAddCustomProperty = () => {
+        if (!newPropLabel.trim() || !derivedSlugKey) return;
+
+        let formattedValue = newPropValue;
+        if (newPropType === 'number' || newPropType === 'bathrooms') {
+            formattedValue = newPropValue !== '' ? Number(newPropValue) : null;
+        } else if (newPropType === 'boolean') {
+            formattedValue = newPropValue === 'true' || newPropValue === true;
+        }
+
+        updateCustomAttr(derivedSlugKey, formattedValue);
+
+        setNewPropLabel('');
+        setNewPropValue('');
+        setNewPropType('text');
+        setShowAddPropModal(false);
+    };
+
+    // Form Values
     const customTitle = getValue('title', localProps.title);
-    const desc = getValue('description', localProps.description);
     const linkedPageId = getValue('wp_page_id', localProps.wp_page_id);
+    const isInteractive = getValue('is_interactive', localProps.is_interactive !== undefined ? !!localProps.is_interactive : true);
+    const showLabel = getValue('show_label', localProps.show_label !== undefined ? !!localProps.show_label : true);
+    const desc = getValue('description', localProps.description);
     const appendDescription = getValue('append_description', !!localProps.append_description);
-    const sqFt = getValue('sq_ft', localProps.sq_ft);
-    const baths = getValue('baths', localProps.baths);
-    const hasFireplace = getValue('fireplace', !!localProps.fireplace);
-    const hasSunroom = getValue('sunroom', !!localProps.sunroom);
-    
-    // Media Override State Getters
+
     const customVideoUrl = getValue('custom_video_url', localProps.custom_video_url);
     const customFloorplanUrl = getValue('custom_floorplan_url', localProps.custom_floorplan_url);
     const hidePageVideo = getValue('hide_page_video', !!localProps.hide_page_video);
@@ -62,7 +273,7 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
     };
 
     const currentGallery = getGallery();
-    const isResidential = ['residential_apartment', 'cottage'].includes(localProps.category);
+    const customAttrKeys = Object.keys(mergedCustomAttributes);
 
     const handleConfirmSave = () => {
         setShowSaveModal(false);
@@ -70,67 +281,99 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
     };
 
     return (
-        <div className="building-editor-container" style={{ maxWidth: '600px' }}>
+        <div className="building-editor-container" style={{ maxWidth: '650px' }}>
             <div style={{ marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 <Text variant="title.medium" display="block">
-                    {__('Internal ID:', 'bawbab-imaps-vertical-tabs')} {localProps.name || localProps.fid}
+                    {__('Internal ID:', TEXT_DOMAIN)} {localProps.name || localProps.fid}
                 </Text>
             </div>
 
-            {/* CUSTOM TITLE OVERRIDE */}
-            <div style={{ marginBottom: '25px', display: 'block' }}>
+            {/* 1. DISPLAY TITLE OVERRIDE (FIRST BOX) */}
+            <div style={{ marginBottom: '20px' }}>
                 <TextControl 
-                    label={__('Display Title (Overrides WP Page Title)', 'bawbab-interactive-maps')} 
+                    label={__('Display Title (Overrides WP Page Title)', TEXT_DOMAIN)} 
                     value={customTitle} 
                     onChange={(val) => updateDraft({ title: val })}
                     placeholder={localProps.name}
-                    help={__('Leave blank to fall back to the linked WP Page title.', 'bawbab-interactive-maps')}
-                    __nextHasNoMarginBottom={false}
+                    __nextHasNoMarginBottom
                 />
             </div>
 
-            {isResidential && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
-                    <TextControl label={__('Square Feet', 'bawbab-interactive-maps')} value={sqFt} onChange={(val) => updateDraft({ sq_ft: val })} placeholder={__('e.g. 980 - 1,000', 'bawbab-interactive-maps')} />
-                    <TextControl label={__('Bathrooms (0-5)', 'bawbab-interactive-maps')} type="number" step="0.5" value={baths} onChange={(v) => updateDraft({ baths: v })} />
-                    <CheckboxControl label={__('Has Fireplace', 'bawbab-interactive-maps')} checked={hasFireplace} onChange={(val) => updateDraft({ fireplace: val })} />
-                    <CheckboxControl label={__('Has Sunroom', 'bawbab-interactive-maps')} checked={hasSunroom} onChange={(val) => updateDraft({ sunroom: val })} />
-                </div>
-            )}
-
-            {/* LINKED WORDPRESS PAGE */}
+            {/* 2. LINKED WORDPRESS PAGE (SECOND BOX) */}
             <div style={{ padding: '15px', background: '#f0f6fb', borderRadius: '4px', borderLeft: '4px solid #2271b1', marginBottom: '20px' }}>
                 <ComboboxControl
-                    label={__('Linked WordPress Page', 'bawbab-interactive-maps')}
-                    help={__('Start typing to link a page from your site.', 'bawbab-interactive-maps')}
+                    label={__('Linked WordPress Page', TEXT_DOMAIN)}
                     value={linkedPageId ? linkedPageId.toString() : ''}
                     onChange={(val) => updateDraft({ wp_page_id: val })}
                     options={pages}
                 />
             </div>
 
-            {/* ACF MEDIA OVERRIDES SECTION */}
+            {/* 3. CUSTOM FEATURE PROPERTIES (UNIFIED LIGHT GRAY CONTAINER) */}
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+                <Flex align="center" justify="space-between" style={{ marginBottom: '12px' }}>
+                    <Text variant="label" display="block" style={{ fontWeight: '600' }}>
+                        {__('Custom Feature Properties', TEXT_DOMAIN)}
+                    </Text>
+                    <Button 
+                        variant="secondary" 
+                        isSmall 
+                        icon="plus-alt" 
+                        onClick={() => setShowAddPropModal(true)}
+                    >
+                        {__('Add Property', TEXT_DOMAIN)}
+                    </Button>
+                </Flex>
+
+                {customAttrKeys.length === 0 ? (
+                    <Text variant="caption" style={{ color: '#666', fontStyle: 'italic' }}>
+                        {__('No custom attributes associated with this feature.', TEXT_DOMAIN)}
+                    </Text>
+                ) : (
+                    <div style={{ border: '1px solid #e0e0e0', borderRadius: '4px', background: '#fff', overflow: 'hidden' }}>
+                        {customAttrKeys.map((key, index) => {
+                            const schemaItem = globalSchema.find(s => s.key === key);
+                            const isLast = index === customAttrKeys.length - 1;
+
+                            return (
+                                <div 
+                                    key={key} 
+                                    style={{ 
+                                        padding: '10px 12px', 
+                                        borderBottom: isLast ? 'none' : '1px solid #f0f0f0'
+                                    }}
+                                >
+                                    <PropertyInputControl
+                                        propKey={key}
+                                        label={schemaItem?.label}
+                                        schemaType={schemaItem?.type}
+                                        value={mergedCustomAttributes[key]}
+                                        onChange={(newVal) => updateCustomAttr(key, newVal)}
+                                        onClear={() => clearCustomAttrValue(key)}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* 4. MEDIA OVERRIDES SECTION */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
-                <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px', textTransform: 'none' }}>
-                    {__('Page Media Overrides (Video & Floorplan)', 'bawbab-interactive-maps')}
+                <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
+                    {__('Page Media Overrides (Video & Floorplan)', TEXT_DOMAIN)}
                 </Text>
                 
-                {/* Video Overrides */}
                 <div style={{ marginBottom: '15px', paddingBottom: '12px', borderBottom: '1px solid #eee' }}>
                     <ToggleControl
-                        label={__('Hide Linked Page Video', 'bawbab-interactive-maps')}
+                        label={__('Hide Linked Page Video', TEXT_DOMAIN)}
                         checked={hidePageVideo}
                         onChange={(val) => updateDraft({ hide_page_video: val })}
                     />
                     {!hidePageVideo && (
                         <div style={{ marginTop: '12px' }}>
                             <TextControl
-                                label={
-                                    <span style={{ textTransform: 'none', fontWeight: '500' }}>
-                                        {__('Custom Video URL (Overrides Page Video)', 'bawbab-interactive-maps')}
-                                    </span>
-                                }
-                                placeholder="e.g. https://vimeo.com/123456789"
+                                label={__('Custom Video URL', TEXT_DOMAIN)}
                                 value={customVideoUrl}
                                 onChange={(val) => updateDraft({ custom_video_url: val })}
                                 __nextHasNoMarginBottom
@@ -139,10 +382,9 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                     )}
                 </div>
 
-                {/* Floorplan Overrides */}
                 <div>
                     <ToggleControl
-                        label={__('Hide Linked Page Floorplan', 'bawbab-interactive-maps')}
+                        label={__('Hide Linked Page Floorplan', TEXT_DOMAIN)}
                         checked={hidePageFloorplan}
                         onChange={(val) => updateDraft({ hide_page_floorplan: val })}
                     />
@@ -150,12 +392,7 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                         <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                             <div style={{ flex: 1 }}>
                                 <TextControl
-                                    label={
-                                        <span style={{ textTransform: 'none', fontWeight: '500' }}>
-                                            {__('Custom Floorplan Image/PDF URL', 'bawbab-interactive-maps')}
-                                        </span>
-                                    }
-                                    placeholder="https://..."
+                                    label={__('Custom Floorplan URL', TEXT_DOMAIN)}
                                     value={customFloorplanUrl}
                                     onChange={(val) => updateDraft({ custom_floorplan_url: val })}
                                     __nextHasNoMarginBottom
@@ -165,7 +402,7 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                                 variant="secondary" 
                                 icon="upload"
                                 onClick={() => {
-                                    const frame = window.wp.media({ title: __('Select Custom Floorplan', 'bawbab-interactive-maps'), multiple: false });
+                                    const frame = window.wp.media({ title: __('Select Custom Floorplan', TEXT_DOMAIN), multiple: false });
                                     frame.on('select', () => {
                                         const attachment = frame.state().get('selection').first().toJSON();
                                         updateDraft({ custom_floorplan_url: attachment.url });
@@ -179,10 +416,10 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                 </div>
             </div>
 
-            {/* CUSTOM DESCRIPTION */}
+            {/* 5. CUSTOM DESCRIPTION */}
             <div style={{ marginBottom: '20px' }}>
                 <TextareaControl 
-                    label={__('Custom Description', 'bawbab-interactive-maps')} 
+                    label={__('Custom Description', TEXT_DOMAIN)} 
                     value={desc} 
                     onChange={(val) => updateDraft({ description: val })} 
                     rows={5} 
@@ -191,10 +428,7 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                 {linkedPageId && desc.trim().length > 0 && (
                     <div style={{ marginTop: '10px', padding: '10px 12px', background: '#fff', border: '1px solid #ccd0d4', borderRadius: '4px' }}>
                         <ToggleControl
-                            label={__('Append to WP Page Content', 'bawbab-interactive-maps')}
-                            help={appendDescription 
-                                ? __('Custom description will appear ABOVE the linked WP page content.', 'bawbab-interactive-maps') 
-                                : __('Custom description will REPLACE the linked WP page content.', 'bawbab-interactive-maps')}
+                            label={__('Append to WP Page Content', TEXT_DOMAIN)}
                             checked={appendDescription}
                             onChange={(val) => updateDraft({ append_description: val })}
                         />
@@ -202,9 +436,28 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                 )}
             </div>
 
-            {/* MEDIA GALLERY */}
+            {/* 6. MAP BEHAVIOR TOGGLES (BOTTOM) */}
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+                <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
+                    {__('Map Interaction & Display Settings', TEXT_DOMAIN)}
+                </Text>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <ToggleControl
+                        label={__('Feature is Interactive (Clickable on map)', TEXT_DOMAIN)}
+                        checked={isInteractive}
+                        onChange={(val) => updateDraft({ is_interactive: val })}
+                    />
+                    <ToggleControl
+                        label={__('Display Name/Code Label on Map Canvas', TEXT_DOMAIN)}
+                        checked={showLabel}
+                        onChange={(val) => updateDraft({ show_label: val })}
+                    />
+                </div>
+            </div>
+
+            {/* 7. CUSTOM GALLERY */}
             <div style={{ margin: '20px 0' }}>
-                <Text variant="label" display="block" style={{ marginBottom: '10px' }}>{__('Custom Gallery', 'bawbab-interactive-maps')}</Text>
+                <Text variant="label" display="block" style={{ marginBottom: '10px' }}>{__('Custom Gallery', TEXT_DOMAIN)}</Text>
                 <Flex wrap="wrap" gap={2} style={{ marginBottom: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '4px', justifyContent: 'flex-start' }}>
                     {currentGallery.map((img) => (
                         <div key={img.id} style={{ position: 'relative', width: '80px', height: '80px' }}>
@@ -214,43 +467,83 @@ const DataEditor = ({ building, draft, updateDraft, onUpdate, onCancel, hasChang
                     ))}
                 </Flex>
                 <Button variant="secondary" icon="upload" onClick={() => {
-                    const frame = window.wp.media({ title: __('Manage Gallery', 'bawbab-interactive-maps'), multiple: true });
+                    const frame = window.wp.media({ title: __('Manage Gallery', TEXT_DOMAIN), multiple: true });
                     frame.on('select', () => {
                         const selection = frame.state().get('selection').toJSON();
                         const newImages = selection.map(img => ({ id: img.id, url: img.url }));
                         updateDraft({ gallery: [...currentGallery, ...newImages] });
                     });
                     frame.open();
-                }} style={{ width: '100%', justifyContent: 'center' }}>{__('Manage Images', 'bawbab-interactive-maps')}</Button>
+                }} style={{ width: '100%', justifyContent: 'center' }}>{__('Manage Images', TEXT_DOMAIN)}</Button>
             </div>
 
-            {/* ACTION BUTTONS */}
+            {/* 8. ACTION BUTTONS */}
             <Flex justify="flex-start" style={{ marginTop: '30px', gap: '15px' }}>
                 <Button variant="secondary" onClick={() => setShowCancelModal(true)} disabled={isSaving || !hasChanges} style={{ height: '40px', flex: '1', justifyContent: 'center' }}>
-                    {__('Discard All Changes', 'bawbab-interactive-maps')}
+                    {__('Discard All Changes', TEXT_DOMAIN)}
                 </Button>
                 <Button variant="primary" isBusy={isSaving} disabled={!hasChanges} onClick={() => setShowSaveModal(true)} style={{ height: '40px', flex: '1', justifyContent: 'center' }}>
-                    {__('Save All Changes', 'bawbab-interactive-maps')}
+                    {__('Save All Changes', TEXT_DOMAIN)}
                 </Button>
             </Flex>
 
-            {/* MODALS */}
+            {/* MODAL: ADD CUSTOM PROPERTY */}
+            {showAddPropModal && (
+                <Modal title={__('Add Custom Property', TEXT_DOMAIN)} onRequestClose={() => setShowAddPropModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <TextControl
+                            label={__('Property Field Name', TEXT_DOMAIN)}
+                            placeholder="e.g. Bathrooms, Square Feet, or Fireplace"
+                            value={newPropLabel}
+                            onChange={setNewPropLabel}
+                            help={derivedSlugKey ? sprintf(__('Database Key Slug: %s', TEXT_DOMAIN), derivedSlugKey) : ''}
+                        />
+                        <SelectControl
+                            label={__('Property Type', TEXT_DOMAIN)}
+                            value={newPropType}
+                            options={[
+                                { label: __('Text String', TEXT_DOMAIN), value: 'text' },
+                                { label: __('Number', TEXT_DOMAIN), value: 'number' },
+                                { label: __('Boolean (Yes/No Flag)', TEXT_DOMAIN), value: 'boolean' },
+                                { label: __('Bathroom Counter (0.5 steps)', TEXT_DOMAIN), value: 'bathrooms' },
+                            ]}
+                            onChange={setNewPropType}
+                        />
+                        <TextControl
+                            label={__('Initial Value', TEXT_DOMAIN)}
+                            placeholder="e.g. 1.5, 980, or true"
+                            value={newPropValue}
+                            onChange={setNewPropValue}
+                        />
+                        <Flex justify="flex-end" style={{ marginTop: '10px' }}>
+                            <Button variant="tertiary" onClick={() => setShowAddPropModal(false)}>
+                                {__('Cancel', TEXT_DOMAIN)}
+                            </Button>
+                            <Button variant="primary" onClick={handleAddCustomProperty} disabled={!newPropLabel.trim()}>
+                                {__('Add Property', TEXT_DOMAIN)}
+                            </Button>
+                        </Flex>
+                    </div>
+                </Modal>
+            )}
+
+            {/* CONFIRMATION MODALS */}
             {showSaveModal && (
-                <Modal title={__('Save All Changes?', 'bawbab-interactive-maps')} onRequestClose={() => setShowSaveModal(false)}>
-                    <p>{__('This will save all pending modifications to the map database.', 'bawbab-interactive-maps')}</p>
+                <Modal title={__('Save All Changes?', TEXT_DOMAIN)} onRequestClose={() => setShowSaveModal(false)}>
+                    <p>{__('This will save all pending modifications to the map database.', TEXT_DOMAIN)}</p>
                     <Flex justify="flex-end" style={{ marginTop: '20px' }}>
-                        <Button variant="tertiary" onClick={() => setShowSaveModal(false)}>{__('Wait, go back', 'bawbab-interactive-maps')}</Button>
-                        <Button variant="primary" onClick={handleConfirmSave}>{__('Confirm and Save All', 'bawbab-interactive-maps')}</Button>
+                        <Button variant="tertiary" onClick={() => setShowSaveModal(false)}>{__('Wait, go back', TEXT_DOMAIN)}</Button>
+                        <Button variant="primary" onClick={handleConfirmSave}>{__('Confirm and Save All', TEXT_DOMAIN)}</Button>
                     </Flex>
                 </Modal>
             )}
 
             {showCancelModal && (
-                <Modal title={__('Discard Changes?', 'bawbab-interactive-maps')} onRequestClose={() => setShowCancelModal(false)}>
-                    <p>{__('You have unsaved modifications. Discarding will reset all features to their last saved state.', 'bawbab-interactive-maps')}</p>
+                <Modal title={__('Discard Changes?', TEXT_DOMAIN)} onRequestClose={() => setShowCancelModal(false)}>
+                    <p>{__('You have unsaved modifications.', TEXT_DOMAIN)}</p>
                     <Flex justify="flex-end" style={{ marginTop: '20px' }}>
-                        <Button variant="tertiary" onClick={() => setShowCancelModal(false)}>{__('Keep editing', 'bawbab-interactive-maps')}</Button>
-                        <Button isDestructive onClick={() => { onCancel(); setShowCancelModal(false); }}>{__('Discard Everything', 'bawbab-interactive-maps')}</Button>
+                        <Button variant="tertiary" onClick={() => setShowCancelModal(false)}>{__('Keep editing', TEXT_DOMAIN)}</Button>
+                        <Button isDestructive onClick={() => { onCancel(); setShowCancelModal(false); }}>{__('Discard Everything', TEXT_DOMAIN)}</Button>
                     </Flex>
                 </Modal>
             )}

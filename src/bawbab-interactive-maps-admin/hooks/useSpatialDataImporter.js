@@ -1,36 +1,70 @@
 import { useState, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
 /**
  * useSpatialDataImporter
  * 
- * Custom React hook handling async multi-layer GeoJSON payload uploads 
- * and layer truncations to the custom WordPress REST API namespace endpoints.
- * Optimized with stable callback references to prevent unneeded component tree re-renders.
+ * Custom React hook handling async multi-layer GeoJSON inspections, 
+ * field mapping execution, and layer truncations.
  *
- * @returns {Object} Importer states and actions { importGeoJSON, isUploading, message, setMessage, deleteLayer }
+ * @returns {Object} Importer states and actions { inspectGeoJSON, importGeoJSON, isUploading, message, setMessage, deleteLayer }
  */
 export const useSpatialDataImporter = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState(null);
 
     /**
-     * importGeoJSON
-     * Processes files dynamically over FormData, assigning layer types 
-     * dispatched inside the backend PHP router.
+     * inspectGeoJSON
+     * Sends the file to the REST API to discover properties prior to import.
      */
-    const importGeoJSON = useCallback(async (fileList, layerType) => {
-        if (!fileList?.length) return;
-        
-        const file = fileList[0];
+    const inspectGeoJSON = useCallback(async (file) => {
+        if (!file) return { success: false, message: __('No file provided.', TEXT_DOMAIN) };
+
+        const formData = new FormData();
+        formData.append('geojson_file', file);
+
+        try {
+            const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/inspect-geojson', {
+                method: 'POST',
+                headers: { 'X-WP-Nonce': window.wpApiSettings?.nonce || '' },
+                body: formData,
+            });
+            return await response.json();
+        } catch (error) {
+            return { success: false, message: __('Network error inspecting file.', TEXT_DOMAIN) };
+        }
+    }, []);
+
+    /**
+     * importGeoJSON
+     * Executes feature insertion with custom column mapping options.
+     */
+    const importGeoJSON = useCallback(async ({ 
+        file, 
+        layerType, 
+        fieldMapping = {}, 
+        importedCustomKeys = [], 
+        overwriteExisting = false 
+    }) => {
+        if (!file) return;
+
         setIsUploading(true);
-        
-        // Reset message securely without breaking layout effects
-        setMessage(prev => prev === null ? null : null);
+        setMessage(null);
+
+        console.log('[useSpatialDataImporter] Starting GeoJSON import with payload:', {
+            layerType,
+            fieldMapping,
+            importedCustomKeys
+        });
 
         const formData = new FormData();
         formData.append('geojson_file', file);
         formData.append('layer_type', layerType);
+        formData.append('field_mapping', JSON.stringify(fieldMapping));
+        formData.append('imported_custom_keys', JSON.stringify(importedCustomKeys));
+        formData.append('overwrite_existing', overwriteExisting ? 'true' : 'false');
 
         try {
             const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/spatial-data-importer', {
@@ -45,55 +79,56 @@ export const useSpatialDataImporter = () => {
             try {
                 result = JSON.parse(text);
             } catch (e) {
-                console.error("Malformed JSON response:", text);
+                console.error('[useSpatialDataImporter] Raw server response was not valid JSON:', text);
                 setMessage({ 
                     type: 'error', 
-                    text: __('Server error: Invalid response format.', 'bawbab-interactive-maps') 
+                    text: __('Server error: Invalid response format.', TEXT_DOMAIN) 
                 });
                 return;
             }
+
+            console.log('[useSpatialDataImporter] Server import response:', result);
 
             if (response.ok && result.success) {
                 setMessage({ 
                     type: 'success', 
                     text: sprintf(
-                        __('Import complete: %1$d features imported.', 'bawbab-interactive-maps'),
+                        __('Import complete: %1$d features processed.', TEXT_DOMAIN),
                         result.imported
                     )
                 });
             } else {
                 setMessage({ 
                     type: 'error', 
-                    text: result.message || __('Import failed.', 'bawbab-interactive-maps') 
+                    text: result.message || __('Import failed.', TEXT_DOMAIN) 
                 });
             }
         } catch (error) {
+            console.error('[useSpatialDataImporter] Network error during import:', error);
             setMessage({ 
                 type: 'error', 
-                text: __('Network error occurred.', 'bawbab-interactive-maps') 
+                text: __('Network error occurred.', TEXT_DOMAIN) 
             });
         } finally {
             setIsUploading(false);
             const input = document.getElementById('geojson-import-input');
             if (input) input.value = '';
         }
-    }, []); // Empty dependency array ensures reference stability
+    }, []);
 
     /**
      * deleteLayer
-     * Issues an authorized DELETE verb request targeting specific layers, 
-     * purging records within specialized database structures safely.
+     * Issues an authorized DELETE verb request targeting specific layers.
      */
     const deleteLayer = useCallback(async (layerType) => {
-        // Translation-safe confirmation alert
         const confirmPhrase = sprintf(
-            __('Are you sure you want to delete ALL data for the %1$s layer?', 'bawbab-interactive-maps'),
+            __('Are you sure you want to delete ALL data for the %1$s layer?', TEXT_DOMAIN),
             layerType
         );
         if (!window.confirm(confirmPhrase)) return;
 
         setIsUploading(true);
-        setMessage(prev => prev === null ? null : null);
+        setMessage(null);
 
         try {
             const response = await fetch(`/wp-json/bwb-imaps-federated-api/v1/delete-layer/${layerType}`, {
@@ -106,25 +141,24 @@ export const useSpatialDataImporter = () => {
             if (response.ok && result.success) {
                 setMessage({ 
                     type: 'success', 
-                    text: sprintf(__('Layer %1$s deleted successfully.', 'bawbab-interactive-maps'), layerType) 
+                    text: sprintf(__('Layer %1$s deleted successfully.', TEXT_DOMAIN), layerType) 
                 });
-                // Soft timeout to give users feedback before view refresh
                 setTimeout(() => window.location.reload(), 1500);
             } else {
                 setMessage({ 
                     type: 'error', 
-                    text: __('Failed to delete layer.', 'bawbab-interactive-maps') 
+                    text: __('Failed to delete layer.', TEXT_DOMAIN) 
                 });
             }
         } catch (error) {
             setMessage({ 
                 type: 'error', 
-                text: __('Network error occurred.', 'bawbab-interactive-maps') 
+                text: __('Network error occurred.', TEXT_DOMAIN) 
             });
         } finally {
             setIsUploading(false);
         }
-    }, []); // Wrapped in useCallback to prevent hook re-allocation side-effects
+    }, []);
 
-    return { importGeoJSON, isUploading, message, setMessage, deleteLayer };
+    return { inspectGeoJSON, importGeoJSON, isUploading, message, setMessage, deleteLayer };
 };

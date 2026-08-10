@@ -1,15 +1,29 @@
 import { __ } from '@wordpress/i18n';
 import { 
     Panel, Flex, FlexItem, NoticeList, Button, Spinner, SearchControl, 
-    SelectControl, PanelBody, CheckboxControl, Dashicon 
+    SelectControl, PanelBody, CheckboxControl, TextControl, Dashicon 
 } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
 import DataEditor from './components/DataEditor'; 
+import { AttributeSchemaManager } from './components/attributeSchemaManager';
 import BawBabIMaps from '../bawbab-interactive-maps-block/components/maps';
+import { DEFAULT_CATEGORY_CONFIG } from '../bawbab-interactive-maps-block/constants/mapConstants';
+import { discoverCustomAttributes, matchesAllFilters } from './utils/editFilters';
+import { useAttributeSchema } from './hooks/useAttributeSchema';
 
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
+const formatLabel = (str) => {
+    if (!str) return '';
+    return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+/**
+ * EditPage Component
+ */
 const EditPage = () => {
     const [features, setFeatures] = useState([]);
     const [searchQuery, setSearchQuery] = useState(''); 
@@ -19,7 +33,13 @@ const EditPage = () => {
     const [resetCounter, setResetCounter] = useState(0);
     const [drafts, setDrafts] = useState({});
     
-    // --- MAP CONFIGURATION STATES ---
+    // Panel Tab Navigation State ('editor' vs 'schema')
+    const [activeTab, setActiveTab] = useState('editor');
+
+    // Attribute Schema Hook
+    const { schema, isLoadingSchema, updateSchemaKey, deleteSchemaKey, fetchSchema } = useAttributeSchema();
+
+    // Map settings
     const [googleApiKey, setGoogleApiKey] = useState('');
     const [googleMapId, setGoogleMapId] = useState('');
     const [mapType, setMapType] = useState('hybrid');
@@ -27,20 +47,22 @@ const EditPage = () => {
     const [navBackground, setNavBackground] = useState('');
     const [colorTheme, setColorTheme] = useState('blue');
     
-    const [openedGroup, setOpenedGroup] = useState(null);
-
+    // Accordion state
+    const [openedTopTab, setOpenedGroup] = useState(null);
+    const [openedSubGroup, setOpenedSubGroup] = useState({});
     const sidebarListRef = useRef(null);
 
+    // Filter Panel Deploy State
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [filterCategory, setFilterCategory] = useState('all');
-    const [filterFireplace, setFilterFireplace] = useState(false);
-    const [filterSunroom, setFilterSunroom] = useState(false);
+    const [dynamicFilters, setDynamicFilters] = useState({});
 
     const { removeNotice } = useDispatch( noticesStore );
     const notices = useSelect( ( select ) => select( noticesStore ).getNotices(), [] );
 
+    // 1. Fetch Features
     const fetchFeatures = async () => {
         setIsLoading(true);
-        console.log("🛠️ [EditPage] Fetching fresh spatial features from /get-spatial-data...");
         try {
             const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/get-spatial-data');
             const data = await response.json();
@@ -48,7 +70,6 @@ const EditPage = () => {
                 return f.properties.layer_type === 'buildings' || f.properties.layer_type === 'land_use';
             }) || [];
             
-            console.log(`🛠️ [EditPage] Fetched ${filtered.length} features successfully.`);
             setFeatures(filtered);
 
             setActiveFeature(prevActive => {
@@ -57,111 +78,122 @@ const EditPage = () => {
                     f.properties.fid === prevActive.properties.fid && 
                     f.properties.layer_type === prevActive.properties.layer_type
                 );
-                console.log("🛠️ [EditPage] Re-synced activeFeature from server:", updated?.properties);
                 return updated || prevActive;
             });
         } catch (err) {
-            console.error("❌ [EditPage] Error fetching spatial data:", err);
+            console.error("Error fetching spatial data:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const displayItems = useMemo(() => {
-        const filtered = features.filter(f => {
-            const p = f.properties;
-            const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                (p.code || '').toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCat = filterCategory === 'all' || p.category === filterCategory;
-            const matchesFireplace = !filterFireplace || !!p.fireplace;
-            const matchesSunroom = !filterSunroom || !!p.sunroom;
-            return matchesSearch && matchesCat && matchesFireplace && matchesSunroom;
+    // 2. Discover Dynamic Attributes
+    const discoveredAttributes = useMemo(() => {
+        return discoverCustomAttributes(features);
+    }, [features]);
+
+    const handleDynamicFilterChange = (key, value) => {
+        setDynamicFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    // 3. Process Two-Level Category Accordion Structure
+    const displayStructure = useMemo(() => {
+        const categoryConfig = window.bwbimapsSettings?.categoryConfig || DEFAULT_CATEGORY_CONFIG;
+        const configuredTabs = categoryConfig.tabs || DEFAULT_CATEGORY_CONFIG.tabs;
+
+        const filteredFeatures = features.filter(f => 
+            matchesAllFilters(f, searchQuery, filterCategory, dynamicFilters)
+        );
+
+        const naturalSort = (a, b) => (a.properties?.code || a.properties?.name || '').localeCompare(b.properties?.code || b.properties?.name || '', undefined, { numeric: true });
+
+        const mainCategories = [];
+        const assignedFeatureFids = new Set();
+
+        configuredTabs.forEach(tab => {
+            const tabCategories = tab.categories || [];
+            const matchingFeatures = filteredFeatures.filter(f => tabCategories.includes(f.properties?.category));
+
+            if (matchingFeatures.length === 0) return;
+
+            matchingFeatures.forEach(f => assignedFeatureFids.add(`${f.properties.layer_type}-${f.properties.fid}`));
+
+            const subGroupMap = {};
+            const flatItems = [];
+
+            matchingFeatures.forEach(f => {
+                const p = f.properties || {};
+                if (p.name && p.code && tab.displayType === 'grouped') {
+                    if (!subGroupMap[p.name]) subGroupMap[p.name] = [];
+                    subGroupMap[p.name].push(f);
+                } else {
+                    flatItems.push(f);
+                }
+            });
+
+            const subGroups = Object.keys(subGroupMap)
+                .filter(subName => subGroupMap[subName].length > 0)
+                .sort()
+                .map(subName => ({
+                    id: `sub-${tab.id}-${subName.replace(/\s+/g, '_')}`,
+                    title: subName,
+                    items: subGroupMap[subName].sort(naturalSort)
+                }));
+
+            mainCategories.push({
+                id: `tab-${tab.id}`,
+                title: tab.title,
+                displayType: tab.displayType,
+                subGroups,
+                flatItems: flatItems.sort(naturalSort),
+                totalCount: matchingFeatures.length
+            });
         });
 
-        const groups = {};
-        const cottages = [];
-        const amenities = [];
-        const unnamed = [];
+        const unassignedFeatures = filteredFeatures.filter(f => !assignedFeatureFids.has(`${f.properties.layer_type}-${f.properties.fid}`));
 
-        filtered.forEach(f => {
-            const p = f.properties;
-            if (p.category === 'cottage' && p.name) {
-                cottages.push(f);
-            } else if (p.name && p.code) {
-                if (!groups[p.name]) groups[p.name] = [];
-                groups[p.name].push(f);
-            } else if (p.name && !p.code) {
-                 amenities.push(f);
-            } else {
-                unnamed.push(f);
-            }
-        });
-
-        const result = [];
-
-        if (cottages.length > 0) {
-            result.push({
-                type: 'group',
-                title: __('Cottages', 'bawbab-interactive-maps'),
-                items: cottages.sort((a, b) => {
-                    const nameA = a.properties.name || '';
-                    const nameB = b.properties.name || '';
-                    if (nameA !== nameB) return nameA.localeCompare(nameB);
-                    return (a.properties.code || '').localeCompare(b.properties.code || '', undefined, {numeric: true});
-                })
+        if (unassignedFeatures.length > 0) {
+            mainCategories.push({
+                id: 'tab-unassigned',
+                title: __('Unassigned / Other Features', TEXT_DOMAIN),
+                displayType: 'flat',
+                subGroups: [],
+                flatItems: unassignedFeatures.sort(naturalSort),
+                totalCount: unassignedFeatures.length
             });
         }
 
-        Object.keys(groups).sort().forEach(name => {
-            result.push({
-                type: 'group',
-                title: name,
-                items: groups[name].sort((a, b) => a.properties.code.localeCompare(b.properties.code, undefined, {numeric: true}))
-            });
-        });
-
-        if (amenities.length > 0) {
-            result.push({ type: 'group', title: __('Amenities', 'bawbab-interactive-maps'), items: amenities.sort((a, b) => a.properties.name.localeCompare(b.properties.name)) });
-        }
-
-        if (unnamed.length > 0) {
-            result.push({
-                type: 'group',
-                title: __('Unnamed Features', 'bawbab-interactive-maps'),
-                items: unnamed.sort((a, b) => {
-                    const labelA = `${a.properties.layer_type}-${a.properties.fid}`;
-                    const labelB = `${b.properties.layer_type}-${b.properties.fid}`;
-                    return labelA.localeCompare(labelB);
-                })
-            });
-        }
-        return result;
-    }, [features, searchQuery, filterCategory, filterFireplace, filterSunroom]);
+        return mainCategories;
+    }, [features, searchQuery, filterCategory, dynamicFilters]);
 
     const updateDraft = (layerType, fid, data) => {
         const compositeKey = `${layerType}::${fid}`;
-        console.log(`🛠️ [EditPage] updateDraft called for [${compositeKey}] with changes:`, data);
         setDrafts(prev => {
-            const updated = { ...prev, [compositeKey]: { ...(prev[compositeKey] || {}), ...data } };
-            console.log("🛠️ [EditPage] Current cumulative drafts state:", updated);
-            return updated;
+            const currentDraft = prev[compositeKey] || {};
+            const updatedCustomAttrs = {
+                ...(currentDraft.custom_attributes || {}),
+                ...(data.custom_attributes || {})
+            };
+
+            return {
+                ...prev,
+                [compositeKey]: {
+                    ...currentDraft,
+                    ...data,
+                    ...(Object.keys(updatedCustomAttrs).length > 0 ? { custom_attributes: updatedCustomAttrs } : {})
+                }
+            };
         });
     };
 
     const handleCancel = () => {
-        console.log("🛠️ [EditPage] Discarding all pending drafts.");
         setDrafts({});
         setResetCounter(prev => prev + 1);
     };
 
     const saveAllDrafts = async () => {
         const draftKeys = Object.keys(drafts);
-        console.log("🛠️ [EditPage] saveAllDrafts triggered. Draft keys pending save:", draftKeys);
-        
-        if (draftKeys.length === 0) {
-            console.warn("⚠️ [EditPage] No drafts found to save.");
-            return;
-        }
+        if (draftKeys.length === 0) return;
 
         setIsSaving(true);
         
@@ -171,30 +203,31 @@ const EditPage = () => {
                 const [layerType, fid] = compositeKey.split('::');
                 const feature = features.find(f => String(f.properties.fid) === String(fid) && f.properties.layer_type === layerType);
                 
-                if (!feature) {
-                    console.error(`❌ [EditPage] Could not find matching feature in memory for key: ${compositeKey}`);
-                    return;
-                }
+                if (!feature) return;
 
-                const helperBool = (key) => {
+                const helperBool = (key, defaultBool) => {
                     if (draftData[key] !== undefined) return draftData[key] ? 1 : 0;
-                    return feature.properties[key] ? 1 : 0;
+                    return feature.properties[key] !== undefined ? (feature.properties[key] ? 1 : 0) : defaultBool;
+                };
+
+                const mergedCustomAttrs = {
+                    ...(feature.properties.custom_attributes || {}),
+                    ...(draftData.custom_attributes || {})
                 };
 
                 const payload = {
                     fid: fid,
                     layer_type: layerType,
                     ...draftData,
-                    fireplace: helperBool('fireplace'),
-                    sunroom: helperBool('sunroom'),
-                    append_description: helperBool('append_description'),
-                    hide_page_video: helperBool('hide_page_video'),
-                    hide_page_floorplan: helperBool('hide_page_floorplan'),
+                    is_interactive: helperBool('is_interactive', 1),
+                    show_label: helperBool('show_label', 1),
+                    append_description: helperBool('append_description', 0),
+                    hide_page_video: helperBool('hide_page_video', 0),
+                    hide_page_floorplan: helperBool('hide_page_floorplan', 0),
                     custom_video_url: draftData.custom_video_url !== undefined ? draftData.custom_video_url : (feature.properties.custom_video_url || ''),
                     custom_floorplan_url: draftData.custom_floorplan_url !== undefined ? draftData.custom_floorplan_url : (feature.properties.custom_floorplan_url || ''),
+                    custom_attributes: mergedCustomAttrs,
                 };
-
-                console.log(`📡 [EditPage] Sending POST to /update-spatial-meta for [${compositeKey}]`, payload);
 
                 const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/update-spatial-meta', {
                     method: 'POST',
@@ -205,19 +238,15 @@ const EditPage = () => {
                     body: JSON.stringify(payload)
                 });
 
-                const resJson = await response.json();
-                console.log(`📥 [EditPage] Server response for [${compositeKey}] (HTTP ${response.status}):`, resJson);
-                return resJson;
+                return await response.json();
             });
 
-            const results = await Promise.all(savePromises);
-            console.log("✅ [EditPage] All save promises resolved:", results);
-            
+            await Promise.all(savePromises);
             setDrafts({});
             setResetCounter(prev => prev + 1);
             await fetchFeatures();
         } catch (err) {
-            console.error("❌ [EditPage] Global Save Exception:", err);
+            console.error("Global Save Exception:", err);
         } finally {
             setIsSaving(false);
         }
@@ -225,7 +254,7 @@ const EditPage = () => {
 
     const renderFeatureItem = (f) => {
         const isActive = activeFeature?.properties.fid === f.properties.fid && activeFeature?.properties.layer_type === f.properties.layer_type;
-        let itemLabel = f.properties.code ? `${__('Unit', 'bawbab-interactive-maps')} ${f.properties.code}` : f.properties.name;
+        let itemLabel = f.properties.code ? `${__('Unit', TEXT_DOMAIN)} ${f.properties.code}` : f.properties.name;
         if (!itemLabel) itemLabel = `${f.properties.layer_type} #${f.properties.fid}`;
         
         return (
@@ -233,11 +262,11 @@ const EditPage = () => {
                 id={`item-${f.properties.layer_type}-${f.properties.fid}`}
                 key={`${f.properties.layer_type}-${f.properties.fid}`} 
                 onClick={() => {
-                    console.log("🛠️ [EditPage] Selected feature:", f.properties);
                     setActiveFeature(f);
+                    setActiveTab('editor'); // Auto-switch to editor view when a feature is clicked
                 }}
                 style={{ 
-                    padding: '10px 12px', 
+                    padding: '8px 12px', 
                     cursor: 'pointer', 
                     borderRadius: '4px',
                     marginBottom: '4px',
@@ -262,9 +291,8 @@ const EditPage = () => {
         );
     };
 
-    // --- LOAD MAP SETTINGS ON MOUNT ---
     useEffect(() => {
-        const settings = window.Settings;
+        const settings = window.bwbimapsSettings;
         if (settings?.googleApiKey && settings?.googleMapId) {
             setGoogleApiKey(settings.googleApiKey);
             setGoogleMapId(settings.googleMapId);
@@ -275,7 +303,7 @@ const EditPage = () => {
         } else {
             apiFetch({ path: '/wp/v2/settings' })
                 .then((response) => {
-                    const data = response.map_data;
+                    const data = response.bwb_imaps_options_data;
                     if (data) {
                         const key = data.googleApiKey || '';
                         const id = data.googleMapId || '';
@@ -291,15 +319,16 @@ const EditPage = () => {
                         setNavBackground(bg);
                         setColorTheme(theme);
 
-                        if (!window.Settings) window.Settings = {};
-                        window.Settings = {
-                            ...window.Settings,
+                        if (!window.bwbimapsSettings) window.bwbimapsSettings = {};
+                        window.bwbimapsSettings = {
+                            ...window.bwbimapsSettings,
                             googleApiKey: key,
                             googleMapId: id,
                             mapType: type,
                             mapLogo: logo,
                             navBackground: bg,
-                            colorTheme: theme
+                            colorTheme: theme,
+                            categoryConfig: data.categoryConfig || DEFAULT_CATEGORY_CONFIG
                         };
                     }
                 })
@@ -309,42 +338,10 @@ const EditPage = () => {
 
     useEffect(() => { fetchFeatures(); }, []);
 
-    useEffect(() => {
-        if (!activeFeature || !displayItems.length) return;
-
-        let targetGroupId = null;
-        displayItems.forEach((group, idx) => {
-            const hasFeature = group.items.some(i => 
-                i.properties.fid === activeFeature.properties.fid && 
-                i.properties.layer_type === activeFeature.properties.layer_type
-            );
-            if (hasFeature) {
-                targetGroupId = `group-${idx}`;
-            }
-        });
-
-        if (targetGroupId) {
-            setOpenedGroup(targetGroupId);
-
-            setTimeout(() => {
-                const activeId = `item-${activeFeature.properties.layer_type}-${activeFeature.properties.fid}`;
-                const element = document.getElementById(activeId);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 300);
-        }
-    }, [activeFeature, displayItems]);
-
-    const formatLabel = (str) => {
-        if (!str) return '';
-        return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    };
-
     const categories = useMemo(() => {
         const cats = new Set(features.map(f => f.properties.category).filter(Boolean));
         return [
-            { label: __('All Categories', 'bawbab-interactive-maps'), value: 'all' },
+            { label: __('All Categories', TEXT_DOMAIN), value: 'all' },
             ...Array.from(cats).map(cat => ({ label: formatLabel(cat), value: cat }))
         ];
     }, [features]);
@@ -356,91 +353,292 @@ const EditPage = () => {
             <NoticeList notices={notices} onRemove={removeNotice} style={{ marginBottom: '20px', flexShrink: 0 }}/>
             
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', flexShrink: 0 }}>
-                <h1 className="wp-heading-inline" style={{ margin: 0 }}>{ __('Edit Map Features', 'bawbab-interactive-maps') }</h1>
+                <h1 className="wp-heading-inline" style={{ margin: 0 }}>{ __('Edit Map Features', TEXT_DOMAIN) }</h1>
             </div>
 
             <div style={{ flex: 1, minHeight: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', display: 'flex', overflow: 'hidden' }}>
+                
+                {/* LEFT SIDEBAR: UNITS LIST & FILTERS */}
                 <div style={{ flex: '0 0 350px', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    
                     <div style={{ padding: '15px', borderBottom: '1px solid #f0f0f0', background: '#f9f9f9', flexShrink: 0 }}>
-                        <SearchControl value={ searchQuery } onChange={ setSearchQuery } placeholder={__('Search units...', 'bawbab-interactive-maps')} />
-                        <div style={{ marginTop: '10px' }}>
-                            <SelectControl label={__('Category', 'bawbab-interactive-maps')} value={filterCategory} options={categories} onChange={(val) => setFilterCategory(val)} __nextHasNoMarginBottom />
-                            <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <CheckboxControl label={__('Has Fireplace', 'bawbab-interactive-maps')} checked={filterFireplace} onChange={setFilterFireplace} />
-                                <CheckboxControl label={__('Has Sunroom', 'bawbab-interactive-maps')} checked={filterSunroom} onChange={setFilterSunroom} />
+                        <Flex align="center" gap={2}>
+                            <FlexItem style={{ flex: 1 }}>
+                                <SearchControl 
+                                    value={ searchQuery } 
+                                    onChange={ setSearchQuery } 
+                                    placeholder={__('Search units...', TEXT_DOMAIN)} 
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+
+                            <FlexItem>
+                                <Button
+                                    onClick={() => setIsFilterOpen(prev => !prev)}
+                                    label={__('Toggle Filters', TEXT_DOMAIN)}
+                                    showTooltip
+                                    style={{ 
+                                        height: '40px', 
+                                        minWidth: '40px', 
+                                        padding: '0 8px', 
+                                        background: '#f0f0f0', 
+                                        border: '1px solid #ccc',
+                                        borderRadius: '3px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <Dashicon 
+                                        icon="filter" 
+                                        style={{ 
+                                            color: isFilterOpen ? '#2271b1' : '#666',
+                                            transition: 'color 0.2s ease'
+                                        }} 
+                                    />
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+
+                        {isFilterOpen && (
+                            <div 
+                                className="no-scrollbar"
+                                style={{ 
+                                    marginTop: '12px', 
+                                    paddingTop: '10px', 
+                                    borderTop: '1px solid #e0e0e0',
+                                    maxHeight: '200px',
+                                    overflowY: 'auto',
+                                    scrollbarWidth: 'none',
+                                    msOverflowStyle: 'none'
+                                }}
+                            >
+                                <SelectControl 
+                                    label={__('Category Slug', TEXT_DOMAIN)} 
+                                    value={filterCategory} 
+                                    options={categories} 
+                                    onChange={(val) => setFilterCategory(val)} 
+                                    __nextHasNoMarginBottom 
+                                />
+
+                                {(discoveredAttributes.booleans.length > 0 || discoveredAttributes.numbers.length > 0) && (
+                                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #ddd' }}>
+                                        <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '8px' }}>
+                                            {__('Dynamic Custom Filters', TEXT_DOMAIN)}
+                                        </strong>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            {discoveredAttributes.booleans.map(key => (
+                                                <CheckboxControl
+                                                    key={`filter-bool-${key}`}
+                                                    label={formatLabel(key)}
+                                                    checked={Boolean(dynamicFilters[key])}
+                                                    onChange={(val) => handleDynamicFilterChange(key, val)}
+                                                    __nextHasNoMarginBottom
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {discoveredAttributes.numbers.map(key => {
+                                            const currentVal = dynamicFilters[key] || {};
+                                            return (
+                                                <div key={`filter-num-${key}`} style={{ marginTop: '8px' }}>
+                                                    <span style={{ fontSize: '11px', fontWeight: '500' }}>{formatLabel(key)}</span>
+                                                    <Flex gap={2} style={{ marginTop: '2px' }}>
+                                                        <FlexItem style={{ flex: 1 }}>
+                                                            <TextControl
+                                                                type="number"
+                                                                step="0.5"
+                                                                placeholder={__('Min', TEXT_DOMAIN)}
+                                                                value={currentVal.min || ''}
+                                                                onChange={(val) => handleDynamicFilterChange(key, { ...currentVal, min: val })}
+                                                                style={{ height: '28px', fontSize: '11px' }}
+                                                                __nextHasNoMarginBottom
+                                                            />
+                                                        </FlexItem>
+                                                        <FlexItem style={{ flex: 1 }}>
+                                                            <TextControl
+                                                                type="number"
+                                                                step="0.5"
+                                                                placeholder={__('Max', TEXT_DOMAIN)}
+                                                                value={currentVal.max || ''}
+                                                                onChange={(val) => handleDynamicFilterChange(key, { ...currentVal, max: val })}
+                                                                style={{ height: '28px', fontSize: '11px' }}
+                                                                __nextHasNoMarginBottom
+                                                            />
+                                                        </FlexItem>
+                                                    </Flex>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div ref={sidebarListRef} style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
                         {isLoading ? (
                             <Flex justify="center" style={{ padding: '20px' }}><Spinner /></Flex>
+                        ) : displayStructure.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '30px 15px', color: '#666' }}>
+                                <Dashicon icon="search" size={32} style={{ marginBottom: '10px', color: '#999' }} />
+                                <p style={{ fontStyle: 'italic', margin: 0, fontSize: '13px' }}>
+                                    {__('No units found matching your search or active filters.', TEXT_DOMAIN)}
+                                </p>
+                            </div>
                         ) : (
-                            displayItems.map((group, idx) => {
-                                const groupId = `group-${idx}`;
-                                
-                                return (
-                                    <PanelBody 
-                                        title={`${group.title} (${group.items.length})`} 
-                                        key={groupId}
-                                        opened={openedGroup === groupId}
-                                        onToggle={() => {
-                                            setOpenedGroup(prev => prev === groupId ? null : groupId);
-                                        }}
-                                    >
-                                        {group.items.map((f) => renderFeatureItem(f))}
-                                    </PanelBody>
-                                );
-                            })
+                            displayStructure.map((topTab) => (
+                                <PanelBody
+                                    key={topTab.id}
+                                    title={`${topTab.title} (${topTab.totalCount})`}
+                                    opened={openedTopTab === topTab.id}
+                                    onToggle={() => setOpenedGroup(prev => prev === topTab.id ? null : topTab.id)}
+                                >
+                                    {topTab.subGroups.map((subGroup) => (
+                                        <div key={subGroup.id} style={{ marginLeft: '10px', marginBottom: '8px', borderLeft: '2px solid #2271b1', paddingLeft: '8px' }}>
+                                            <div 
+                                                onClick={() => setOpenedSubGroup(prev => ({ ...prev, [subGroup.id]: !prev[subGroup.id] }))}
+                                                style={{ 
+                                                    fontWeight: '600', 
+                                                    fontSize: '12px', 
+                                                    cursor: 'pointer', 
+                                                    padding: '6px 0', 
+                                                    color: '#2271b1',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between'
+                                                }}
+                                            >
+                                                <span>{subGroup.title} ({subGroup.items.length})</span>
+                                                <Dashicon icon={openedSubGroup[subGroup.id] === true ? 'arrow-up-alt2' : 'arrow-down-alt2'} size={14} />
+                                            </div>
+
+                                            {openedSubGroup[subGroup.id] === true && (
+                                                <div style={{ marginTop: '4px' }}>
+                                                    {subGroup.items.map((f) => renderFeatureItem(f))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {topTab.flatItems.map((f) => renderFeatureItem(f))}
+                                </PanelBody>
+                            ))
                         )}
                     </div>
                 </div>
 
+                {/* RIGHT PANEL: TABBED INTERFACE (FEATURE EDITOR VS SCHEMA MANAGER) */}
                 <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: '#fdfdfd', display: 'flex', flexDirection: 'column' }}>
-                    {activeFeature ? (
-                        <div style={{ padding: '40px 20px', maxWidth: '800px', width: '100%', margin: '0 auto', alignItems: 'center'}}>
-                            <DataEditor 
-                                key={`${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`} 
-                                building={activeFeature} 
-                                draft={drafts[activeCompositeKey] || {}}
-                                updateDraft={(data) => updateDraft(activeFeature.properties.layer_type, activeFeature.properties.fid, data)}
-                                onUpdate={saveAllDrafts}
-                                onCancel={handleCancel}
-                                isSaving={isSaving}
-                                hasChanges={Object.keys(drafts).length > 0}
-                            />
+                    
+                    {/* TAB BAR HEADER */}
+                    <div style={{ display: 'flex', background: '#f9f9f9', borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
+                        <button
+                            onClick={() => setActiveTab('editor')}
+                            style={{
+                                padding: '12px 20px',
+                                border: 'none',
+                                background: activeTab === 'editor' ? '#fff' : 'transparent',
+                                borderBottom: activeTab === 'editor' ? '2px solid #2271b1' : '2px solid transparent',
+                                fontWeight: activeTab === 'editor' ? '600' : '400',
+                                color: activeTab === 'editor' ? '#2271b1' : '#555',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            <Dashicon icon="edit" size={16} />
+                            {__('Edit Feature Details', TEXT_DOMAIN)}
+                        </button>
 
-                            <div style={{ marginTop: '40px', borderTop: '20px solid #f0f0f0', paddingTop: '30px', marginLeft: '-20px', marginRight: '-20px', paddingLeft: '20px', paddingRight: '20px' }}>
-                                <h2 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Dashicon icon="location-alt" />
-                                    {__('Location Preview', 'bawbab-interactive-maps')}
-                                </h2>
-                                <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                    <BawBabIMaps 
-                                        height="450px"
-                                        editMode={true}
-                                        selectedLocationProp={activeFeature}
-                                        isDrawerOpenProp={true} 
-                                        onFeatureSelect={(feature) => setActiveFeature(feature)}
-                                        apiKeyProp={googleApiKey}
-                                        mapIdProp={googleMapId}
-                                        mapTypeProp={mapType}
-                                        mapLogo={mapLogo}
-                                        navBackground={navBackground}
-                                        colorTheme={colorTheme}
+                        <button
+                            onClick={() => setActiveTab('schema')}
+                            style={{
+                                padding: '12px 20px',
+                                border: 'none',
+                                background: activeTab === 'schema' ? '#fff' : 'transparent',
+                                borderBottom: activeTab === 'schema' ? '2px solid #2271b1' : '2px solid transparent',
+                                fontWeight: activeTab === 'schema' ? '600' : '400',
+                                color: activeTab === 'schema' ? '#2271b1' : '#555',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            <Dashicon icon="category" size={16} />
+                            {__('Custom Attributes', TEXT_DOMAIN)} ({schema.length})
+                        </button>
+                    </div>
+
+                    {/* TAB CONTENT 1: FEATURE EDITOR */}
+                    {activeTab === 'editor' && (
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                            {activeFeature ? (
+                                <div style={{ padding: '40px 20px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
+                                    <DataEditor 
+                                        key={`${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`} 
+                                        building={activeFeature} 
+                                        draft={drafts[activeCompositeKey] || {}}
+                                        globalSchema={schema} // Pass central attribute schema to editor
+                                        updateDraft={(data) => updateDraft(activeFeature.properties.layer_type, activeFeature.properties.fid, data)}
+                                        onUpdate={saveAllDrafts}
+                                        onCancel={handleCancel}
+                                        isSaving={isSaving}
+                                        hasChanges={Object.keys(drafts).length > 0}
                                     />
+
+                                    <div style={{ marginTop: '40px', borderTop: '20px solid #f0f0f0', paddingTop: '30px', marginLeft: '-20px', marginRight: '-20px', paddingLeft: '20px', paddingRight: '20px' }}>
+                                        <h2 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Dashicon icon="location-alt" />
+                                            {__('Location Preview', TEXT_DOMAIN)}
+                                        </h2>
+                                        <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            <BawBabIMaps 
+                                                height="450px"
+                                                editMode={true}
+                                                selectedLocationProp={activeFeature}
+                                                isDrawerOpenProp={true} 
+                                                onFeatureSelect={(feature) => setActiveFeature(feature)}
+                                                apiKeyProp={googleApiKey}
+                                                mapIdProp={googleMapId}
+                                                mapTypeProp={mapType}
+                                                mapLogo={mapLogo}
+                                                navBackground={navBackground}
+                                                colorTheme={colorTheme}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#949494', background: '#fcfcfc', height: '100%', minHeight: '400px' }}>
+                                    <div style={{ background: '#fff', padding: '40px', borderRadius: '50%', marginBottom: '20px', border: '1px solid #e0e0e0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.02)' }}>
+                                        <Dashicon icon="edit" size={60} />
+                                    </div>
+                                    <h2 style={{ color: '#1d2327', fontWeight: '500', marginBottom: '8px' }}>{__('No Feature Selected', TEXT_DOMAIN)}</h2>
+                                    <p style={{ maxWidth: '300px', textAlign: 'center', margin: 0, fontSize: '13px' }}>
+                                        {__('Select a unit or amenity from the left sidebar or directly on the map to begin editing its details.', TEXT_DOMAIN)}
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    ) : (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#949494', background: '#fcfcfc' }}>
-                            <div style={{ background: '#fff', padding: '40px', borderRadius: '50%', marginBottom: '20px', border: '1px solid #e0e0e0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.02)' }}>
-                                <Dashicon icon="edit" size={60} />
-                            </div>
-                            <h2 style={{ color: '#1d2327', fontWeight: '500', marginBottom: '8px' }}>{__('No Feature Selected', 'bawbab-interactive-maps')}</h2>
-                            <p style={{ maxWidth: '300px', textAlign: 'center', margin: 0, fontSize: '13px' }}>
-                                {__('Select a unit or amenity from the left sidebar or directly on the map to begin editing its details.', 'bawbab-interactive-maps')}
-                            </p>
+                    )}
+
+                    {/* TAB CONTENT 2: ATTRIBUTE SCHEMA MANAGER */}
+                    {activeTab === 'schema' && (
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '30px', maxWidth: '900px', width: '100%', margin: '0 auto' }}>
+                            <AttributeSchemaManager 
+                                schema={schema}
+                                isLoading={isLoadingSchema}
+                                onUpdateKey={updateSchemaKey}
+                                onDeleteKey={deleteSchemaKey}
+                                onRefreshFeatures={fetchFeatures}
+                            />
                         </div>
                     )}
                 </div>

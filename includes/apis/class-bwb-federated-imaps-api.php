@@ -10,21 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class BWB_Federated_Imaps_API_Controller {
 
-    /**
-     * Initialize and hook the API routes into WordPress.
-     */
     public function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_bwb_imaps_routes' ) );
     }
 
-    /**
-     * Register REST API routes.
-     */
     public function register_bwb_imaps_routes() {
         $namespace = 'bwb-imaps-federated-api/v1';
 
-        // GET Route to fetch all bawbab interactive Maps data
-        //AFC support for pages
         register_rest_field('page', 'acf', array(
             'get_callback' => function( $object ) {
                 if ( function_exists('get_fields') ) {
@@ -33,11 +25,10 @@ class BWB_Federated_Imaps_API_Controller {
                 }
                 return array();
             },
-        'update_callback' => null,
-        'schema'          => null,
+            'update_callback' => null,
+            'schema'          => null,
         ));
 
-        //GET Route to fetch all bawbab interactive Maps data
         register_rest_route( $namespace, '/map-proxy', array(
             'methods'             => 'GET',
             'callback'            => array( $this, 'bwb_imaps_proxy_graphql' ),
@@ -45,8 +36,8 @@ class BWB_Federated_Imaps_API_Controller {
         ) );
 
         register_rest_route( $namespace, '/get-spatial-data', array(
-            'methods'  => 'GET',
-            'callback' => array( $this, 'handle_get_spatial_data' ),
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'handle_get_spatial_data' ),
             'permission_callback' => '__return_true',
         ) );
 
@@ -57,13 +48,17 @@ class BWB_Federated_Imaps_API_Controller {
         ) );
 
         register_rest_route( $namespace, '/get-navigation-graph', array(
-            'methods'  => 'GET',
-            'callback' => array( $this, 'handle_get_navigation_graph' ),
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'handle_get_navigation_graph' ),
             'permission_callback' => '__return_true',
         ) );
 
+        register_rest_route( $namespace, '/inspect-geojson', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'handle_inspect_geojson' ),
+            'permission_callback' => array( $this, 'check_admin_permissions' )
+        ) );
 
-        // POST Route to update spatial data
         register_rest_route( $namespace, '/spatial-data-importer', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'handle_spatial_geojson_import' ),
@@ -71,33 +66,39 @@ class BWB_Federated_Imaps_API_Controller {
         ) );
 
         register_rest_route( $namespace, '/update-spatial-meta', array(
-            'methods'  => 'POST',
-            'callback' => array( $this, 'handle_update_spatial_meta' ),
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'handle_update_spatial_meta' ),
             'permission_callback' => array( $this, 'check_admin_permissions' )
         ) );
 
-        // DELETE Route to remove image comparisons
         register_rest_route( $namespace, '/delete-layer/(?P<layer_type>[a-zA-Z0-9_\-]+)', array(
             'methods'             => 'DELETE',
             'callback'            => array( $this, 'handle_delete_layer' ),
             'permission_callback' => array( $this, 'check_admin_permissions' )
         ) );
+
+        register_rest_route( $namespace, '/get-attribute-schema', array(
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'handle_get_attribute_schema' ),
+            'permission_callback' => '__return_true'
+        ) );
+
+        register_rest_route( $namespace, '/update-attribute-schema', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'handle_update_attribute_schema' ),
+            'permission_callback' => array( $this, 'check_admin_permissions' )
+        ) );
+
+        register_rest_route( $namespace, '/delete-attribute-key', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'handle_delete_attribute_key' ),
+            'permission_callback' => array( $this, 'check_admin_permissions' )
+        ) );
     }
 
-    /**
-     * Shared permission callback routine.
-     */
     public function check_admin_permissions() {
         return current_user_can( 'manage_options' );
     }
-
-    // ==========================================
-    // REST API CALLBACK HANDLERS
-    // ==========================================
-
-    /**
-     * GET Route Callback: Proxy GraphQL requests to the internal API
-     */
 
     public function bwb_imaps_proxy_graphql($request) {
         $body = $request->get_body();
@@ -117,49 +118,78 @@ class BWB_Federated_Imaps_API_Controller {
         return new WP_REST_Response(json_decode(wp_remote_retrieve_body($response)), 200 );
     }
 
-    /**
-     * GET Route Callback: Serve public map data from the custom database table
-     */
-
     function bwb_imaps_get_public_map_data() {
         $settings = get_option( 'bwb_imaps_options_data' );
+
+        $default_category_config = array(
+            'tabs' => array(
+                array(
+                    'id'          => 'apartments',
+                    'title'       => 'Apartments',
+                    'displayType' => 'grouped',
+                    'categories'  => array( 'residential_apartment' )
+                ),
+                array(
+                    'id'          => 'cottages',
+                    'title'       => 'Cottages',
+                    'displayType' => 'grouped',
+                    'categories'  => array( 'cottage' )
+                ),
+                array(
+                    'id'          => 'amenities',
+                    'title'       => 'Amenities',
+                    'displayType' => 'flat',
+                    'categories'  => array(
+                        'amenity',
+                        'community_center',
+                        'personal_care',
+                        'skilled_care',
+                        'fitness_center',
+                        'utilities'
+                    )
+                )
+            ),
+            'categoryColors' => array(
+                'residential_apartment' => '#1565c0',
+                'cottage'               => '#2e7d32',
+                'community_center'      => '#007cba',
+                'personal_care'         => '#f57c00',
+                'skilled_care'          => '#d84315',
+                'fitness_center'        => '#00838f',
+                'amenity'               => '#8d6e63'
+            )
+        );
+
         return array(
-            'locations'     => isset( $settings['locations'] ) ? $settings['locations'] : array(),
-            'mapType'       => isset( $settings['mapType'] ) ? $settings['mapType'] : 'hybrid',
-            'mapLogo'       => isset( $settings['mapLogo'] ) ? $settings['mapLogo'] : '',
-            'colorTheme'    => isset( $settings['colorTheme'] ) ? $settings['colorTheme'] : 'blue',
-            'navBackground' => isset( $settings['navBackground'] ) ? $settings['navBackground'] : '',
-            'googleApiKey'  => isset( $settings['googleApiKey'] ) ? $settings['googleApiKey'] : '',
-            'googleMapId'   => isset( $settings['googleMapId'] ) ? $settings['googleMapId'] : '',
+            'locations'        => isset( $settings['locations'] ) ? $settings['locations'] : array(),
+            'mapType'          => isset( $settings['mapType'] ) ? $settings['mapType'] : 'hybrid',
+            'mapLogo'          => isset( $settings['mapLogo'] ) ? $settings['mapLogo'] : '',
+            'colorTheme'       => isset( $settings['colorTheme'] ) ? $settings['colorTheme'] : 'blue',
+            'navBackground'    => isset( $settings['navBackground'] ) ? $settings['navBackground'] : '',
+            'googleApiKey'     => isset( $settings['googleApiKey'] ) ? $settings['googleApiKey'] : '',
+            'googleMapId'      => isset( $settings['googleMapId'] ) ? $settings['googleMapId'] : '',
+            'attribute_schema' => isset( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array(),
+            'categoryConfig'   => isset( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : $default_category_config,
         );
     }
 
-    /**
-     * GET Route Callback: Serve navigation graph data from the custom database table
-     */
     public function handle_get_navigation_graph() {
         global $wpdb;
 
-
-        // Check for mapped dataset from object cache first
         $cache_key   = 'bwb_navigation_graph_data';
         $cache_group = 'bwb_spatial_cache';
         $graph_data  = wp_cache_get( $cache_key, $cache_group );
 
-
-        // If the cache is empty (false), execute database queries and format the entries
         if ( false === $graph_data ) {
             $table_entries = $wpdb->prefix . 'bwb_nav_entries_data';
             $table_network = $wpdb->prefix . 'bwb_nav_network_data';
 
-            // Query records from database tables
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table data retrieval requires direct query execution.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $entries = $wpdb->get_results($wpdb->prepare( "SELECT * FROM %i", $table_entries ), ARRAY_A );
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table data retrieval requires direct query execution.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $network = $wpdb->get_results($wpdb->prepare( "SELECT * FROM %i", $table_network ), ARRAY_A );
 
-            // Verify database execution query integrity
             if ( is_null( $entries ) || is_null( $network ) ) {
                 return new WP_Error( 'db_error', 'Failed to retrieve navigation graph network datasets.', array( 'status' => 500 ) );
             }
@@ -169,7 +199,6 @@ class BWB_Federated_Imaps_API_Controller {
                 'network' => array()
             );
 
-            // Map structural array entities for entry markers
             foreach ( $entries as $row ) {
                 $graph_data['entries'][] = array(
                     'fid'   => isset( $row['fid'] ) ? (string) $row['fid'] : '',
@@ -180,7 +209,6 @@ class BWB_Federated_Imaps_API_Controller {
                 );
             }
 
-            // Map structural array entities for connection line paths
             foreach ( $network as $row ) {
                 $graph_data['network'][] = array(
                     'fid'      => isset( $row['fid'] ) ? (string) $row['fid'] : '',
@@ -192,31 +220,23 @@ class BWB_Federated_Imaps_API_Controller {
                 );
             }
 
-            // Save the formatted graph payload to cache for 12 hours (43200 seconds)
             wp_cache_set( $cache_key, $graph_data, $cache_group, 43200 );
         }
-        // Return clean, unified object instance through the native interface class
         return new WP_REST_Response( $graph_data, 200 );
     }
 
-    /**
-     * GET Route Callback: Serve data from the custom database table
-     */
     public function handle_get_spatial_data() {
         global $wpdb;
 
-        // Check for fully processed GeoJSON FeatureCollection from object cache first
         $cache_key          = 'bwb_spatial_geojson_collection';
         $cache_group        = 'bwb_spatial_cache';
         $geojson_collection = wp_cache_get( $cache_key, $cache_group );
 
-        // If the cache is empty (false), execute database queries and compile the structural GeoJSON arrays
         if ( false === $geojson_collection ) {
             $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
             $table_entries = $wpdb->prefix . 'bwb_nav_entries_data';
 
-            // Fetch Spatial Layer Data with strict rendering priorities
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom spatial table processing requires direct SQL queries and caching is handled manually.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $spatial_results = $wpdb->get_results( 
                 $wpdb->prepare( "
                     SELECT *, CASE 
@@ -228,56 +248,59 @@ class BWB_Federated_Imaps_API_Controller {
                     END as render_order FROM %i ORDER BY render_order ASC
                 ", $table_spatial ), ARRAY_A );
 
-            // Verify query safety execution on primary table
             if ( is_null( $spatial_results ) ) {
                 return new WP_Error( 'db_error', 'Failed to retrieve spatial data layers.', array( 'status' => 500 ) );
             }
 
             $features = array();
 
-            // Format Spatial Records into GeoJSON Schema
             foreach ( $spatial_results as $row ) {
+                $custom_attrs = ! empty( $row['custom_attributes'] ) ? json_decode( $row['custom_attributes'], true ) : array();
+                if ( ! is_array( $custom_attrs ) ) {
+                    $custom_attrs = array();
+                }
+
+                $properties = array(
+                    'fid'                  => isset( $row['fid'] ) ? (string) $row['fid'] : '',
+                    'layer_type'           => $row['layer_type'] ?? '',
+                    'name'                 => $row['name'] ?? '',
+                    'category'             => $row['category'] ?? '',
+                    'code'                 => $row['code'] ?? '',
+                    'fill_color'           => $row['fill_color'] ?? '',
+                    'lat'                  => ! empty( $row['lat'] ) ? (float) $row['lat'] : null,
+                    'lng'                  => ! empty( $row['lng'] ) ? (float) $row['lng'] : null,
+                    'floor'                => isset( $row['floor'] ) ? (int) $row['floor'] : 0,
+                    'is_interactive'       => isset( $row['is_interactive'] ) ? (bool) $row['is_interactive'] : ( 'buildings' === ( $row['layer_type'] ?? '' ) ),
+                    'show_label'           => isset( $row['show_label'] ) ? (bool) $row['show_label'] : ( ! empty( $row['name'] ) && 'paths' !== ( $row['layer_type'] ?? '' ) ),
+                    'title'                => $row['title'] ?? '',
+                    'description'          => $row['description'] ?? '',
+                    'wp_page_id'           => ! empty( $row['wp_page_id'] ) ? (int) $row['wp_page_id'] : null,
+                    'append_description'   => ! empty( $row['append_description'] ),
+                    'custom_video_url'     => $row['custom_video_url'] ?? '',
+                    'custom_floorplan_url' => $row['custom_floorplan_url'] ?? '',
+                    'hide_page_video'      => ! empty( $row['hide_page_video'] ),
+                    'hide_page_floorplan'  => ! empty( $row['hide_page_floorplan'] ),
+                    'gallery'              => ! empty( $row['gallery'] ) ? ( json_decode( $row['gallery'], true ) ?: array() ) : array(),
+                    'custom_attributes'    => $custom_attrs,
+                );
+
+                $merged_properties = array_merge( $custom_attrs, $properties );
+
                 $features[] = array(
                     'type'       => 'Feature',
-                    'properties' => array(
-                        'fid'                  => isset( $row['fid'] ) ? (string) $row['fid'] : '',
-                        'layer_type'           => $row['layer_type'] ?? '',
-                        'name'                 => $row['name'] ?? '',
-                        'category'             => $row['category'] ?? '',
-                        'wp_page_id'           => ! empty( $row['wp_page_id'] ) ? (int) $row['wp_page_id'] : null,
-                        'fill_color'           => $row['fill_color'] ?? '',
-                        'code'                 => $row['code'] ?? '',
-                        'lat'                  => ! empty( $row['lat'] ) ? (float) $row['lat'] : null,
-                        'lng'                  => ! empty( $row['lng'] ) ? (float) $row['lng'] : null,
-                        'sq_ft'                => $row['sq_ft'] ?? '',
-                        'baths'                => ! empty( $row['baths'] ) ? (float) $row['baths'] : null,
-                        'floor'                => isset( $row['floor'] ) ? (int) $row['floor'] : 0,
-                        'fireplace'            => ! empty( $row['fireplace'] ),
-                        'sunroom'              => ! empty( $row['sunroom'] ),
-                        'title'                => $row['title'] ?? '',
-                        'description'          => $row['description'] ?? '',
-                        'append_description'   => ! empty( $row['append_description'] ),
-                        'custom_video_url'     => $row['custom_video_url'] ?? '',
-                        'custom_floorplan_url' => $row['custom_floorplan_url'] ?? '',
-                        'hide_page_video'      => ! empty( $row['hide_page_video'] ),
-                        'hide_page_floorplan'  => ! empty( $row['hide_page_floorplan'] ),
-                        'gallery'              => ! empty( $row['gallery'] ) ? ( json_decode( $row['gallery'], true ) ?: array() ) : array(),
-                    ),
+                    'properties' => $merged_properties,
                     'geometry'   => ! empty( $row['geom'] ) ? json_decode( $row['geom'] ) : null,
                 );
             }
 
-            // Fetch Entries Layer Data
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom spatial table processing requires direct SQL queries and caching is handled manually.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $entries_results = $wpdb->get_results( 
                 $wpdb->prepare( "SELECT * FROM %i", $table_entries ), ARRAY_A );
 
-            // Verify query safety execution on secondary table
             if ( is_null( $entries_results ) ) {
                 return new WP_Error( 'db_error', 'Failed to retrieve navigation entry points.', array( 'status' => 500 ) );
             }
 
-            // Format and Append Entries Records to Features collection
             foreach ( $entries_results as $row ) {
                 $features[] = array(
                     'type'       => 'Feature',
@@ -292,181 +315,366 @@ class BWB_Federated_Imaps_API_Controller {
                 );
             }
 
-            // Package output inside a standard validated GeoJSON FeatureCollection wrapper object
             $geojson_collection = array(
                 'type'     => 'FeatureCollection',
                 'features' => $features,
             );
-            // Store the compiled collection array into transient memory cache for 24 hours (86400 seconds)
             wp_cache_set( $cache_key, $geojson_collection, $cache_group, 86400 );
         }
         return new WP_REST_Response( $geojson_collection, 200 );
     }
 
-    /**
-     * POST Route Callback: Unified insertion & item modification handler
-     */
-    public function handle_spatial_geojson_import($request) {
-        global $wpdb;
-
+    public function handle_inspect_geojson($request) {
         $files = $request->get_file_params();
         if ( empty( $files['geojson_file'] ) ) {
             return new WP_Error( 'no_file', 'No file found.', array( 'status' => 400 ) );
         }
 
-        $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) );
-        $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
+        $content = file_get_contents( $files['geojson_file']['tmp_name'] );
+        $data    = json_decode( $content, true );
 
-        if ( ! isset( $data['features'] ) ) {
-            return new WP_Error( 'invalid_json', 'Invalid GeoJSON.', array( 'status' => 400 ) );
+        if ( ! isset( $data['features'] ) || ! is_array( $data['features'] ) ) {
+            return new WP_Error( 'invalid_json', 'Invalid GeoJSON format.', array( 'status' => 400 ) );
         }
 
-        $imported_fids = array();
+        $detected_properties  = array();
+        $sample_feature_props = array();
+
+        foreach ( $data['features'] as $feature ) {
+            if ( ! empty( $feature['properties'] ) && is_array( $feature['properties'] ) ) {
+                foreach ( $feature['properties'] as $key => $val ) {
+                    if ( ! in_array( $key, $detected_properties, true ) ) {
+                        $detected_properties[]      = $key;
+                        $sample_feature_props[$key] = $val;
+                    }
+                }
+            }
+        }
+
+        return new WP_REST_Response( array(
+            'success'             => true,
+            'total_features'      => count( $data['features'] ),
+            'detected_properties' => $detected_properties,
+            'sample_properties'   => $sample_feature_props,
+        ), 200 );
+    }
+
+    private function compute_centroid_from_geom( $geometry ) {
+        if ( empty( $geometry['coordinates'] ) ) return array( null, null );
+        
+        $type = $geometry['type'] ?? '';
+        $coords = $geometry['coordinates'];
+        $lats = array();
+        $lngs = array();
+
+        $extract = function($item) use (&$lats, &$lngs, &$extract) {
+            if ( is_array($item) && count($item) >= 2 && is_numeric($item[0]) && is_numeric($item[1]) ) {
+                $lngs[] = (float)$item[0];
+                $lats[] = (float)$item[1];
+            } elseif ( is_array($item) ) {
+                foreach ($item as $sub) $extract($sub);
+            }
+        };
+
+        $extract($coords);
+
+        if ( empty($lats) || empty($lngs) ) return array( null, null );
+
+        $avg_lat = array_sum($lats) / count($lats);
+        $avg_lng = array_sum($lngs) / count($lngs);
+
+        return array( $avg_lat, $avg_lng );
+    }
+
+    /**
+     * Helper: Robustly syncs newly imported or added custom attribute keys and their types into global attribute_schema
+     */
+    private function sync_custom_keys_to_schema( $keys = array() ) {
+        if ( empty( $keys ) ) return;
+
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
+
+        $existing_keys = array_column( $schema, 'key' );
+        $has_changes   = false;
+
+        foreach ( $keys as $k => $info ) {
+            $clean_key = '';
+            $type      = 'text';
+
+            if ( is_array( $info ) ) {
+                $clean_key = sanitize_key( $info['key'] ?? $k );
+                $type      = sanitize_text_field( $info['type'] ?? 'text' );
+            } elseif ( is_string( $k ) && ! is_numeric( $k ) ) {
+                // Handles associative object format: { "fireplace": "boolean", "sq_ft": "number" }
+                $clean_key = sanitize_key( $k );
+                $type      = sanitize_text_field( $info );
+            } else {
+                // Handles simple array format: [ "fireplace", "sq_ft" ]
+                $clean_key = sanitize_key( $info );
+                $type      = ( strpos( $clean_key, 'bath' ) !== false ) ? 'bathrooms' : 'text';
+            }
+
+            if ( ! empty( $clean_key ) && ! in_array( $clean_key, $existing_keys, true ) ) {
+                $label = ucwords( str_replace( '_', ' ', $clean_key ) );
+                $schema[] = array(
+                    'key'   => $clean_key,
+                    'label' => $label,
+                    'type'  => ! empty( $type ) ? $type : 'text',
+                );
+                $existing_keys[] = $clean_key;
+                $has_changes     = true;
+            }
+        }
+
+        if ( $has_changes ) {
+            $settings['attribute_schema'] = $schema;
+            update_option( 'bwb_imaps_options_data', $settings );
+        }
+    }
+
+    /**
+     * POST Route Callback: Import spatial features
+     */
+    public function handle_spatial_geojson_import($request) {
+        global $wpdb;
+
+        if ( function_exists( 'bwb_create_general_spatial_dbtable' ) ) {
+            bwb_create_general_spatial_dbtable();
+        }
+
+        $files = $request->get_file_params();
+        if ( empty( $files['geojson_file'] ) ) {
+            return new WP_Error( 'no_file', 'No file found in request.', array( 'status' => 400 ) );
+        }
+
+        $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) );
+        
+        $mapping_param = $request->get_param( 'field_mapping' );
+        $field_mapping = is_string( $mapping_param ) ? ( json_decode( stripslashes( $mapping_param ), true ) ?: array() ) : ( is_array( $mapping_param ) ? $mapping_param : array() );
+
+        $custom_keys_param = $request->get_param( 'imported_custom_keys' );
+        $imported_custom_keys = is_string( $custom_keys_param ) ? ( json_decode( stripslashes( $custom_keys_param ), true ) ?: array() ) : ( is_array( $custom_keys_param ) ? $custom_keys_param : array() );
+
+        $raw_key_names = array();
+        foreach ( $imported_custom_keys as $k => $v ) {
+            if ( is_array( $v ) && isset( $v['key'] ) ) {
+                $raw_key_names[] = $v['key'];
+            } elseif ( is_string( $k ) && ! is_numeric( $k ) ) {
+                $raw_key_names[] = $k;
+            } else {
+                $raw_key_names[] = $v;
+            }
+        }
+
+        $this->sync_custom_keys_to_schema( $imported_custom_keys );
+
+        $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
+
+        if ( ! isset( $data['features'] ) || ! is_array( $data['features'] ) ) {
+            return new WP_Error( 'invalid_json', 'Invalid GeoJSON payload.', array( 'status' => 400 ) );
+        }
+
+        $imported_fids   = array();
         $processed_count = 0;
 
+        $reserved_cols = array(
+            'fid', 'name', 'category', 'code', 'fill_color', 'lat', 'lng', 'floor',
+            'is_interactive', 'show_label', 'title', 'description', 'wp_page_id',
+            'custom_video_url', 'custom_floorplan_url', 'append_description',
+            'hide_page_video', 'hide_page_floorplan', 'gallery', 'custom_attributes', 'geom'
+        );
+
         switch ( $layer_type ) {
-            
+
             case 'entries':
                 $table_name = $wpdb->prefix . 'bwb_nav_entries_data';
                 foreach ( $data['features'] as $feature ) {
-                    $props = $feature['properties'] ?? array();
-                    $fid = sanitize_text_field( $props['fid'] ?? '' );
+                    $props   = $feature['properties'] ?? array();
+                    $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
+                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
                     if ( empty( $fid ) ) continue;
                     $imported_fids[] = $fid;
 
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table insertion explicitly flushed via manual cache invalidation post-loop.
+                    $name_key = ! empty( $field_mapping['name'] ) ? $field_mapping['name'] : 'name';
+                    $type_key = ! empty( $field_mapping['type'] ) ? $field_mapping['type'] : 'type';
+
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query(
-                        
                         $wpdb->prepare(
                             "INSERT INTO %i (fid, type, floor, name, geom) VALUES (%s, %s, %d, %s, %s)
                             ON DUPLICATE KEY UPDATE type = VALUES(type), floor = VALUES(floor), name = VALUES(name), geom = VALUES(geom)",
                             $table_name,
                             $fid,
-                            sanitize_text_field( $props['type'] ?? '' ),
+                            sanitize_text_field( $props[$type_key] ?? $props['type'] ?? '' ),
                             isset($props['floor']) ? (int)$props['floor'] : 0,
-                            sanitize_text_field( $props['name'] ?? '' ),
+                            sanitize_text_field( $props[$name_key] ?? $props['name'] ?? '' ),
                             json_encode( $feature['geometry'] )
                         )
-                    ) ) 
-                    { $processed_count++;}
+                    ) ) { $processed_count++; }
                 }
                 break;
 
             case 'network':
                 $table_name = $wpdb->prefix . 'bwb_nav_network_data';
                 foreach ( $data['features'] as $feature ) {
-                    $props = $feature['properties'] ?? array();
-                    $fid = sanitize_text_field( $props['fid'] ?? '' );
+                    $props   = $feature['properties'] ?? array();
+                    $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
+                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
                     if ( empty( $fid ) ) continue;
                     $imported_fids[] = $fid;
 
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table insertion explicitly flushed via manual cache invalidation post-loop.
+                    $name_key = ! empty( $field_mapping['name'] ) ? $field_mapping['name'] : 'name';
+                    $type_key = ! empty( $field_mapping['type'] ) ? $field_mapping['type'] : 'type';
+
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query(
                         $wpdb->prepare(
                             "INSERT INTO %i (fid, name, type, floor, length_m, geom) VALUES (%s, %s, %s, %d, %f, %s)
                             ON DUPLICATE KEY UPDATE name = VALUES(name), type = VALUES(type), floor = VALUES(floor), length_m = VALUES(length_m), geom = VALUES(geom)",
                             $table_name,
                             $fid,
-                            sanitize_text_field( $props['name'] ?? '' ),
-                            sanitize_text_field( $props['type'] ?? '' ),
+                            sanitize_text_field( $props[$name_key] ?? $props['name'] ?? '' ),
+                            sanitize_text_field( $props[$type_key] ?? $props['type'] ?? '' ),
                             isset($props['floor']) ? (int)$props['floor'] : 0,
                             isset($props['length_m']) ? (float)$props['length_m'] : 0.00,
                             json_encode( $feature['geometry'] )
                         )
-                    ))
-                    {  $processed_count++; }
+                    )) { $processed_count++; }
                 }
                 break;
 
             default:
                 $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+                $mapped_source_keys = array_filter( array_values( $field_mapping ) );
+
                 foreach ( $data['features'] as $feature ) {
                     $props = $feature['properties'] ?? array();
-                    $fid = sanitize_text_field( $props['fid'] ?? '' );
+                    
+                    $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
+                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? $props['OBJECTID'] ?? '' );
+                    
                     if ( empty( $fid ) ) continue;
                     $imported_fids[] = $fid;
-                     
-                    
-                    // PRESERVE EDITS: If sq_ft, baths, fireplace, sunroom, or wp_page_id already exist, retain them.
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table insertion explicitly flushed via manual cache invalidation post-loop.
+
+                    $get_mapped_val = function( $std_col ) use ( $field_mapping, $props ) {
+                        if ( empty( $field_mapping[$std_col] ) ) return null;
+                        $mapped_key = $field_mapping[$std_col];
+                        return isset( $props[$mapped_key] ) && '' !== $props[$mapped_key] ? $props[$mapped_key] : null;
+                    };
+
+                    $v_name       = sanitize_text_field( $get_mapped_val('name') ?? '' );
+                    $v_category   = sanitize_text_field( $get_mapped_val('category') ?? '' );
+                    $v_code       = sanitize_text_field( $get_mapped_val('code') ?? '' );
+                    $v_color      = sanitize_hex_color( $get_mapped_val('fill_color') ?? '' );
+                    $v_title      = sanitize_text_field( $get_mapped_val('title') ?? '' );
+                    $v_desc       = sanitize_textarea_field( $get_mapped_val('description') ?? '' );
+                    $v_wp_page_id = ! empty( $get_mapped_val('wp_page_id') ) ? (int) $get_mapped_val('wp_page_id') : null;
+                    $v_floor      = (int)( $get_mapped_val('floor') ?? 0 );
+
+                    list( $calc_lat, $calc_lng ) = $this->compute_centroid_from_geom( $feature['geometry'] ?? array() );
+
+                    $lat_mapped = $field_mapping['lat'] ?? null;
+                    if ( '__AUTO_COMPUTE__' === $lat_mapped ) {
+                        $v_lat = $calc_lat;
+                    } elseif ( ! empty( $lat_mapped ) && isset( $props[$lat_mapped] ) ) {
+                        $v_lat = (float) $props[$lat_mapped];
+                    } else {
+                        $v_lat = null;
+                    }
+
+                    $lng_mapped = $field_mapping['lng'] ?? null;
+                    if ( '__AUTO_COMPUTE__' === $lng_mapped ) {
+                        $v_lng = $calc_lng;
+                    } elseif ( ! empty( $lng_mapped ) && isset( $props[$lng_mapped] ) ) {
+                        $v_lng = (float) $props[$lng_mapped];
+                    } else {
+                        $v_lng = null;
+                    }
+
+                    $raw_interactive = $get_mapped_val('is_interactive');
+                    $v_interactive   = ( null !== $raw_interactive ) ? (! empty( $raw_interactive ) ? 1 : 0) : ('buildings' === $layer_type ? 1 : 0);
+
+                    $raw_label   = $get_mapped_val('show_label');
+                    $v_show_label = ( null !== $raw_label ) ? (! empty( $raw_label ) ? 1 : 0) : (! empty( $v_name ) && 'paths' !== $layer_type ? 1 : 0);
+
+                    $custom_attrs = array();
+
+                    if ( ! empty( $raw_key_names ) ) {
+                        foreach ( $raw_key_names as $custom_key ) {
+                            if ( is_string( $custom_key ) && array_key_exists( $custom_key, $props ) ) {
+                                $custom_attrs[$custom_key] = $props[$custom_key];
+                            }
+                        }
+                    } else {
+                        foreach ( $props as $prop_key => $prop_val ) {
+                            if ( in_array( $prop_key, $mapped_source_keys, true ) || in_array( $prop_key, $reserved_cols, true ) ) {
+                                continue;
+                            }
+                            $custom_attrs[$prop_key] = $prop_val;
+                        }
+                    }
+
+                    $custom_json = json_encode( $custom_attrs, JSON_UNESCAPED_UNICODE );
+
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query( 
                         $wpdb->prepare(
-                            "INSERT INTO %i (fid, layer_type, name, category, fill_color, code, lat, lng, sq_ft, baths, floor, fireplace, sunroom, wp_page_id, geom)
-                            VALUES (%s, %s, %s, %s, %s, %s, %f, %f, %s, %f, %d, %d, %d, %d, %s) 
+                            "INSERT INTO %i (fid, layer_type, name, category, fill_color, code, lat, lng, floor, is_interactive, show_label, title, description, wp_page_id, custom_attributes, geom)
+                            VALUES (%s, %s, %s, %s, %s, %s, %f, %f, %d, %d, %d, %s, %s, %d, %s, %s) 
                             ON DUPLICATE KEY UPDATE
-                            name = VALUES(name), 
-                            category = VALUES(category), 
-                            fill_color = VALUES(fill_color), 
-                            code = VALUES(code),
-                            lat = VALUES(lat), 
-                            lng = VALUES(lng), 
+                            name = CASE WHEN VALUES(name) != '' THEN VALUES(name) ELSE name END, 
+                            category = CASE WHEN VALUES(category) != '' THEN VALUES(category) ELSE category END, 
+                            fill_color = CASE WHEN VALUES(fill_color) != '' THEN VALUES(fill_color) ELSE fill_color END, 
+                            code = CASE WHEN VALUES(code) != '' THEN VALUES(code) ELSE code END,
+                            lat = CASE WHEN VALUES(lat) IS NOT NULL THEN VALUES(lat) ELSE lat END, 
+                            lng = CASE WHEN VALUES(lng) IS NOT NULL THEN VALUES(lng) ELSE lng END, 
                             floor = VALUES(floor), 
-                            geom = VALUES(geom),
-                            wp_page_id = CASE WHEN wp_page_id IS NOT NULL AND wp_page_id > 0 THEN wp_page_id ELSE VALUES(wp_page_id) END,
-                            sq_ft = CASE WHEN sq_ft IS NOT NULL AND sq_ft != '' THEN sq_ft ELSE VALUES(sq_ft) END,
-                            baths = CASE WHEN baths IS NOT NULL AND baths > 0 THEN baths ELSE VALUES(baths) END,
-                            fireplace = CASE WHEN fireplace IS NOT NULL THEN fireplace ELSE VALUES(fireplace) END,
-                            sunroom = CASE WHEN sunroom IS NOT NULL THEN sunroom ELSE VALUES(sunroom) END", 
+                            is_interactive = VALUES(is_interactive),
+                            show_label = VALUES(show_label),
+                            wp_page_id = CASE WHEN VALUES(wp_page_id) IS NOT NULL THEN VALUES(wp_page_id) ELSE wp_page_id END,
+                            custom_attributes = VALUES(custom_attributes),
+                            geom = VALUES(geom)", 
                             $table_name,
-                            $fid, $layer_type, 
-                            sanitize_text_field( $props['name'] ?? '' ),
-                            sanitize_text_field( $props['category'] ?? $props['type'] ?? '' ),
-                            sanitize_hex_color( $props['fill_color'] ?? '' ),
-                            sanitize_text_field( $props['code'] ?? '' ),
-                            isset($props['lat']) ? (float)$props['lat'] : null,
-                            isset($props['lng']) ? (float)$props['lng'] : null,
-                            isset($props['sq_ft']) ? sanitize_text_field($props['sq_ft']) : null,
-                            isset($props['baths']) ? (float)$props['baths'] : null,
-                            isset( $props['floor'] ) ? (int) $props['floor'] : 0,
-                            !empty($props['fireplace']) ? 1 : 0,
-                            !empty($props['sunroom']) ? 1 : 0,
-                            isset($props['wp_page_id']) && $props['wp_page_id'] !== '' ? (int)$props['wp_page_id'] : null,
-                            json_encode( $feature['geometry'] )
+                            $fid, $layer_type, $v_name, $v_category, $v_color, $v_code,
+                            $v_lat, $v_lng, $v_floor, $v_interactive, $v_show_label,
+                            $v_title, $v_desc, $v_wp_page_id, $custom_json, json_encode( $feature['geometry'] )
                         )
-                    ) ) 
-                    { $processed_count++; }
+                    ) ) { $processed_count++; }
                 }
                 break;
         }
 
-        // Cleanup records for features that were removed from the newly imported GeoJSON payload
         if ( ! empty( $imported_fids ) ) {
-            // Safely generate %s placeholder string for SQL NOT IN (...) clause (e.g. "%s,%s,%s")
             $fids_placeholders = implode( ',', array_fill( 0, count( $imported_fids ), '%s' ) );
 
             if ( 'entries' === $layer_type || 'network' === $layer_type ) {
                 $sql        = "DELETE FROM %i WHERE fid NOT IN ($fids_placeholders)";
                 $query_args = array_merge( array( $table_name ), $imported_fids );
 
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $fids_placeholders strictly contains safe %s string sequences and parameters match placeholders.
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $wpdb->query( $wpdb->prepare( $sql, $query_args ) );
             } else {
                 $sql        = "DELETE FROM %i WHERE layer_type = %s AND fid NOT IN ($fids_placeholders)";
                 $query_args = array_merge( array( $table_name, $layer_type ), $imported_fids );
 
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $fids_placeholders strictly contains safe %s string sequences and parameters match placeholders.
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $wpdb->query( $wpdb->prepare( $sql, $query_args ) );
             }
         }
 
-
-        // Forcefully invalidate the 24-hour transient cache data in order to updated frontend.
         wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );
         wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
 
-        // Explicitly package our array payload inside the core WordPress response object
-        $response_data = array( 
+        return new WP_REST_Response( array( 
             'success'  => true, 
-            'total'    => count($data['features']), 
+            'total'    => count( $data['features'] ), 
             'imported' => $processed_count 
-        );
-
-        return new WP_REST_Response( $response_data, 200 );
+        ), 200 );
     }
 
-
     /**
-     * POST Route Callback: Update metadata for a specific spatial layer
+     * POST Route Callback: Update metadata fields for a specific spatial feature
      */
     public function handle_update_spatial_meta( $request ) {
         global $wpdb;
@@ -507,13 +715,23 @@ class BWB_Federated_Imaps_API_Controller {
             $format[] = '%s';
         }
 
-        if ( $request->has_param( 'hide_page_video' ) ? 1 : 0 ) {
+        if ( $request->has_param( 'hide_page_video' ) ) {
             $update_data['hide_page_video'] = ! empty( $request->get_param( 'hide_page_video' ) ) ? 1 : 0;
             $format[] = '%d';
         }
 
         if ( $request->has_param( 'hide_page_floorplan' ) ) {
             $update_data['hide_page_floorplan'] = ! empty( $request->get_param( 'hide_page_floorplan' ) ) ? 1 : 0;
+            $format[] = '%d';
+        }
+
+        if ( $request->has_param( 'is_interactive' ) ) {
+            $update_data['is_interactive'] = ! empty( $request->get_param( 'is_interactive' ) ) ? 1 : 0;
+            $format[] = '%d';
+        }
+
+        if ( $request->has_param( 'show_label' ) ) {
+            $update_data['show_label'] = ! empty( $request->get_param( 'show_label' ) ) ? 1 : 0;
             $format[] = '%d';
         }
 
@@ -529,32 +747,23 @@ class BWB_Federated_Imaps_API_Controller {
             $format[] = '%d';
         }
 
-        if ( $request->has_param( 'sq_ft' ) ) {
-            $update_data['sq_ft'] = sanitize_text_field( $request->get_param( 'sq_ft' ) );
+        if ( $request->has_param( 'custom_attributes' ) ) {
+            $custom_attrs = $request->get_param( 'custom_attributes' );
+            $parsed_attrs = is_string( $custom_attrs ) ? json_decode( $custom_attrs, true ) : $custom_attrs;
+            
+            if ( is_array( $parsed_attrs ) ) {
+                $this->sync_custom_keys_to_schema( array_keys( $parsed_attrs ) );
+            }
+
+            $update_data['custom_attributes'] = is_string( $custom_attrs ) ? $custom_attrs : json_encode( $custom_attrs );
             $format[] = '%s';
-        }
-
-        if ( $request->has_param( 'baths' ) ) {
-            $baths = $request->get_param( 'baths' );
-            $update_data['baths'] = ( $baths !== '' && ! is_null( $baths ) ) ? (float) $baths : null;
-            $format[] = '%f';
-        }
-
-        if ( $request->has_param( 'fireplace' ) ) {
-            $update_data['fireplace'] = ! empty( $request->get_param( 'fireplace' ) ) ? 1 : 0;
-            $format[] = '%d';
-        }
-
-        if ( $request->has_param( 'sunroom' ) ) {
-            $update_data['sunroom'] = ! empty( $request->get_param( 'sunroom' ) ) ? 1 : 0;
-            $format[] = '%d';
         }
 
         if ( empty( $update_data ) ) {
             return new WP_REST_Response( array( 'success' => true, 'message' => 'No fields provided for update.' ), 200 );
         }
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table metadata update explicitly handled by caching eviction hooks directly post-query.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
         $result = $wpdb->update(
             $table_name,
             $update_data,
@@ -563,19 +772,139 @@ class BWB_Federated_Imaps_API_Controller {
             array( '%s', '%s' )
         );
 
-        // If update queries fail completely due to SQL architecture errors, throw an explicit error framework hook.
         if ( false === $result ) {
             return new WP_Error( 'db_update_error', 'Failed to update metadata records inside database.', array( 'status' => 500 ) );
         }
 
-        // Forcefully invalidate the 24-hour transient cache data in order to updated frontend.
         wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
 
         return new WP_REST_Response( array( 'success' => true ), 200 );
     }
 
     /**
-     * DELETE Route Callback: Deletes a selected layer safely
+     * GET Route Callback: Returns central attribute registry schema
+     */
+    public function handle_get_attribute_schema() {
+        global $wpdb;
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
+
+        // Self-healing fallback: If option is empty, discover keys directly from MySQL
+        if ( empty( $schema ) ) {
+            $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+            $results    = $wpdb->get_results( "SELECT custom_attributes FROM {$table_name} WHERE custom_attributes IS NOT NULL AND custom_attributes != '' AND custom_attributes != '{}'", ARRAY_A );
+
+            if ( ! empty( $results ) ) {
+                $discovered_keys = array();
+                foreach ( $results as $row ) {
+                    $attrs = json_decode( $row['custom_attributes'], true );
+                    if ( is_array( $attrs ) ) {
+                        foreach ( $attrs as $k => $v ) {
+                            if ( ! isset( $discovered_keys[$k] ) ) {
+                                $type = is_bool( $v ) || $v === 'true' || $v === 'false' ? 'boolean' : ( is_numeric( $v ) ? 'number' : 'text' );
+                                $discovered_keys[$k] = $type;
+                            }
+                        }
+                    }
+                }
+
+                if ( ! empty( $discovered_keys ) ) {
+                    $this->sync_custom_keys_to_schema( $discovered_keys );
+                    $settings = get_option( 'bwb_imaps_options_data', array() );
+                    $schema   = isset( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
+                }
+            }
+        }
+
+        return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
+    }
+
+    /**
+     * POST Route Callback: Adds or updates an attribute definition in the central schema
+     */
+    public function handle_update_attribute_schema( $request ) {
+        $key   = sanitize_key( $request->get_param( 'key' ) );
+        $label = sanitize_text_field( $request->get_param( 'label' ) );
+        $type  = sanitize_text_field( $request->get_param( 'type' ) ?: 'text' );
+
+        if ( empty( $key ) ) {
+            return new WP_Error( 'missing_key', 'Attribute key is required.', array( 'status' => 400 ) );
+        }
+
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
+
+        $updated = false;
+        foreach ( $schema as &$item ) {
+            if ( $item['key'] === $key ) {
+                $item['label'] = ! empty( $label ) ? $label : $item['label'];
+                $item['type']  = ! empty( $type ) ? $type : $item['type'];
+                $updated       = true;
+                break;
+            }
+        }
+
+        if ( ! $updated ) {
+            $schema[] = array(
+                'key'   => $key,
+                'label' => ! empty( $label ) ? $label : ucwords( str_replace( '_', ' ', $key ) ),
+                'type'  => $type,
+            );
+        }
+
+        $settings['attribute_schema'] = $schema;
+        update_option( 'bwb_imaps_options_data', $settings );
+
+        return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
+    }
+
+    /**
+     * POST Route Callback: Deletes an attribute key from central schema AND purges it from all features in MySQL
+     */
+    public function handle_delete_attribute_key( $request ) {
+        global $wpdb;
+
+        $key = sanitize_key( $request->get_param( 'key' ) );
+        if ( empty( $key ) ) {
+            return new WP_Error( 'missing_key', 'Attribute key is required for deletion.', array( 'status' => 400 ) );
+        }
+
+        // 1. Delete from central schema option
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
+
+        $filtered_schema = array_values( array_filter( $schema, function( $item ) use ( $key ) {
+            return $item['key'] !== $key;
+        } ) );
+
+        $settings['attribute_schema'] = $filtered_schema;
+        update_option( 'bwb_imaps_options_data', $settings );
+
+        // 2. MySQL JSON Purge Query: Removes the JSON key from custom_attributes across all rows
+        $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+        $json_path  = '$.' . $key;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE %i SET custom_attributes = JSON_REMOVE(custom_attributes, %s) WHERE JSON_EXTRACT(custom_attributes, %s) IS NOT NULL",
+                $table_name,
+                $json_path,
+                $json_path
+            )
+        );
+
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+
+        return new WP_REST_Response( array( 
+            'success' => true, 
+            'key'     => $key, 
+            'schema'  => $filtered_schema 
+        ), 200 );
+    }
+
+    /**
+     * POST Route Callback: Deletes all features of a specific layer type
      */
     public function handle_delete_layer($data) {
         global $wpdb;
@@ -586,14 +915,14 @@ class BWB_Federated_Imaps_API_Controller {
         }
 
         if ( $layer_type === 'entries' ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table truncation on custom database layers is safely evicted from the object cache via manual invalidation routines below.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_entries_data' ) );
         } elseif ( $layer_type === 'network' ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table truncation on custom database layers is safely evicted from the object cache via manual invalidation routines below.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_network_data' ) );
         } else {
             $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The dynamic table name is safe, built with core prefix, and its storage context is flushed via custom cache routines.
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $result = $wpdb->delete( $table_name, array( 'layer_type' => $layer_type ) );
         }
 
@@ -601,18 +930,15 @@ class BWB_Federated_Imaps_API_Controller {
             return new WP_Error( 'db_error', 'Could not delete layer.', array( 'status' => 500 ) );
         }
 
-        // Forcefully invalidate the 24-hour transient cache data in order to updated frontend.
         wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );
         wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+
         return new WP_REST_Response( array(
             'success' => true, 
             'message' => "Layer '$layer_type' deleted successfully."
         ), 200 );
     }
-    
-    /**
-     * Generates standardized, translatable WP_Error API responses.
-     */
+
     private function api_error( $code, $message, $status = 400 ) {
         return new WP_Error( 
             $code, 

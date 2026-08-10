@@ -1,20 +1,34 @@
 import { __ } from '@wordpress/i18n';
 import { useState, useMemo, useEffect, useRef } from '@wordpress/element';
+import { DEFAULT_CATEGORY_CONFIG } from '../constants/mapConstants';
 
-const SearchList = ({ spatialFeatures, locations, onSelect, isOpen, onCloseMenu }) => {
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
+/**
+ * SearchList Component
+ * 
+ * Dynamic navigation menu rendering feature hierarchies based on the configurable 
+ * Category Configuration settings. Accommodates grouped multi-unit accordions 
+ * as well as flat facility/amenity lists and location pins.
+ *
+ * @param {Object} props
+ * @param {Array} props.spatialFeatures GeoJSON features list
+ * @param {Array} props.locations Custom marker locations list
+ * @param {Function} props.onSelect Selection callback when a user clicks an item
+ * @param {boolean} props.isOpen Mobile menu open state
+ * @param {Function} props.onCloseMenu Callback to dismiss mobile menu
+ */
+const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, onCloseMenu }) => {
     const [activeTab, setActiveTab] = useState(null);
-    const menuRef = useRef(null); // Reference to the menu container
+    const menuRef = useRef(null);
 
-    // Handle clicking outside the menu
+    // Dismiss dropdown when clicking outside menu container
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // If the menu is open and the click is NOT inside the menuRef
             if (isOpen && menuRef.current && !menuRef.current.contains(event.target)) {
-                // Also check if the click was on the burger button itself 
-                // (usually handled by the button's own toggle, but safe to ignore here)
                 if (!event.target.closest('.burger-btn')) {
                     onCloseMenu();
-                    setActiveTab(null); // Optional: close open accordions too
+                    setActiveTab(null);
                 }
             }
         };
@@ -28,55 +42,109 @@ const SearchList = ({ spatialFeatures, locations, onSelect, isOpen, onCloseMenu 
         };
     }, [isOpen, onCloseMenu]);
 
-    const toggleTab = (e, tab) => {
+    const toggleTab = (e, tabId) => {
         e.preventDefault();
         e.stopPropagation();
-        setActiveTab(prev => (prev === tab ? null : tab));
+        setActiveTab(prev => (prev === tabId ? null : tabId));
     };
 
-    const categories = useMemo(() => {
-        const rawGroups = { apartments: {}, cottages: {}, amenities: [] };
-        const amenityCategories = ['community_center', 'personal_care', 'skilled_care', 'fitness_center', 'amenities'];
+    /**
+     * Process spatial features and locations into dynamic category tab buckets
+     */
+    const categoryData = useMemo(() => {
+        // Resolve active category settings or fallback to default preset
+        const categoryConfig = window.bwbimapsSettings?.categoryConfig || DEFAULT_CATEGORY_CONFIG;
+        const tabs = categoryConfig.tabs || DEFAULT_CATEGORY_CONFIG.tabs;
 
+        // Initialize empty tab structures
+        const tabBuckets = {};
+        tabs.forEach(tab => {
+            tabBuckets[tab.id] = {
+                id: tab.id,
+                title: tab.title,
+                displayType: tab.displayType || 'flat',
+                categories: tab.categories || [],
+                groupedItems: {}, // Keyed by parent group name (for Name + Code features)
+                flatItems: []     // Array of flat items (for Name-only features or pins)
+            };
+        });
+
+        // 1. Process Spatial GeoJSON Features
         spatialFeatures.forEach(f => {
-            const name = f.properties.name;
-            if (!name) return;
-            const item = { ...f.properties, type: 'spatial' };
-            const lowerName = name.toLowerCase();
-            const isParlorOrRoom = lowerName.includes('parlor');
-            const isLandUse = f.properties.layer_type === 'land_use';
+            const props = f.properties || {};
 
-            if (isParlorOrRoom || isLandUse || amenityCategories.includes(f.properties.category)) {
-                rawGroups.amenities.push(item);
-            } else if (f.properties.category === 'residential_apartment') {
-                if (!rawGroups.apartments[name]) rawGroups.apartments[name] = [];
-                rawGroups.apartments[name].push(item);
-            } else if (f.properties.category === 'cottage') {
-                if (!rawGroups.cottages[name]) rawGroups.cottages[name] = [];
-                rawGroups.cottages[name].push(item);
+            // Exclude non-interactive features (patios, background parcels, etc.) and features without a label
+            if (props.is_interactive === false || (!props.name && !props.code)) {
+                return;
+            }
+
+            const featureItem = { ...props, type: 'spatial', geometry: f.geometry };
+            const category = props.category || '';
+
+            // Find matching tab or fallback to 'amenities' (or first available tab)
+            let targetTab = tabs.find(t => (t.categories || []).includes(category));
+            let targetTabId = targetTab ? targetTab.id : (tabBuckets['amenities'] ? 'amenities' : tabs[0]?.id);
+
+            if (!targetTabId || !tabBuckets[targetTabId]) return;
+
+            const bucket = tabBuckets[targetTabId];
+
+            // Distinguish between Grouped Accordion items (has BOTH Name and Code) and Flat items
+            if (props.name && props.code && bucket.displayType === 'grouped') {
+                const groupName = props.name;
+                if (!bucket.groupedItems[groupName]) {
+                    bucket.groupedItems[groupName] = [];
+                }
+                bucket.groupedItems[groupName].push(featureItem);
+            } else {
+                // Name-only features (e.g. Community Center) or flat display layout
+                bucket.flatItems.push(featureItem);
             }
         });
 
-        locations.forEach(loc => {
-            if (loc.title) rawGroups.amenities.push({ ...loc, name: loc.title, type: 'marker' });
-        });
+        // 2. Process Custom Location Pin Markers (always added to flat items of the 'amenities' or fallback tab)
+        const fallbackFlatTabId = tabBuckets['amenities'] ? 'amenities' : tabs[tabs.length - 1]?.id;
+        if (fallbackFlatTabId && tabBuckets[fallbackFlatTabId]) {
+            locations.forEach(loc => {
+                if (loc.title && loc.showMarker !== false) {
+                    tabBuckets[fallbackFlatTabId].flatItems.push({
+                        ...loc,
+                        name: loc.title,
+                        type: 'marker'
+                    });
+                }
+            });
+        }
 
+        // 3. Format and Sort Grouped Accordion Structures
         const naturalSort = (a, b) => (a.code || a.name || '').localeCompare(b.code || b.name || '', undefined, { numeric: true });
-        
-        const formatGroup = (obj) => Object.keys(obj).map(name => ({
-            groupName: name,
-            units: obj[name].sort(naturalSort)
-        })).sort((a, b) => a.groupName.localeCompare(b.groupName));
 
-        return {
-            apartments: formatGroup(rawGroups.apartments),
-            cottages: formatGroup(rawGroups.cottages),
-            amenities: rawGroups.amenities.sort(naturalSort)
-        };
+        const formattedTabs = tabs.map(tab => {
+            const bucket = tabBuckets[tab.id];
+            if (!bucket) return null;
+
+            const formattedGroups = Object.keys(bucket.groupedItems).map(groupName => ({
+                groupName,
+                units: bucket.groupedItems[groupName].sort(naturalSort)
+            })).sort((a, b) => a.groupName.localeCompare(b.groupName));
+
+            return {
+                id: bucket.id,
+                title: bucket.title,
+                displayType: bucket.displayType,
+                groups: formattedGroups,
+                flatItems: bucket.flatItems.sort(naturalSort)
+            };
+        }).filter(Boolean);
+
+        return formattedTabs;
     }, [spatialFeatures, locations]);
 
-    const NavItem = ({ title, groups, type, isAmenities = false }) => {
-        const isTabOpen = activeTab === type;
+    /**
+     * Sub-Component: Renders an individual dynamic navigation tab and its dropdown
+     */
+    const NavItem = ({ tab }) => {
+        const isTabOpen = activeTab === tab.id;
         const [activeGroup, setActiveGroup] = useState(null);
 
         const toggleGroup = (e, groupName) => {
@@ -85,37 +153,50 @@ const SearchList = ({ spatialFeatures, locations, onSelect, isOpen, onCloseMenu 
             setActiveGroup(prev => (prev === groupName ? null : groupName));
         };
 
+        const hasGroupedItems = tab.groups && tab.groups.length > 0;
+        const hasFlatItems = tab.flatItems && tab.flatItems.length > 0;
+
+        if (!hasGroupedItems && !hasFlatItems) return null;
+
         return (
             <div className={`nav-item-container ${isTabOpen ? 'is-expanded' : ''}`}>
-                <button className="nav-tab-btn" onClick={(e) => toggleTab(e, type)}>
-                    {title} <span className="chevron"></span>
+                <button className="nav-tab-btn" onClick={(e) => toggleTab(e, tab.id)}>
+                    {__(tab.title, TEXT_DOMAIN)} <span className="chevron"></span>
                 </button>
                 <div className="nav-dropdown">
-                    {isAmenities ? (
-                        groups.map((item, idx) => (
-                            <div key={idx} className="dropdown-row" onClick={() => { onSelect(item); onCloseMenu(); setActiveTab(null); }}>
-                                {item.name}
-                            </div>
-                        ))
-                    ) : (
-                        groups.map((group, idx) => {
-                            const isGroupOpen = activeGroup === group.groupName;
-                            return (
-                                <div key={idx} className={`dropdown-group-container ${isGroupOpen ? 'group-expanded' : ''}`}>
-                                    <div className="dropdown-row group-header" onClick={(e) => toggleGroup(e, group.groupName)}>
-                                        {group.groupName} <span className="side-chevron"></span>
-                                    </div>
-                                    <div className="sub-side-menu">
-                                        {group.units.map((unit, uIdx) => (
-                                            <div key={uIdx} className="dropdown-row" onClick={() => { onSelect(unit); onCloseMenu(); setActiveTab(null); }}>
-                                                {unit.code || unit.name}
-                                            </div>
-                                        ))}
-                                    </div>
+                    {/* Render Grouped Accordion Rows */}
+                    {hasGroupedItems && tab.groups.map((group, idx) => {
+                        const isGroupOpen = activeGroup === group.groupName;
+                        return (
+                            <div key={`group-${idx}`} className={`dropdown-group-container ${isGroupOpen ? 'group-expanded' : ''}`}>
+                                <div className="dropdown-row group-header" onClick={(e) => toggleGroup(e, group.groupName)}>
+                                    {group.groupName} <span className="side-chevron"></span>
                                 </div>
-                            );
-                        })
-                    )}
+                                <div className="sub-side-menu">
+                                    {group.units.map((unit, uIdx) => (
+                                        <div 
+                                            key={`unit-${uIdx}`} 
+                                            className="dropdown-row" 
+                                            onClick={() => { onSelect(unit); onCloseMenu(); setActiveTab(null); }}
+                                        >
+                                            {unit.code || unit.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* Render Flat List Rows */}
+                    {hasFlatItems && tab.flatItems.map((item, idx) => (
+                        <div 
+                            key={`flat-${idx}`} 
+                            className="dropdown-row" 
+                            onClick={() => { onSelect(item); onCloseMenu(); setActiveTab(null); }}
+                        >
+                            {item.name || item.title}
+                        </div>
+                    ))}
                 </div>
             </div>
         );
@@ -126,9 +207,9 @@ const SearchList = ({ spatialFeatures, locations, onSelect, isOpen, onCloseMenu 
             ref={menuRef} 
             className={`nav-menu ${isOpen ? 'mobile-open' : ''}`}
         >
-            <NavItem title={__('Apartments', 'bawbab-interactive-maps')} type="apartments" groups={categories.apartments} />
-            <NavItem title={__('Cottages', 'bawbab-interactive-maps')} type="cottages" groups={categories.cottages} />
-            <NavItem title={__('Amenities', 'bawbab-interactive-maps')} type="amenities" groups={categories.amenities} isAmenities />
+            {categoryData.map(tab => (
+                <NavItem key={tab.id} tab={tab} />
+            ))}
         </div>
     );
 };

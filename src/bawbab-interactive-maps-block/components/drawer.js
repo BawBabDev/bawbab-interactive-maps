@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from '@wordpress/element';
+import React, { useState, useEffect } from '@wordpress/element';
 import { Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { UnitSpecs } from './drawer-unit-specs';
@@ -9,13 +9,23 @@ import { CampusNavigation } from './campusNavigation';
 import { FloorPlanBlock } from './floorPlanBlock';
 import { ExcerptText } from './excerptText';
 
-const DrawingSidebar = ({ isOpen, selectedLoc, onClose, onImageClick, mapDimensions, onRouteGenerated, onRouteCleared     
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
+const DrawingSidebar = ({ 
+    isOpen, 
+    selectedLoc, 
+    onClose, 
+    onImageClick, 
+    mapDimensions, 
+    onRouteGenerated, 
+    onRouteCleared     
 }) => {
     const stablePageId = selectedLoc?.wp_page_id ? parseInt(selectedLoc.wp_page_id, 10) : 0;
     const stableFeatureId = selectedLoc?.fid;
     const initialGallery = selectedLoc?.gallery || [];
 
-    const { wpData, isLoading, currentImage, setCurrentImage, allImages, videoEmbedUrl, vimeoThumbUrl
+    const { 
+        wpData, isLoading, currentImage, setCurrentImage, allImages 
     } = useWpLinkedContent(stablePageId, stableFeatureId, initialGallery, selectedLoc);
 
     const mapSettings = window.bwbimapsSettings || {};
@@ -23,10 +33,9 @@ const DrawingSidebar = ({ isOpen, selectedLoc, onClose, onImageClick, mapDimensi
     const { width = 0, height = 0 } = mapDimensions || {};
     const isSmallUI = (width < 800 || height < 500);
 
-    const isParlor = selectedLoc?.name?.toLowerCase().includes('parlor') || selectedLoc?.title?.toLowerCase().includes('parlor');
-    const categoryText = (!isParlor && (selectedLoc?.category === 'residential_apartment' || selectedLoc?.category === 'cottage')) 
-        ? selectedLoc.category.replace('_', ' ') 
-        : 'amenity';
+    // Generic Category Header formatting
+    const rawCategory = selectedLoc?.category || selectedLoc?.layer_type || 'amenity';
+    const categoryText = rawCategory.replace(/_/g, ' ');
     
     const [shouldShow, setShouldShow] = useState(false);
 
@@ -46,9 +55,13 @@ const DrawingSidebar = ({ isOpen, selectedLoc, onClose, onImageClick, mapDimensi
     
     if (!selectedLoc) return null;
 
-    const displayTitle = selectedLoc?.title || wpData?.title?.rendered  || selectedLoc?.name || "Untitled Location";
-    const showCodeAsSubtitle = (selectedLoc?.category === 'residential_apartment' || selectedLoc?.category === 'cottage') && selectedLoc?.code;
-    const secondaryTitle = showCodeAsSubtitle ? selectedLoc.code : ((wpData && selectedLoc?.name) ? selectedLoc.name : null);
+    const displayTitle = selectedLoc?.title || wpData?.title?.rendered || selectedLoc?.name || __('Untitled Location', TEXT_DOMAIN);
+    
+    // Generic subtitle resolution: display unit code if present, otherwise fall back to feature name
+    const secondaryTitle = selectedLoc?.code 
+        ? `${__('Unit', TEXT_DOMAIN)} ${selectedLoc.code}`
+        : ((wpData && selectedLoc?.name && selectedLoc.name !== displayTitle) ? selectedLoc.name : null);
+
     const directFloorplanAssetUrl = selectedLoc?.custom_floorplan_url 
         || (selectedLoc?.hide_page_floorplan ? null : wpData?.acf?.floorplan?.url);
 
@@ -61,15 +74,20 @@ const DrawingSidebar = ({ isOpen, selectedLoc, onClose, onImageClick, mapDimensi
                         <div className="sidebar-loader-container"><Spinner /></div>
                     ) : (
                         <div className="sidebar-content-fade">
-                             <MediaCarousel currentImage={currentImage} allImages={allImages} setCurrentImage={setCurrentImage} 
+                            <MediaCarousel 
+                                currentImage={currentImage} 
+                                allImages={allImages} 
+                                setCurrentImage={setCurrentImage} 
                                 onImageClick={onImageClick} 
                             />
+
                             {/* TITLE HEADER CONTAINER */}
                             <div className="sidebar-title-section">
-                               <h2 className="loc-title">{displayTitle}</h2>
+                                <h2 className="loc-title">{displayTitle}</h2>
                                 {secondaryTitle && <h3 className="loc-subtitle">{secondaryTitle}</h3>}
                             </div>
-                            {/* REGULAR HARDWARE DATA SPECS */}
+
+                            {/* DYNAMIC SPECS & ATTRIBUTES */}
                             <UnitSpecs specs={selectedLoc} isSmallUI={isSmallUI} />
 
                             {/* FLOORPLAN ACTIONABLE BOUNDARY PANEL */}

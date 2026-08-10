@@ -1,110 +1,73 @@
-import { Button, SelectControl, Flex, FlexItem, Dashicon, __experimentalText as Text,ExternalLink } from '@wordpress/components';
+import { Button, SelectControl, Flex, FlexItem, Dashicon, __experimentalText as Text, ExternalLink } from '@wordpress/components';
 import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
 import { useNotify } from '../Notices';
+import { GeoJSONImportWizardModal } from '../modals/GeoJSONImportWizardModal';
+
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
 /**
- * Uploader Component
+ * SpatialDataUploader Component
  * 
- * Renders the GIS administration dashboard interface allowing synchronization of
- * display geometries and routing topological datasets.
+ * GIS administration dashboard panel allowing layer selection, 
+ * column-mapping wizard launches, and layer truncations.
  * 
  * @param {Object} props
  * @param {Function} props.onUploadSuccess Callback fired immediately upon a successful layer sync.
  */
 export const SpatialDataUploader = ({ onUploadSuccess }) => {
     const [importType, setImportType] = useState('parcels');
-    const [selectedFile, setSelectedFile] = useState(null);
-    const { importGeoJSON, deleteLayer, isUploading, message, setMessage } = useSpatialDataImporter();
-    const { notify } = useNotify();
     const [pendingFile, setPendingFile] = useState(null);
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
 
+    const { inspectGeoJSON, importGeoJSON, deleteLayer, isUploading, message } = useSpatialDataImporter();
+    const { notify } = useNotify();
     const lastProcessedMessageRef = useRef(null);
 
-    /**
-     * handleFileSelect
-     * Buffers the uploaded document into react state ready for explicit manual transmission.
-     */
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
-            //console.log("📂 File Selected:", file.name, "Type:", file.type);
-            setPendingFile(file); 
-            setSelectedFile(file);
+            setPendingFile(file);
         }
     };
 
-    /**
-     * handleManualUpload
-     * Dispatches the network payload request towards our specific PHP custom table routes.
-     */
-    const handleManualUpload = () => {
+    const handleOpenWizard = () => {
         if (pendingFile) {
-            //console.log(`🚀 Starting Upload: Layer="${importType}", File="${pendingFile.name}"`);
-            lastProcessedMessageRef.current = null;
-            importGeoJSON([pendingFile], importType); 
+            setIsWizardOpen(true);
         }
     };
 
-    /**
-     * handleClearLayer
-     * Triggers specific layer truncations matching selected routing or structural constraints.
-     */
     const handleClearLayer = () => {
-        //console.warn(`🗑️ Requesting Wipe for Layer: ${importType}`);
         lastProcessedMessageRef.current = null;
         deleteLayer(importType);
     };
 
-    /**
-     * clearFile
-     * Clears internal state buffers and resets file form inputs.
-     */
     const clearFile = () => {
         setPendingFile(null);
-        setSelectedFile(null);
         const input = document.getElementById('geojson-import-input');
         if (input) input.value = '';
     };
 
-    // Monitor REST API processing status notifications
     useEffect(() => {
         if (message && message !== lastProcessedMessageRef.current) {
-            //console.log("📩 Message from Importer:", message);
             lastProcessedMessageRef.current = message;
             notify(message.type, message.text, { id: 'spatial-import' });
 
             if (message.type === 'success') {
-                // Safeguard against missing array parsing allocations
-                if (message.text.includes(' 0 ')) {
-                    console.warn("⚠️ Import reported 0 features. Check PHP logs.");
-                    return;
-                }
-
                 setPendingFile(null);
-                setSelectedFile(null);
-                
-                // FIXED: Trigger background success hook directly without interrupting visual panel layouts with deep window reloads
                 if (onUploadSuccess) onUploadSuccess();
-
-                const isNavLayer = importType === 'entries' || importType === 'network';
-                if (!isNavLayer) {
-                    console.log("✅ Visual map layer elements synchronized safely. Interface map updating via reactive hooks.");
-                } else {
-                    console.log("✅ Navigation graph structural update written seamlessly to custom DB schema.");
-                }
             }
         }
-    }, [message, notify, onUploadSuccess, importType]);
+    }, [message, notify, onUploadSuccess]);
 
     return (
         <div className="tab-content">
             <Text variant="title.small" display="block" style={{ marginBottom: '5px' }}>
-                {__('GIS Layer Manager', 'bawbab-interactive-maps')}
+                {__('GIS Layer Manager', TEXT_DOMAIN)}
             </Text>
             <Text variant="caption" display="block" style={{ color: '#666', marginBottom: '20px' }}>
-                {__('Sync spatial geometries while preserving custom descriptions and page links.', 'bawbab-interactive-maps')}
+                {__('Sync spatial geometries with custom column mapping and automated attribute detection.', TEXT_DOMAIN)}
             </Text>
 
             <div style={{ marginTop: '20px' }}>
@@ -119,7 +82,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                 <SelectControl 
                     label={
                         <Flex align="center" justify="flex-start" expanded={false} height="12px">
-                            {__('Target Layer', 'bawbab-interactive-maps')}
+                            {__('Target Layer', TEXT_DOMAIN)}
                             <span className="pulsating-dot-inline" />
                         </Flex>
                     } 
@@ -132,10 +95,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                         { label: 'Navigation - Entries & Doors (Points)', value: 'entries' },
                         { label: 'Navigation - Routable Network (Lines)', value: 'network' },
                     ]}
-                    onChange={(val) => {
-                        // console.log("🎯 Layer Type changed to:", val);
-                        setImportType(val);
-                    }}
+                    onChange={(val) => setImportType(val)}
                 />
 
                 <div style={{ marginTop: '15px'}}>
@@ -144,14 +104,14 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                             <Flex align="center" justify="space-between">
                                 <Flex align="center" gap={2}>
                                     <Dashicon icon="media-document" size={16} />
-                                    <Text style={{ color: '#d63638' }}><strong>{pendingFile.name}</strong></Text>
+                                    <Text style={{ color: '#2271b1' }}><strong>{pendingFile.name}</strong></Text>
                                 </Flex>
                                 <Button 
-                                    isDestructive  
+                                    isDestructive   
                                     onClick={clearFile} 
                                     icon="no-alt" 
                                     showTooltip
-                                    label={__('Remove file', 'bawbab-interactive-maps')}
+                                    label={__('Remove file', TEXT_DOMAIN)}
                                 />
                             </Flex>
                         </div>
@@ -162,9 +122,9 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                             <Button 
                                 variant="secondary" 
                                 onClick={() => document.getElementById('geojson-import-input').click()}
-                                style={{ width: '100%', justifyContenht: 'center' }}
+                                style={{ width: '100%', justifyContent: 'center' }}
                             >
-                                {pendingFile ? __('Change File', 'bawbab-interactive-maps') : __('Select GeoJSON', 'bawbab-interactive-maps')}
+                                {pendingFile ? __('Change File', TEXT_DOMAIN) : __('Select GeoJSON', TEXT_DOMAIN)}
                             </Button>
                         </FlexItem>
                         <FlexItem style={{ flex: 1 }}>
@@ -172,21 +132,27 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                                 variant="primary" 
                                 disabled={!pendingFile || isUploading} 
                                 isBusy={isUploading} 
-                                onClick={handleManualUpload}
+                                onClick={handleOpenWizard}
                                 style={{ width: '100%', justifyContent: 'center' }}
                             >
-                                {isUploading ? __('Syncing...', 'bawbab-interactive-maps') : __('Update Layer', 'bawbab-interactive-maps')}
+                                {__('Configure & Import', TEXT_DOMAIN)}
                             </Button>
                         </FlexItem>
                     </Flex>
                 </div>
-                <Flex wrap="wrap" gap={2} style={{ margin: '10px 0px', justifyContent: 'flex-end' }}>
-                    <ExternalLink href="#" style={{ color: '#3858e9' }}>
-                        {__('Sample Data file', 'bawbab-interactive-maps')}
-                    </ExternalLink>
-                </Flex>
 
-                {/* DANGER ZONE: Clear Layer Functionality */}
+                {/* Import Wizard Modal Trigger */}
+                {isWizardOpen && (
+                    <GeoJSONImportWizardModal
+                        file={pendingFile}
+                        layerType={importType}
+                        onClose={() => setIsWizardOpen(false)}
+                        onInspect={inspectGeoJSON}
+                        onExecuteImport={importGeoJSON}
+                    />
+                )}
+
+                {/* Danger Zone: Wiping Layer */}
                 <div style={{ 
                     marginTop: '40px', 
                     padding: '20px', 
@@ -197,13 +163,13 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                     <Flex align="center" gap={2} style={{ marginBottom: '10px' }}>
                         <Dashicon icon="warning" style={{ color: '#d63638' }} />
                         <Text variant="title.small" style={{ color: '#d63638', fontWeight: '600' }}>
-                            {__('Danger Zone', 'bawbab-interactive-maps')}
+                            {__('Danger Zone', TEXT_DOMAIN)}
                         </Text>
                     </Flex>
                     
                     <Flex style={{ marginBottom: '15px' }}>
                         <Text variant="caption" display="block" style={{ color: '#555' }}>
-                            {sprintf(__('This will permanently delete all features and properties associated with the "%s" layer.', 'bawbab-interactive-maps'), importType)}
+                            {sprintf(__('This will permanently delete all features and properties associated with the "%s" layer.', TEXT_DOMAIN), importType)}
                         </Text>
                     </Flex>
 
@@ -215,7 +181,7 @@ export const SpatialDataUploader = ({ onUploadSuccess }) => {
                         style={{ width: '100%', justifyContent: 'center' }}
                     >
                         <Dashicon icon="trash" />
-                        {sprintf(__('Wipe "%s" Layer', 'bawbab-interactive-maps'), importType)}
+                        {sprintf(__('Wipe "%s" Layer', TEXT_DOMAIN), importType)}
                     </Button>
                 </div>
             </div>

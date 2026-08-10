@@ -1,4 +1,4 @@
-# Bawbab Interactive Maps – User Guide
+# Bawbab Interactive Maps
 
 Contributors:       Bawbab Technologies  
 Tags:               block  

@@ -4,9 +4,9 @@ import { __ } from '@wordpress/i18n';
 import MainSettingsPage from './mainSettingsPage';
 import SpatialDataEditPage from './spatialDataEditPage';
 import './admin-styles.css';
+import CategorySettingsPage from './categorySettingsPage';
 
 const App = () => {
-    
     // Determine the current page from the URL query string
     const urlParams = new URLSearchParams( window.location.search );
     const currentPage = urlParams.get( 'page' );
@@ -16,9 +16,12 @@ const App = () => {
         return <SpatialDataEditPage />;
     }
 
+    if ( currentPage === 'bawbab-interactive-maps-category-settings' ) {
+        return <CategorySettingsPage />;
+    }
+
     // Default route
     return <MainSettingsPage />;
-    
 };
 
 /**
@@ -32,4 +35,3 @@ domReady(() => {
         root.render(<App />);
     }
 });
-

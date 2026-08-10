@@ -12,20 +12,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Enqueues compiled React dashboard scripts and stylesheets conditionally based on the active admin screen hook identifier string
  */
 function bwb_imaps_enqueue_admin_assets( $hook ) {
-    $allowed_pages = [
+    // Corrected screen hook identifiers matching parent slug "bawbab-interactive-maps-settings"
+    $allowed_pages = array(
         'toplevel_page_bawbab-interactive-maps-settings',
-        'bawbab-interactive-maps_page_bawbab-interactive-maps-edit-spatial-data'
-    ];
+        'bawbab-interactive-maps-settings_page_bawbab-interactive-maps-edit-spatial-data',
+        'bawbab-interactive-maps-settings_page_bawbab-interactive-maps-category-settings',
+    );
 
-    if ( ! in_array( $hook, $allowed_pages ) ) {
+    // Fail-safe check: match exact hook array OR any subpage under our plugin menu
+    if ( ! in_array( $hook, $allowed_pages, true ) && false === strpos( $hook, 'bawbab-interactive-maps' ) ) {
         return;
     }
 
     wp_enqueue_media();
-
     wp_enqueue_style( 'wp-components' );
 
-    // Move up two levels out of /core/ and /includes/ into the root plugin directory by passing '2' to dirname()
     $plugin_root_path = dirname( plugin_dir_path( __FILE__ ), 2 ) . '/';
     $plugin_root_url  = dirname( plugins_url( '', __FILE__ ), 2 ) . '/';
 
