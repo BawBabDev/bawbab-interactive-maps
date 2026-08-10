@@ -27,18 +27,25 @@
 
 ## 🔮 Next Steps & To-Do List
 
-🛠️ Immediate Fixes & Polish
-- Avoid constant page reload on data import / deletion or settings changes from the admin panel
-- Use custom confirmation modal everywhere
+Done
 - Fix remove button for custom fields + Option to remove entire column
-- Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks.
 - Styling & Legend Verification:
     - Verify that color picker selections properly update both the UI legend and live map rendering.
     - Adapt the legend to be dynamic
-    - Insure proper styling for additionnal custom fields + Allow to choose icons from a library or WP library
     - Simplify the category tool:
         - one ligne by category: label, pick color, pick group
         - simple tool to create new groups
+
+🛠️ Immediate Fixes & Polish
+- Avoid constant page reload on data import / deletion or settings changes from the admin panel
+- Editor
+    - Allow to modify batch of feature (ex. is interactive etc)
+    - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks. 
+    - Have option with pen button to edit actual name and code
+- Importer: make sure the predetermined data not imported don't end up in custom fields
+- Use custom confirmation modal everywhere
+- Styling & Legend Verification: Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
+
 
 🗺️ Future Roadmap Items
 - Multi-Layer Support: Build the architecture to add and toggle multiple layers.

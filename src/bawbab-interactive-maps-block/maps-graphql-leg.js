@@ -1,9 +1,9 @@
 import { useState, useEffect, Fragment } from '@wordpress/element';
-import Polygon from './hooks/polygonHelper';
+import Polygon from './hooks/usePolygonHelper';
 import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { useCoordinateFormatter } from '../admin/coordinateFormatter';
 import DrawingSidebar from './drawer';
-import { MapLegend, LayerToggler } from './components/map-controls';
+import { MapLegend, LayerToggler } from './components/mapControls';
 import { MapSearch } from './components/map-search';
 import { __ } from '@wordpress/i18n';
 

@@ -10,9 +10,10 @@ import { store as noticesStore } from '@wordpress/notices';
 import DataEditor from './components/DataEditor'; 
 import { AttributeSchemaManager } from './components/attributeSchemaManager';
 import BawBabIMaps from '../bawbab-interactive-maps-block/components/maps';
-import { DEFAULT_CATEGORY_CONFIG } from '../bawbab-interactive-maps-block/constants/mapConstants';
 import { discoverCustomAttributes, matchesAllFilters } from './utils/editFilters';
 import { useAttributeSchema } from './hooks/useAttributeSchema';
+import { useCategoryManager } from '../hooks/useCategoryManager';
+import { DEFAULT_GROUPS, DEFAULT_CATEGORY_MAPPINGS } from '../constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -35,6 +36,9 @@ const EditPage = () => {
     
     // Panel Tab Navigation State ('editor' vs 'schema')
     const [activeTab, setActiveTab] = useState('editor');
+
+    // Category Manager Hook (1-to-1 Groups & Mappings)
+    const { groups, categoryMap } = useCategoryManager();
 
     // Attribute Schema Hook
     const { schema, isLoadingSchema, updateSchemaKey, deleteSchemaKey, fetchSchema } = useAttributeSchema();
@@ -96,10 +100,10 @@ const EditPage = () => {
         setDynamicFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // 3. Process Two-Level Category Accordion Structure
+    // 3. Process Two-Level Category Accordion Structure Using 1-to-1 Groups
     const displayStructure = useMemo(() => {
-        const categoryConfig = window.bwbimapsSettings?.categoryConfig || DEFAULT_CATEGORY_CONFIG;
-        const configuredTabs = categoryConfig.tabs || DEFAULT_CATEGORY_CONFIG.tabs;
+        const activeGroups = groups.length > 0 ? groups : DEFAULT_GROUPS;
+        const activeMap = Object.keys(categoryMap).length > 0 ? categoryMap : DEFAULT_CATEGORY_MAPPINGS;
 
         const filteredFeatures = features.filter(f => 
             matchesAllFilters(f, searchQuery, filterCategory, dynamicFilters)
@@ -110,9 +114,11 @@ const EditPage = () => {
         const mainCategories = [];
         const assignedFeatureFids = new Set();
 
-        configuredTabs.forEach(tab => {
-            const tabCategories = tab.categories || [];
-            const matchingFeatures = filteredFeatures.filter(f => tabCategories.includes(f.properties?.category));
+        activeGroups.forEach(group => {
+            // Find categories assigned strictly to this group
+            const groupCategorySlugs = Object.keys(activeMap).filter(catSlug => activeMap[catSlug].groupId === group.id);
+
+            const matchingFeatures = filteredFeatures.filter(f => groupCategorySlugs.includes(f.properties?.category));
 
             if (matchingFeatures.length === 0) return;
 
@@ -123,7 +129,7 @@ const EditPage = () => {
 
             matchingFeatures.forEach(f => {
                 const p = f.properties || {};
-                if (p.name && p.code && tab.displayType === 'grouped') {
+                if (p.name && p.code && group.displayType === 'grouped') {
                     if (!subGroupMap[p.name]) subGroupMap[p.name] = [];
                     subGroupMap[p.name].push(f);
                 } else {
@@ -135,26 +141,27 @@ const EditPage = () => {
                 .filter(subName => subGroupMap[subName].length > 0)
                 .sort()
                 .map(subName => ({
-                    id: `sub-${tab.id}-${subName.replace(/\s+/g, '_')}`,
+                    id: `sub-${group.id}-${subName.replace(/\s+/g, '_')}`,
                     title: subName,
                     items: subGroupMap[subName].sort(naturalSort)
                 }));
 
             mainCategories.push({
-                id: `tab-${tab.id}`,
-                title: tab.title,
-                displayType: tab.displayType,
+                id: `group-${group.id}`,
+                title: group.title,
+                displayType: group.displayType || 'flat',
                 subGroups,
                 flatItems: flatItems.sort(naturalSort),
                 totalCount: matchingFeatures.length
             });
         });
 
+        // Collect unassigned features
         const unassignedFeatures = filteredFeatures.filter(f => !assignedFeatureFids.has(`${f.properties.layer_type}-${f.properties.fid}`));
 
         if (unassignedFeatures.length > 0) {
             mainCategories.push({
-                id: 'tab-unassigned',
+                id: 'group-unassigned',
                 title: __('Unassigned / Other Features', TEXT_DOMAIN),
                 displayType: 'flat',
                 subGroups: [],
@@ -164,7 +171,7 @@ const EditPage = () => {
         }
 
         return mainCategories;
-    }, [features, searchQuery, filterCategory, dynamicFilters]);
+    }, [features, searchQuery, filterCategory, dynamicFilters, groups, categoryMap]);
 
     const updateDraft = (layerType, fid, data) => {
         const compositeKey = `${layerType}::${fid}`;
@@ -263,7 +270,7 @@ const EditPage = () => {
                 key={`${f.properties.layer_type}-${f.properties.fid}`} 
                 onClick={() => {
                     setActiveFeature(f);
-                    setActiveTab('editor'); // Auto-switch to editor view when a feature is clicked
+                    setActiveTab('editor');
                 }}
                 style={{ 
                     padding: '8px 12px', 
@@ -328,7 +335,7 @@ const EditPage = () => {
                             mapLogo: logo,
                             navBackground: bg,
                             colorTheme: theme,
-                            categoryConfig: data.categoryConfig || DEFAULT_CATEGORY_CONFIG
+                            categoryConfig: data.categoryConfig || null
                         };
                     }
                 })
@@ -585,7 +592,7 @@ const EditPage = () => {
                                         key={`${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`} 
                                         building={activeFeature} 
                                         draft={drafts[activeCompositeKey] || {}}
-                                        globalSchema={schema} // Pass central attribute schema to editor
+                                        globalSchema={schema}
                                         updateDraft={(data) => updateDraft(activeFeature.properties.layer_type, activeFeature.properties.fid, data)}
                                         onUpdate={saveAllDrafts}
                                         onCancel={handleCancel}

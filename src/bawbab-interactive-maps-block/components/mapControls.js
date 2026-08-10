@@ -1,6 +1,7 @@
 import { __ } from '@wordpress/i18n';
-import { useState, useEffect, useRef } from '@wordpress/element';
+import { useState, useEffect, useRef, useMemo } from '@wordpress/element';
 import { Icon } from '@iconify/react';
+import { useCategoryManager } from '../../hooks/useCategoryManager';
 
 const LegendIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/></svg>
@@ -32,6 +33,8 @@ export const MapLegend = ({ mapDimensions }) => {
     const [isOpen, setIsOpen] = useState(true);
     const hasInitialized = useRef(false);
 
+    const { categoryMap, discoveredCategories } = useCategoryManager();
+
     useEffect(() => {
         if (width > 0 && !hasInitialized.current) {
             if (isSmallUI) setIsOpen(false);
@@ -39,20 +42,22 @@ export const MapLegend = ({ mapDimensions }) => {
         }
     }, [width, height, isSmallUI]);
 
-    const legendItems = [
-        { label: 'Residential Apartments', color: '#d70f4f' },
-        { label: 'Cottages', color: '#d776e9' },
-        { label: 'Community Center', color: '#ed8401' },
-        { label: 'Personal Care', color: '#f6e395' },
-        { label: 'Skilled Care', color: '#ede370' },
-        { label: 'Amenities', color: '#48dad0' },
-        { label: 'Fitness Center', color: '#6ab6ea' },
-        { label: 'Utilities', color: '#0f73d7' },
-        { label: 'Carport / Garage / Support', color: '#ce6787' },
-        { label: 'Pathways / Patios', color: '#ddebaf' },
-        { label: 'Trail', color: '#7c4e1c' },
-        { label: 'Indoor / Covered Pathways', colors: ['#e39cb2', '#feba67', '#ede79f'] },
-    ];
+    // Build dynamic legend items from categoryMap (discovered or mapped categories)
+    const legendItems = useMemo(() => {
+        const categoriesToRender = discoveredCategories.length > 0 
+            ? discoveredCategories 
+            : Object.keys(categoryMap);
+
+        return categoriesToRender.map(catSlug => {
+            const item = categoryMap[catSlug] || {};
+            return {
+                slug: catSlug,
+                label: item.label || catSlug,
+                color: item.color || '#007cba',
+                colors: item.colors || null // Supports multi-color swatch array if defined
+            };
+        });
+    }, [categoryMap, discoveredCategories]);
 
     return (
         <div 
@@ -109,15 +114,17 @@ export const MapLegend = ({ mapDimensions }) => {
                 padding: '0 16px 16px 16px', 
                 opacity: isOpen ? 1 : 0,
                 transition: 'opacity 0.2s ease',
-                pointerEvents: isOpen ? 'auto' : 'none'
+                pointerEvents: isOpen ? 'auto' : 'none',
+                overflowY: 'auto',
+                maxHeight: '440px'
             }}>
                 <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {legendItems.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {legendItems.map((item) => (
+                        <div key={item.slug} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
                                 {(item.colors || [item.color]).map((swatchColor, swatchIdx) => (
                                     <div
-                                        key={`${idx}-${swatchIdx}`}
+                                        key={`${item.slug}-${swatchIdx}`}
                                         style={{
                                             width: '12px',
                                             height: '12px',
@@ -142,10 +149,7 @@ export const LayerToggler = ({ visibleLayers, layerOpacity, onToggle, onOpacityC
     const { width = 0, height = 0 } = mapDimensions || {};
     const isSmallUI = width > 0 && (width < 800 || height < 500);
 
-    // CLOSED BY DEFAULT ON ALL SCREEN SIZES
     const [isOpen, setIsOpen] = useState(false);
-
-    // Layers that should NOT show an opacity slider
     const noOpacityLayers = ['parcels', 'labels', 'markers'];
 
     return (
@@ -189,7 +193,6 @@ export const LayerToggler = ({ visibleLayers, layerOpacity, onToggle, onOpacityC
                         <span>{layer.replace('_', ' ')}</span>
                     </div>
 
-                    {/* Only show opacity slider if layer is visible AND not in the excluded list */}
                     {visibleLayers[layer] && !noOpacityLayers.includes(layer) && (
                         <input 
                             type="range" className="subtle-slider"
@@ -231,7 +234,6 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
             const container = activeRef.current.parentElement;
             const target = activeRef.current;
 
-            // Scroll ONLY the floor stack container
             container.scrollTo({
                 top: target.offsetTop - container.offsetTop,
                 behavior: 'smooth'
@@ -239,7 +241,6 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
         }
     }, [isOpen, activeFloor]);
 
-    // Sort floors top-to-bottom: highest first
     const sortedFloors = [...availableFloors].sort((a, b) => b - a);
 
     useEffect(() => {
@@ -282,7 +283,6 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
             }}
             onClick={() => !isOpen && setIsOpen(true)}
         >
-            {/* Header icon / close button */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -303,7 +303,6 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
                 )}
             </div>
 
-            {/* Floor stack - scrollable */}
             {isOpen && (
                 <div style={{
                     overflowY: 'auto',

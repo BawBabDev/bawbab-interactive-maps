@@ -67,19 +67,33 @@ const MainSettingsPage = () => {
     const handleSave = async () => {
         setIsSaving( true );
         try {
+            // 1. Fetch current saved options to preserve categoryConfig & attribute_schema
+            let currentOptions = {};
+            try {
+                const settingsRes = await apiFetch( { path: '/wp/v2/settings' } );
+                currentOptions = settingsRes?.bwb_imaps_options_data || {};
+            } catch ( err ) {
+                console.warn( 'Could not fetch existing options before save:', err );
+            }
+
+            // 2. Helper to guarantee string types for REST API validation
+            const safeString = ( val ) => ( typeof val === 'string' ? val : ( val?.url || '' ) );
+
+            // 3. POST merged payload to REST API
             await apiFetch( {
                 path: '/wp/v2/settings',
                 method: 'POST',
                 data: {
                     bwb_imaps_options_data: {
-                        mapDescription,
-                        mapType,
-                        locations,
-                        mapLogo,
-                        navBackground,
-                        colorTheme,
-                        googleApiKey,
-                        googleMapId
+                        ...currentOptions, // Preserves categoryConfig & attribute_schema!
+                        mapDescription: safeString( mapDescription ),
+                        mapType: safeString( mapType ),
+                        locations: Array.isArray( locations ) ? locations : [],
+                        mapLogo: safeString( mapLogo ),
+                        navBackground: safeString( navBackground ), // Guarantees string type!
+                        colorTheme: safeString( colorTheme ),
+                        googleApiKey: safeString( googleApiKey ),
+                        googleMapId: safeString( googleMapId )
                     }
                 },
             } );
@@ -87,12 +101,12 @@ const MainSettingsPage = () => {
             // Explicit memory management sync parameters to window state
             window.bwbimapsSettings = {
                 ...window.bwbimapsSettings,
-                mapType,
-                colorTheme,
-                mapLogo,
-                googleApiKey,
-                googleMapId,
-                navBackground
+                mapType: safeString( mapType ),
+                colorTheme: safeString( colorTheme ),
+                mapLogo: safeString( mapLogo ),
+                googleApiKey: safeString( googleApiKey ),
+                googleMapId: safeString( googleMapId ),
+                navBackground: safeString( navBackground )
             };
 
             createSuccessNotice( __( 'Settings saved successfully!', 'bawbab-interactive-maps' ), {
@@ -103,6 +117,7 @@ const MainSettingsPage = () => {
                 window.location.reload();
             }, 800);
         } catch ( error ) {
+            console.error( 'Save settings REST error:', error );
             createErrorNotice( __( 'Error saving settings: ', 'bawbab-interactive-maps' ) + error.message );
         } finally {
             setIsSaving( false );

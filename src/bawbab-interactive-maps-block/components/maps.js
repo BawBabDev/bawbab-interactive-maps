@@ -4,7 +4,7 @@ import Polyline from '../hooks/usePolylineHelper';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { useCoordinateFormatter } from '../hooks/useCoordinateFormatter';
 import DrawingSidebar from './drawer';
-import { MapLegend, LayerToggler, FloorSwitcher } from './map-controls';
+import { MapLegend, LayerToggler, FloorSwitcher } from './mapControls';
 import { MapSearch } from './map-search';
 import { ZoomHandler } from './mapsZoomHandler';
 import { MapLabels } from './map-labels';
@@ -14,7 +14,7 @@ import { __ } from '@wordpress/i18n';
 
 import { useMapDimensions } from '../hooks/useMapDimensions';
 import { useMapLayers } from '../hooks/useMapLayers';
-import { useMapCategoryColors } from '../hooks/useMapCategoryColors';
+import { useCategoryManager } from '../../hooks/useCategoryManager';
 import { calculateSpatialBounds } from '../utils/mapBounds';
 import { SpatialFeaturesRenderer } from './spatialFeaturesRenderer';
 import { 
@@ -74,7 +74,22 @@ export default function BawBabIMaps({
         activeFloor, setActiveFloor, availableFloors 
     } = useMapLayers(spatialFeatures);
 
-    const { categoryColorMap, processedSpatialFeatures } = useMapCategoryColors(spatialFeatures);
+    // 2. Central Category & Color Manager
+    const { categoryMap, processSpatialFeatures } = useCategoryManager();
+
+    // Process spatial features with group IDs, display labels, and fill colors
+    const processedSpatialFeatures = useMemo(() => {
+        return processSpatialFeatures(spatialFeatures);
+    }, [spatialFeatures, processSpatialFeatures]);
+
+    // Build flat category-to-color lookup map for Legend component
+    const categoryColorMap = useMemo(() => {
+        const flatMap = {};
+        Object.keys(categoryMap).forEach(cat => {
+            flatMap[cat] = categoryMap[cat].color || '#007cba';
+        });
+        return flatMap;
+    }, [categoryMap]);
 
     useMapUrlParams(spatialFeatures, setActiveFloor, setSelectedLocation, setIsDrawerOpen);
 
@@ -83,7 +98,7 @@ export default function BawBabIMaps({
         setIsLightboxOpen(true);
     };
 
-    // 2. Compute Container-Relative Sidebar Width & Bounds
+    // 3. Compute Container-Relative Sidebar Width & Bounds
     const containerWidth = dimensions.width || 0;
 
     const sidebarWidth = useMemo(() => {

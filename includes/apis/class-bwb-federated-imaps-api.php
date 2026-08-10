@@ -434,6 +434,55 @@ class BWB_Federated_Imaps_API_Controller {
     }
 
     /**
+     * Helper: Syncs newly imported spatial categories and their fill colors into categoryConfig option
+     *
+     * @param array $category_color_map Key-value pair of category_slug => hex_color
+     */
+    private function sync_imported_categories_to_config( $category_color_map = array() ) {
+        if ( empty( $category_color_map ) ) return;
+
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
+
+        $groups      = isset( $config['groups'] ) && is_array( $config['groups'] ) ? $config['groups'] : array();
+        $categoryMap = isset( $config['categoryMap'] ) && is_array( $config['categoryMap'] ) ? $config['categoryMap'] : array();
+
+        // Default fallback group ID if no groups exist
+        $default_group_id = ! empty( $groups[0]['id'] ) ? $groups[0]['id'] : 'amenities';
+        $has_changes      = false;
+
+        foreach ( $category_color_map as $cat_slug => $hex_color ) {
+            $clean_slug = sanitize_key( $cat_slug );
+            if ( empty( $clean_slug ) ) continue;
+
+            if ( ! isset( $categoryMap[$clean_slug] ) ) {
+                $formatted_label = ucwords( str_replace( '_', ' ', $clean_slug ) );
+                $clean_color     = sanitize_hex_color( $hex_color );
+
+                $categoryMap[$clean_slug] = array(
+                    'label'   => $formatted_label,
+                    'groupId' => $default_group_id,
+                    'color'   => ! empty( $clean_color ) ? $clean_color : '#007cba',
+                );
+                $has_changes = true;
+            } elseif ( empty( $categoryMap[$clean_slug]['color'] ) && ! empty( $hex_color ) ) {
+                // Update color if category existed without an explicit color
+                $clean_color = sanitize_hex_color( $hex_color );
+                if ( ! empty( $clean_color ) ) {
+                    $categoryMap[$clean_slug]['color'] = $clean_color;
+                    $has_changes = true;
+                }
+            }
+        }
+
+        if ( $has_changes ) {
+            $config['categoryMap']      = $categoryMap;
+            $settings['categoryConfig'] = $config;
+            update_option( 'bwb_imaps_options_data', $settings );
+        }
+    }
+
+    /**
      * POST Route Callback: Import spatial features
      */
     public function handle_spatial_geojson_import($request) {
@@ -456,6 +505,7 @@ class BWB_Federated_Imaps_API_Controller {
         $custom_keys_param = $request->get_param( 'imported_custom_keys' );
         $imported_custom_keys = is_string( $custom_keys_param ) ? ( json_decode( stripslashes( $custom_keys_param ), true ) ?: array() ) : ( is_array( $custom_keys_param ) ? $custom_keys_param : array() );
 
+        // Extract scalar string key names safely from objects or arrays
         $raw_key_names = array();
         foreach ( $imported_custom_keys as $k => $v ) {
             if ( is_array( $v ) && isset( $v['key'] ) ) {
@@ -467,6 +517,7 @@ class BWB_Federated_Imaps_API_Controller {
             }
         }
 
+        // Auto-sync imported custom keys into central attribute schema
         $this->sync_custom_keys_to_schema( $imported_custom_keys );
 
         $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
@@ -475,8 +526,9 @@ class BWB_Federated_Imaps_API_Controller {
             return new WP_Error( 'invalid_json', 'Invalid GeoJSON payload.', array( 'status' => 400 ) );
         }
 
-        $imported_fids   = array();
-        $processed_count = 0;
+        $imported_fids              = array();
+        $processed_count            = 0;
+        $discovered_category_colors = array();
 
         $reserved_cols = array(
             'fid', 'name', 'category', 'code', 'fill_color', 'lat', 'lng', 'floor',
@@ -572,6 +624,13 @@ class BWB_Federated_Imaps_API_Controller {
                     $v_wp_page_id = ! empty( $get_mapped_val('wp_page_id') ) ? (int) $get_mapped_val('wp_page_id') : null;
                     $v_floor      = (int)( $get_mapped_val('floor') ?? 0 );
 
+                    // Collect category slugs and their colors for categoryConfig auto-sync
+                    if ( ! empty( $v_category ) ) {
+                        if ( ! isset( $discovered_category_colors[$v_category] ) || ! empty( $v_color ) ) {
+                            $discovered_category_colors[$v_category] = $v_color;
+                        }
+                    }
+
                     list( $calc_lat, $calc_lng ) = $this->compute_centroid_from_geom( $feature['geometry'] ?? array() );
 
                     $lat_mapped = $field_mapping['lat'] ?? null;
@@ -643,6 +702,11 @@ class BWB_Federated_Imaps_API_Controller {
                     ) ) { $processed_count++; }
                 }
                 break;
+        }
+
+        // Auto-sync any categories and colors discovered in GeoJSON to categoryConfig
+        if ( ! empty( $discovered_category_colors ) ) {
+            $this->sync_imported_categories_to_config( $discovered_category_colors );
         }
 
         if ( ! empty( $imported_fids ) ) {

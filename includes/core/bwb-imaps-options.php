@@ -9,22 +9,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sanitizes and logs global settings changes
+ * Sanitizes global settings changes and protects core string types
  */
 function bwb_imaps_sanitize_global_settings( $input ) {
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( '[BWB iMaps Options Sanitizer] Received option payload: ' . print_r( $input, true ) );
-        if ( isset( $input['attribute_schema'] ) ) {
-            error_log( '[BWB iMaps Options Sanitizer] attribute_schema count: ' . count( (array) $input['attribute_schema'] ) );
+    if ( ! is_array( $input ) ) {
+        return array();
+    }
+
+    // Ensure all string fields are valid strings
+    $string_fields = array( 
+        'mapDescription', 
+        'mapType', 
+        'mapLogo', 
+        'colorTheme', 
+        'navBackground', 
+        'googleApiKey', 
+        'googleMapId' 
+    );
+
+    foreach ( $string_fields as $field ) {
+        if ( isset( $input[ $field ] ) ) {
+            if ( is_array( $input[ $field ] ) || is_object( $input[ $field ] ) ) {
+                $input[ $field ] = isset( $input[ $field ]['url'] ) ? (string) $input[ $field ]['url'] : '';
+            } else {
+                $input[ $field ] = (string) $input[ $field ];
+            }
         } else {
-            error_log( '[BWB iMaps Options Sanitizer] attribute_schema is NOT SET in input payload!' );
+            $input[ $field ] = '';
         }
     }
+
+    if ( ! isset( $input['categoryConfig'] ) || ! is_array( $input['categoryConfig'] ) ) {
+        $input['categoryConfig'] = array(
+            'groups'      => array(),
+            'categoryMap' => array(),
+        );
+    }
+
+    if ( ! isset( $input['attribute_schema'] ) || ! is_array( $input['attribute_schema'] ) ) {
+        $input['attribute_schema'] = array();
+    }
+
+    if ( ! isset( $input['locations'] ) || ! is_array( $input['locations'] ) ) {
+        $input['locations'] = array();
+    }
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( '[BWB iMaps Options Sanitizer] Processed option payload: ' . print_r( $input, true ) );
+    }
+
     return $input;
 }
 
 /**
- * Registers the map options dataset configuration layout within the WordPress option and REST system
+ * Registers global settings with full schema support for REST API
  */
 function bwb_imaps_register_global_settings() {
     register_setting(
@@ -35,8 +73,9 @@ function bwb_imaps_register_global_settings() {
             'sanitize_callback' => 'bwb_imaps_sanitize_global_settings',
             'show_in_rest'      => array(
                 'schema' => array(
-                    'type'       => 'object',
-                    'properties' => array(
+                    'type'                 => 'object',
+                    'additionalProperties' => true,
+                    'properties'           => array(
                         'mapDescription'   => array( 'type' => 'string' ),
                         'mapType'          => array( 'type' => 'string' ),
                         'mapLogo'          => array( 'type' => 'string' ),
@@ -44,29 +83,22 @@ function bwb_imaps_register_global_settings() {
                         'navBackground'    => array( 'type' => 'string' ),
                         'googleApiKey'     => array( 'type' => 'string' ),
                         'googleMapId'      => array( 'type' => 'string' ),
+                        'categoryConfig'   => array(
+                            'type'                 => 'object',
+                            'additionalProperties' => true,
+                        ),
                         'attribute_schema' => array(
-                            'type'  => 'array',
-                            'items' => array(
-                                'type'       => 'object',
-                                'properties' => array(
-                                    'key'   => array( 'type' => 'string' ),
-                                    'label' => array( 'type' => 'string' ),
-                                    'type'  => array( 'type' => 'string' ), // 'text', 'number', 'boolean', 'bathrooms'
-                                ),
+                            'type'                 => 'array',
+                            'items'                => array(
+                                'type'                 => 'object',
+                                'additionalProperties' => true,
                             ),
                         ),
                         'locations'        => array(
-                            'type'  => 'array',
-                            'items' => array(
-                                'type'       => 'object',
-                                'properties' => array(
-                                    'title'       => array( 'type' => 'string' ),
-                                    'lat'         => array( 'type' => 'string' ),
-                                    'lng'         => array( 'type' => 'string' ),
-                                    'description' => array( 'type' => 'string' ),
-                                    'gallery'     => array( 'type' => 'array' ),
-                                    'showMarker'  => array( 'type' => 'boolean' ),
-                                ),
+                            'type'                 => 'array',
+                            'items'                => array(
+                                'type'                 => 'object',
+                                'additionalProperties' => true,
                             ),
                         ),
                     ),
@@ -75,19 +107,17 @@ function bwb_imaps_register_global_settings() {
             'default' => array(
                 'mapDescription'   => 'Bawbab Interactive Maps',
                 'mapType'          => 'hybrid',
+                'mapLogo'          => '',
+                'colorTheme'       => 'blue',
+                'navBackground'    => '',
                 'googleApiKey'     => '',
                 'googleMapId'      => '',
-                'attribute_schema' => array(),
-                'locations'        => array(
-                    array(
-                        'title'       => 'Main office',
-                        'lat'         => '40.202687',
-                        'lng'         => '-75.251563',
-                        'description' => 'Bawbab Maps Main Office',
-                        'gallery'     => array(),
-                        'showMarker'  => true,
-                    )
+                'categoryConfig'   => array(
+                    'groups'      => array(),
+                    'categoryMap' => array(),
                 ),
+                'attribute_schema' => array(),
+                'locations'        => array(),
             ),
         )
     );

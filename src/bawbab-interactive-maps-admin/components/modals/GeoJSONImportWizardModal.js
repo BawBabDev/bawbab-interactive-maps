@@ -246,7 +246,7 @@ export const GeoJSONImportWizardModal = ({
     const propertySelectOptions = [
         { label: __('-- Select GeoJSON Column --', TEXT_DOMAIN), value: '' },
         ...detectedKeys.map(key => ({
-            label: `${key}${sampleProps[key] !== undefined ? `(e.g. "${sampleProps[key]}")` : ''}`,
+            label: `${key} ${sampleProps[key] !== undefined ? `(e.g. "${sampleProps[key]}")` : ''}`,
             value: key
         }))
     ];
@@ -369,7 +369,7 @@ export const GeoJSONImportWizardModal = ({
                                                         <span>
                                                             <strong>{key}</strong>
                                                             <span style={{ fontSize: '11px', color: '#666', marginLeft: '6px' }}>
-                                                                {`[${inferredType}]${sampleVal !== undefined ? `(e.g., "${sampleVal}")` : ''}`}
+                                                                {`[${inferredType}] ${sampleVal !== undefined ? `(e.g., "${sampleVal}")` : ''}`}
                                                             </span>
                                                         </span>
                                                     }

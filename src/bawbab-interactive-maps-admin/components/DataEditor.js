@@ -1,10 +1,11 @@
 import { 
     Button, ButtonGroup, FlexItem, TextControl, TextareaControl, Flex, Dashicon,
-    Modal, ComboboxControl, ToggleControl, SelectControl, __experimentalText as Text 
+    Modal, ComboboxControl, ToggleControl, SelectControl, ColorPicker, Dropdown, __experimentalText as Text 
 } from '@wordpress/components';
 import { useState, useEffect, useMemo } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
+import { useCategoryManager } from '../../hooks/useCategoryManager';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -22,9 +23,7 @@ const createKeySlug = (label) => {
 };
 
 /**
- * PropertyInputControl
- * Renders True 3-State Controls (Yes / No / Unset) for Booleans,
- * and input boxes perfectly baseline-aligned with clear (X) buttons for Numbers/Text.
+ * PropertyInputControl Component
  */
 const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onClear }) => {
     const lowerKey = propKey.toLowerCase();
@@ -39,7 +38,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
         isValueNumber ? 'number' : 'text'
     );
 
-    // 1. TRUE 3-STATE SEGMENTED CONTROL FOR BOOLEANS (Yes / No / Unset)
     if (resolvedType === 'boolean') {
         const isNullOrUnset = value === null || value === undefined || value === '';
         const isTrue = !isNullOrUnset && (value === true || value === 'true' || value === 1 || value === '1');
@@ -51,7 +49,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
                     {displayLabel}
                 </span>
 
-                {/* NATIVE WORDPRESS BUTTON GROUP (TRUE 3-STATE CONTROL) */}
                 <ButtonGroup>
                     <Button
                         isSmall
@@ -83,7 +80,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
         );
     }
 
-    // HELPER: Renders Label above, and Input + Clear (X) Button aligned on the exact same row below
     const renderAlignedControl = (inputNode) => (
         <div>
             <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
@@ -108,7 +104,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
         </div>
     );
 
-    // 2. Bathroom Stepper Input (0.5 steps)
     if (resolvedType === 'bathrooms') {
         return renderAlignedControl(
             <TextControl
@@ -124,7 +119,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
         );
     }
 
-    // 3. Numeric Stepper Input (0.5 steps)
     if (resolvedType === 'number') {
         return renderAlignedControl(
             <TextControl
@@ -138,7 +132,6 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
         );
     }
 
-    // 4. Default Text Control
     return renderAlignedControl(
         <TextControl
             value={value !== null && value !== undefined ? String(value) : ''}
@@ -174,6 +167,11 @@ const DataEditor = ({
     const [newPropType, setNewPropType] = useState('text');
     const [showAddPropModal, setShowAddPropModal] = useState(false);
 
+    // Get category settings to display master category color
+    const { categoryMap } = useCategoryManager();
+    const currentCategory = building.properties?.category;
+    const globalCategoryColor = categoryMap[currentCategory]?.color || '#007cba';
+
     const derivedSlugKey = createKeySlug(newPropLabel);
 
     useEffect(() => {
@@ -200,6 +198,20 @@ const DataEditor = ({
             return localProps.custom_attributes[key];
         }
         return '';
+    };
+
+    // Fill Color Override Logic
+    const currentFillColor = getValue('fill_color', localProps.fill_color);
+    const hasCustomFillColor = Boolean(currentFillColor && currentFillColor.trim() !== '');
+
+    const handleToggleCustomColor = (enabled) => {
+        if (enabled) {
+            // Enable override: start with existing color or global category color
+            updateDraft({ fill_color: currentFillColor || globalCategoryColor });
+        } else {
+            // Disable override: reset fill_color to empty string so global category color applies
+            updateDraft({ fill_color: '' });
+        }
     };
 
     const mergedCustomAttributes = useMemo(() => {
@@ -288,7 +300,7 @@ const DataEditor = ({
                 </Text>
             </div>
 
-            {/* 1. DISPLAY TITLE OVERRIDE (FIRST BOX) */}
+            {/* 1. DISPLAY TITLE OVERRIDE */}
             <div style={{ marginBottom: '20px' }}>
                 <TextControl 
                     label={__('Display Title (Overrides WP Page Title)', TEXT_DOMAIN)} 
@@ -299,7 +311,7 @@ const DataEditor = ({
                 />
             </div>
 
-            {/* 2. LINKED WORDPRESS PAGE (SECOND BOX) */}
+            {/* 2. LINKED WORDPRESS PAGE */}
             <div style={{ padding: '15px', background: '#f0f6fb', borderRadius: '4px', borderLeft: '4px solid #2271b1', marginBottom: '20px' }}>
                 <ComboboxControl
                     label={__('Linked WordPress Page', TEXT_DOMAIN)}
@@ -309,7 +321,75 @@ const DataEditor = ({
                 />
             </div>
 
-            {/* 3. CUSTOM FEATURE PROPERTIES (UNIFIED LIGHT GRAY CONTAINER) */}
+            {/* 3. UNIT FILL COLOR OVERRIDE CONTROL */}
+            <div style={{ padding: '15px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '4px', marginBottom: '20px' }}>
+                <Flex align="center" justify="space-between" style={{ marginBottom: hasCustomFillColor ? '12px' : '0' }}>
+                    <div>
+                        <Text variant="label" display="block" style={{ fontWeight: '600' }}>
+                            {__('Unit Custom Fill Color', TEXT_DOMAIN)}
+                        </Text>
+                        <Text variant="caption" style={{ color: '#666', fontSize: '11px' }}>
+                            {hasCustomFillColor 
+                                ? __('Custom color enabled for this specific unit.', TEXT_DOMAIN)
+                                : sprintf(__('Using global category color (%s). Toggle on to set a custom color.', TEXT_DOMAIN), globalCategoryColor)
+                            }
+                        </Text>
+                    </div>
+
+                    <ToggleControl
+                        checked={hasCustomFillColor}
+                        onChange={handleToggleCustomColor}
+                        __nextHasNoMarginBottom
+                    />
+                </Flex>
+
+                {hasCustomFillColor && (
+                    <Flex align="center" gap={3} style={{ paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                        <FlexItem style={{ flex: 1 }}>
+                            <TextControl
+                                label={__('Hex Color Code', TEXT_DOMAIN)}
+                                value={currentFillColor}
+                                onChange={(val) => updateDraft({ fill_color: val })}
+                                placeholder={globalCategoryColor}
+                                style={{ height: '36px' }}
+                                __nextHasNoMarginBottom
+                            />
+                        </FlexItem>
+
+                        <FlexItem style={{ alignSelf: 'flex-end' }}>
+                            <Dropdown
+                                renderToggle={({ isOpen, onToggle }) => (
+                                    <Button
+                                        onClick={onToggle}
+                                        aria-expanded={isOpen}
+                                        style={{
+                                            width: '36px',
+                                            height: '36px',
+                                            padding: 0,
+                                            borderRadius: '4px',
+                                            background: currentFillColor || globalCategoryColor,
+                                            border: '2px solid #fff',
+                                            boxShadow: '0 0 0 1px #ccc',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                )}
+                                renderContent={() => (
+                                    <div style={{ padding: '12px' }}>
+                                        <ColorPicker
+                                            color={currentFillColor || globalCategoryColor}
+                                            onChangeComplete={(val) => updateDraft({ fill_color: val.hex })}
+                                            disableAlpha
+                                        />
+                                    </div>
+                                )}
+                            />
+                        </FlexItem>
+                    </Flex>
+                )}
+            </div>
+
+            {/* 4. CUSTOM FEATURE PROPERTIES */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Flex align="center" justify="space-between" style={{ marginBottom: '12px' }}>
                     <Text variant="label" display="block" style={{ fontWeight: '600' }}>
@@ -358,7 +438,7 @@ const DataEditor = ({
                 )}
             </div>
 
-            {/* 4. MEDIA OVERRIDES SECTION */}
+            {/* 5. MEDIA OVERRIDES SECTION */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Page Media Overrides (Video & Floorplan)', TEXT_DOMAIN)}
@@ -416,7 +496,7 @@ const DataEditor = ({
                 </div>
             </div>
 
-            {/* 5. CUSTOM DESCRIPTION */}
+            {/* 6. CUSTOM DESCRIPTION */}
             <div style={{ marginBottom: '20px' }}>
                 <TextareaControl 
                     label={__('Custom Description', TEXT_DOMAIN)} 
@@ -436,7 +516,7 @@ const DataEditor = ({
                 )}
             </div>
 
-            {/* 6. MAP BEHAVIOR TOGGLES (BOTTOM) */}
+            {/* 7. MAP BEHAVIOR TOGGLES */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Map Interaction & Display Settings', TEXT_DOMAIN)}
@@ -455,7 +535,7 @@ const DataEditor = ({
                 </div>
             </div>
 
-            {/* 7. CUSTOM GALLERY */}
+            {/* 8. CUSTOM GALLERY */}
             <div style={{ margin: '20px 0' }}>
                 <Text variant="label" display="block" style={{ marginBottom: '10px' }}>{__('Custom Gallery', TEXT_DOMAIN)}</Text>
                 <Flex wrap="wrap" gap={2} style={{ marginBottom: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '4px', justifyContent: 'flex-start' }}>
@@ -477,7 +557,7 @@ const DataEditor = ({
                 }} style={{ width: '100%', justifyContent: 'center' }}>{__('Manage Images', TEXT_DOMAIN)}</Button>
             </div>
 
-            {/* 8. ACTION BUTTONS */}
+            {/* 9. ACTION BUTTONS */}
             <Flex justify="flex-start" style={{ marginTop: '30px', gap: '15px' }}>
                 <Button variant="secondary" onClick={() => setShowCancelModal(true)} disabled={isSaving || !hasChanges} style={{ height: '40px', flex: '1', justifyContent: 'center' }}>
                     {__('Discard All Changes', TEXT_DOMAIN)}
