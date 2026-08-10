@@ -61,6 +61,7 @@ const PropertyInputControl = ({ propKey, label, value, schemaType, onChange, onC
                         isSmall
                         variant={isFalse ? 'destructive' : 'secondary'}
                         onClick={() => onChange(false)}
+                        style={isFalse ? { background: '#d63638', color: '#fff', borderColor: '#d63638' } : undefined}
                     >
                         {__('No', TEXT_DOMAIN)}
                     </Button>
@@ -167,10 +168,28 @@ const DataEditor = ({
     const [newPropType, setNewPropType] = useState('text');
     const [showAddPropModal, setShowAddPropModal] = useState(false);
 
-    // Get category settings to display master category color
+    // Category Manager
     const { categoryMap } = useCategoryManager();
-    const currentCategory = building.properties?.category;
+
+    const getValue = (key, dbValue) => {
+        if (draft && draft.hasOwnProperty(key)) return draft[key];
+        if (dbValue !== null && dbValue !== undefined) return dbValue;
+        if (localProps.custom_attributes && localProps.custom_attributes[key] !== undefined) {
+            return localProps.custom_attributes[key];
+        }
+        return '';
+    };
+
+    // Category Selection State
+    const currentCategory = getValue('category', localProps.category);
     const globalCategoryColor = categoryMap[currentCategory]?.color || '#007cba';
+
+    const categoryOptions = useMemo(() => {
+        return Object.keys(categoryMap).map(slug => ({
+            label: categoryMap[slug].label || formatFieldLabel(slug),
+            value: slug
+        }));
+    }, [categoryMap]);
 
     const derivedSlugKey = createKeySlug(newPropLabel);
 
@@ -191,25 +210,21 @@ const DataEditor = ({
         setLocalProps(building.properties);
     }, [building.properties]); 
 
-    const getValue = (key, dbValue) => {
-        if (draft && draft.hasOwnProperty(key)) return draft[key];
-        if (dbValue !== null && dbValue !== undefined) return dbValue;
-        if (localProps.custom_attributes && localProps.custom_attributes[key] !== undefined) {
-            return localProps.custom_attributes[key];
-        }
-        return '';
-    };
+    // Custom Fill Color Toggle Logic:
+    // Check if a draft overrides fill_color FIRST.
+    // Otherwise, toggle is ON only if localProps.fill_color exists and differs from globalCategoryColor.
+    const activeFillColor = draft.hasOwnProperty('fill_color') 
+        ? draft.fill_color 
+        : (localProps.fill_color && localProps.fill_color !== globalCategoryColor ? localProps.fill_color : '');
 
-    // Fill Color Override Logic
-    const currentFillColor = getValue('fill_color', localProps.fill_color);
-    const hasCustomFillColor = Boolean(currentFillColor && currentFillColor.trim() !== '');
+    const hasCustomFillColor = Boolean(activeFillColor && activeFillColor.trim() !== '');
 
     const handleToggleCustomColor = (enabled) => {
         if (enabled) {
-            // Enable override: start with existing color or global category color
-            updateDraft({ fill_color: currentFillColor || globalCategoryColor });
+            // Toggle ON: Start with active color, local color, or global category color
+            updateDraft({ fill_color: activeFillColor || localProps.fill_color || globalCategoryColor });
         } else {
-            // Disable override: reset fill_color to empty string so global category color applies
+            // Toggle OFF: Clear fill_color to "" so MySQL row reverts to category default
             updateDraft({ fill_color: '' });
         }
     };
@@ -311,7 +326,19 @@ const DataEditor = ({
                 />
             </div>
 
-            {/* 2. LINKED WORDPRESS PAGE */}
+            {/* 2. CATEGORY PICKER */}
+            <div style={{ marginBottom: '20px' }}>
+                <SelectControl
+                    label={__('Feature Category', TEXT_DOMAIN)}
+                    value={currentCategory}
+                    options={categoryOptions}
+                    onChange={(val) => updateDraft({ category: val })}
+                    help={__('Determines default group placement and color theme.', TEXT_DOMAIN)}
+                    __nextHasNoMarginBottom
+                />
+            </div>
+
+            {/* 3. LINKED WORDPRESS PAGE */}
             <div style={{ padding: '15px', background: '#f0f6fb', borderRadius: '4px', borderLeft: '4px solid #2271b1', marginBottom: '20px' }}>
                 <ComboboxControl
                     label={__('Linked WordPress Page', TEXT_DOMAIN)}
@@ -321,7 +348,7 @@ const DataEditor = ({
                 />
             </div>
 
-            {/* 3. UNIT FILL COLOR OVERRIDE CONTROL */}
+            {/* 4. UNIT FILL COLOR OVERRIDE CONTROL */}
             <div style={{ padding: '15px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '4px', marginBottom: '20px' }}>
                 <Flex align="center" justify="space-between" style={{ marginBottom: hasCustomFillColor ? '12px' : '0' }}>
                     <div>
@@ -330,7 +357,7 @@ const DataEditor = ({
                         </Text>
                         <Text variant="caption" style={{ color: '#666', fontSize: '11px' }}>
                             {hasCustomFillColor 
-                                ? __('Custom color enabled for this specific unit.', TEXT_DOMAIN)
+                                ? __('Custom color override activated for this unit.', TEXT_DOMAIN)
                                 : sprintf(__('Using global category color (%s). Toggle on to set a custom color.', TEXT_DOMAIN), globalCategoryColor)
                             }
                         </Text>
@@ -348,7 +375,7 @@ const DataEditor = ({
                         <FlexItem style={{ flex: 1 }}>
                             <TextControl
                                 label={__('Hex Color Code', TEXT_DOMAIN)}
-                                value={currentFillColor}
+                                value={activeFillColor}
                                 onChange={(val) => updateDraft({ fill_color: val })}
                                 placeholder={globalCategoryColor}
                                 style={{ height: '36px' }}
@@ -367,7 +394,7 @@ const DataEditor = ({
                                             height: '36px',
                                             padding: 0,
                                             borderRadius: '4px',
-                                            background: currentFillColor || globalCategoryColor,
+                                            background: activeFillColor || globalCategoryColor,
                                             border: '2px solid #fff',
                                             boxShadow: '0 0 0 1px #ccc',
                                             cursor: 'pointer'
@@ -377,7 +404,7 @@ const DataEditor = ({
                                 renderContent={() => (
                                     <div style={{ padding: '12px' }}>
                                         <ColorPicker
-                                            color={currentFillColor || globalCategoryColor}
+                                            color={activeFillColor || globalCategoryColor}
                                             onChangeComplete={(val) => updateDraft({ fill_color: val.hex })}
                                             disableAlpha
                                         />
@@ -389,7 +416,7 @@ const DataEditor = ({
                 )}
             </div>
 
-            {/* 4. CUSTOM FEATURE PROPERTIES */}
+            {/* 5. CUSTOM FEATURE PROPERTIES */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Flex align="center" justify="space-between" style={{ marginBottom: '12px' }}>
                     <Text variant="label" display="block" style={{ fontWeight: '600' }}>
@@ -438,7 +465,7 @@ const DataEditor = ({
                 )}
             </div>
 
-            {/* 5. MEDIA OVERRIDES SECTION */}
+            {/* 6. MEDIA OVERRIDES SECTION */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Page Media Overrides (Video & Floorplan)', TEXT_DOMAIN)}
@@ -496,7 +523,7 @@ const DataEditor = ({
                 </div>
             </div>
 
-            {/* 6. CUSTOM DESCRIPTION */}
+            {/* 7. CUSTOM DESCRIPTION */}
             <div style={{ marginBottom: '20px' }}>
                 <TextareaControl 
                     label={__('Custom Description', TEXT_DOMAIN)} 
@@ -516,7 +543,7 @@ const DataEditor = ({
                 )}
             </div>
 
-            {/* 7. MAP BEHAVIOR TOGGLES */}
+            {/* 8. MAP BEHAVIOR TOGGLES */}
             <div style={{ marginBottom: '20px', padding: '15px', background: '#fcfcfc', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Map Interaction & Display Settings', TEXT_DOMAIN)}
@@ -535,7 +562,7 @@ const DataEditor = ({
                 </div>
             </div>
 
-            {/* 8. CUSTOM GALLERY */}
+            {/* 9. CUSTOM GALLERY */}
             <div style={{ margin: '20px 0' }}>
                 <Text variant="label" display="block" style={{ marginBottom: '10px' }}>{__('Custom Gallery', TEXT_DOMAIN)}</Text>
                 <Flex wrap="wrap" gap={2} style={{ marginBottom: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '4px', justifyContent: 'flex-start' }}>
@@ -557,7 +584,7 @@ const DataEditor = ({
                 }} style={{ width: '100%', justifyContent: 'center' }}>{__('Manage Images', TEXT_DOMAIN)}</Button>
             </div>
 
-            {/* 9. ACTION BUTTONS */}
+            {/* 10. ACTION BUTTONS */}
             <Flex justify="flex-start" style={{ marginTop: '30px', gap: '15px' }}>
                 <Button variant="secondary" onClick={() => setShowCancelModal(true)} disabled={isSaving || !hasChanges} style={{ height: '40px', flex: '1', justifyContent: 'center' }}>
                     {__('Discard All Changes', TEXT_DOMAIN)}

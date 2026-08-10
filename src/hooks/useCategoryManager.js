@@ -26,7 +26,7 @@ export const useCategoryManager = () => {
 
     const { createSuccessNotice, createErrorNotice } = useDispatch(noticesStore);
 
-    // 1. Fetch saved WP options + discover spatial categories from database
+    // Fetch saved WP options + discover spatial categories from database
     const loadCategoryData = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -85,13 +85,11 @@ export const useCategoryManager = () => {
                         const gId = (group.id || '').toLowerCase();
                         const gTitle = (group.title || '').toLowerCase();
 
-                        // Title substring match (e.g. "utilities" vs "Utility")
                         if (gTitle && (lowerSlug.includes(gTitle) || gTitle.includes(lowerSlug))) {
                             defaultGroup = group.id;
                             break;
                         }
 
-                        // Keyword semantic checks against group title/id
                         if (/(apt|apartment|residential|building)/i.test(lowerSlug) && /(apt|apartment|residential|building)/i.test(gTitle + ' ' + gId)) {
                             defaultGroup = group.id;
                             break;
@@ -132,7 +130,7 @@ export const useCategoryManager = () => {
         loadCategoryData();
     }, [loadCategoryData]);
 
-    // 2. Persist updated configuration back to WP options
+    // Persist updated configuration back to WP options
     const saveCategoryData = async (newGroups, newCategoryMap) => {
         setIsSaving(true);
         const payloadGroups = newGroups || groups;
@@ -179,7 +177,10 @@ export const useCategoryManager = () => {
         }
     };
 
-    // 3. Helper: Enrich features with resolved colors and group assignments for rendering
+    /**
+     * Helper: Enrich features with resolved colors and group assignments for rendering.
+     * Rule: Default to Category Color. Use fill_color ONLY if explicit custom override is set.
+     */
     const processSpatialFeatures = useCallback((features = []) => {
         return features.map(feature => {
             const cat = feature.properties?.category;
@@ -188,9 +189,12 @@ export const useCategoryManager = () => {
             const rowColor = feature.properties?.fill_color;
             const globalColor = mappedInfo.color;
 
-            const resolvedColor = (rowColor && rowColor.trim() !== '') 
-                ? rowColor 
-                : (globalColor || '#007cba');
+            // Tier 1: Custom Unit Override (if fill_color is explicitly set on row AND non-empty)
+            // Tier 2: Global Category Color
+            // Tier 3: Default Blue Fallback
+            const resolvedColor = (rowColor && rowColor.trim() !== '')
+                ? rowColor
+                : ((globalColor && globalColor.trim() !== '') ? globalColor : '#007cba');
 
             return {
                 ...feature,
@@ -219,7 +223,6 @@ export const useCategoryManager = () => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Ensure result.categoryMap is treated as an Object, not an Array
                 const safeMap = (result.categoryMap && !Array.isArray(result.categoryMap) && typeof result.categoryMap === 'object') 
                     ? result.categoryMap 
                     : {};

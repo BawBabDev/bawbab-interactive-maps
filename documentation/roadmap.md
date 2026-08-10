@@ -45,7 +45,10 @@ Done
     - Have option with pen button to edit actual name and code
 - Importer: make sure the predetermined data not imported don't end up in custom fields
 - Use custom confirmation modal everywhere
-- Styling & Legend Verification: Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
+- Styling & Legend Verification:
+    - Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
+    - Have more customization options for legend (grouping classes etc, labels, item order)
+- Weird zoom behavior in the preview map
 
 
 🗺️ Future Roadmap Items
@@ -58,3 +61,5 @@ Done
     - Time estimate
     - Directions / Instructions
     - Integrated with Bawbab DAI for external navigation
+
+

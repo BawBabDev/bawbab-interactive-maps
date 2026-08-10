@@ -79,7 +79,7 @@ const EditPage = () => {
             setActiveFeature(prevActive => {
                 if (!prevActive) return null;
                 const updated = filtered.find(f => 
-                    f.properties.fid === prevActive.properties.fid && 
+                    String(f.properties.fid) === String(prevActive.properties.fid) && 
                     f.properties.layer_type === prevActive.properties.layer_type
                 );
                 return updated || prevActive;
@@ -117,7 +117,6 @@ const EditPage = () => {
         activeGroups.forEach(group => {
             if (!group.id) return;
 
-            // Find categories assigned strictly to this active group ID (ignoring unassigned/empty groupId)
             const groupCategorySlugs = Object.keys(activeMap).filter(catSlug => activeMap[catSlug].groupId === group.id);
 
             const matchingFeatures = filteredFeatures.filter(f => groupCategorySlugs.includes(f.properties?.category));
@@ -158,7 +157,6 @@ const EditPage = () => {
             });
         });
 
-        // Collect all unassigned features or features whose categories are unassigned (`groupId: ''`)
         const unassignedFeatures = filteredFeatures.filter(f => !assignedFeatureFids.has(`${f.properties.layer_type}-${f.properties.fid}`));
 
         if (unassignedFeatures.length > 0) {
@@ -251,6 +249,8 @@ const EditPage = () => {
             });
 
             await Promise.all(savePromises);
+            
+            // Clear drafts and trigger immediate map + feature state refresh
             setDrafts({});
             setResetCounter(prev => prev + 1);
             await fetchFeatures();
@@ -608,7 +608,9 @@ const EditPage = () => {
                                             {__('Location Preview', TEXT_DOMAIN)}
                                         </h2>
                                         <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            {/* DYNAMIC MAP RE-RENDER KEY BASED ON resetCounter */}
                                             <BawBabIMaps 
+                                                key={`preview-map-${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`}
                                                 height="450px"
                                                 editMode={true}
                                                 selectedLocationProp={activeFeature}

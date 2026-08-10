@@ -128,42 +128,8 @@ class BWB_Federated_Imaps_API_Controller {
         $settings = get_option( 'bwb_imaps_options_data' );
 
         $default_category_config = array(
-            'tabs' => array(
-                array(
-                    'id'          => 'apartments',
-                    'title'       => 'Apartments',
-                    'displayType' => 'grouped',
-                    'categories'  => array( 'residential_apartment' )
-                ),
-                array(
-                    'id'          => 'cottages',
-                    'title'       => 'Cottages',
-                    'displayType' => 'grouped',
-                    'categories'  => array( 'cottage' )
-                ),
-                array(
-                    'id'          => 'amenities',
-                    'title'       => 'Amenities',
-                    'displayType' => 'flat',
-                    'categories'  => array(
-                        'amenity',
-                        'community_center',
-                        'personal_care',
-                        'skilled_care',
-                        'fitness_center',
-                        'utilities'
-                    )
-                )
-            ),
-            'categoryColors' => array(
-                'residential_apartment' => '#1565c0',
-                'cottage'               => '#2e7d32',
-                'community_center'      => '#007cba',
-                'personal_care'         => '#f57c00',
-                'skilled_care'          => '#d84315',
-                'fitness_center'        => '#00838f',
-                'amenity'               => '#8d6e63'
-            )
+            'groups'      => array(),
+            'categoryMap' => array(),
         );
 
         return array(
@@ -412,11 +378,9 @@ class BWB_Federated_Imaps_API_Controller {
                 $clean_key = sanitize_key( $info['key'] ?? $k );
                 $type      = sanitize_text_field( $info['type'] ?? 'text' );
             } elseif ( is_string( $k ) && ! is_numeric( $k ) ) {
-                // Handles associative object format: { "fireplace": "boolean", "sq_ft": "number" }
                 $clean_key = sanitize_key( $k );
                 $type      = sanitize_text_field( $info );
             } else {
-                // Handles simple array format: [ "fireplace", "sq_ft" ]
                 $clean_key = sanitize_key( $info );
                 $type      = ( strpos( $clean_key, 'bath' ) !== false ) ? 'bathrooms' : 'text';
             }
@@ -464,20 +428,17 @@ class BWB_Federated_Imaps_API_Controller {
                 $formatted_label = ucwords( str_replace( '_', ' ', $clean_slug ) );
                 $clean_color     = sanitize_hex_color( $hex_color );
 
-                // Dynamic matching against active groups
                 $target_group_id = '';
 
                 foreach ( $groups as $group ) {
                     $g_id    = strtolower( $group['id'] ?? '' );
                     $g_title = strtolower( $group['title'] ?? '' );
 
-                    // Direct match (e.g. category "utilities" vs group title "Utility" or "Utilities")
                     if ( ! empty( $g_title ) && ( strpos( $clean_slug, $g_title ) !== false || strpos( $g_title, $clean_slug ) !== false ) ) {
                         $target_group_id = $group['id'];
                         break;
                     }
 
-                    // Keyword semantic checks against group title/id
                     if ( preg_match( '/(apt|apartment|residential|building)/i', $clean_slug ) && preg_match( '/(apt|apartment|residential|building)/i', $g_title . ' ' . $g_id ) ) {
                         $target_group_id = $group['id'];
                         break;
@@ -541,7 +502,6 @@ class BWB_Federated_Imaps_API_Controller {
         $custom_keys_param = $request->get_param( 'imported_custom_keys' );
         $imported_custom_keys = is_string( $custom_keys_param ) ? ( json_decode( stripslashes( $custom_keys_param ), true ) ?: array() ) : ( is_array( $custom_keys_param ) ? $custom_keys_param : array() );
 
-        // Extract scalar string key names safely from objects or arrays
         $raw_key_names = array();
         foreach ( $imported_custom_keys as $k => $v ) {
             if ( is_array( $v ) && isset( $v['key'] ) ) {
@@ -553,7 +513,6 @@ class BWB_Federated_Imaps_API_Controller {
             }
         }
 
-        // Auto-sync imported custom keys into central attribute schema
         $this->sync_custom_keys_to_schema( $imported_custom_keys );
 
         $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
@@ -660,7 +619,6 @@ class BWB_Federated_Imaps_API_Controller {
                     $v_wp_page_id = ! empty( $get_mapped_val('wp_page_id') ) ? (int) $get_mapped_val('wp_page_id') : null;
                     $v_floor      = (int)( $get_mapped_val('floor') ?? 0 );
 
-                    // Collect category slugs and their colors for categoryConfig auto-sync
                     if ( ! empty( $v_category ) ) {
                         if ( ! isset( $discovered_category_colors[$v_category] ) || ! empty( $v_color ) ) {
                             $discovered_category_colors[$v_category] = $v_color;
@@ -740,7 +698,6 @@ class BWB_Federated_Imaps_API_Controller {
                 break;
         }
 
-        // Auto-sync any categories and colors discovered in GeoJSON to categoryConfig
         if ( ! empty( $discovered_category_colors ) ) {
             $this->sync_imported_categories_to_config( $discovered_category_colors );
         }
@@ -789,6 +746,18 @@ class BWB_Federated_Imaps_API_Controller {
 
         $update_data = array();
         $format      = array();
+
+        // 1. Category Field Update Support
+        if ( $request->has_param( 'category' ) ) {
+            $update_data['category'] = sanitize_text_field( $request->get_param( 'category' ) );
+            $format[] = '%s';
+        }
+
+        // 2. Unit Fill Color Field Update Support
+        if ( $request->has_param( 'fill_color' ) ) {
+            $update_data['fill_color'] = sanitize_hex_color( $request->get_param( 'fill_color' ) );
+            $format[] = '%s';
+        }
 
         if ( $request->has_param( 'title' ) ) {
             $update_data['title'] = sanitize_text_field( $request->get_param( 'title' ) );
@@ -889,7 +858,6 @@ class BWB_Federated_Imaps_API_Controller {
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
-        // Self-healing fallback: If option is empty, discover keys directly from MySQL
         if ( empty( $schema ) ) {
             $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
             $results    = $wpdb->get_results( "SELECT custom_attributes FROM {$table_name} WHERE custom_attributes IS NOT NULL AND custom_attributes != '' AND custom_attributes != '{}'", ARRAY_A );
@@ -969,7 +937,6 @@ class BWB_Federated_Imaps_API_Controller {
             return new WP_Error( 'missing_key', 'Attribute key is required for deletion.', array( 'status' => 400 ) );
         }
 
-        // 1. Delete from central schema option
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
@@ -980,7 +947,6 @@ class BWB_Federated_Imaps_API_Controller {
         $settings['attribute_schema'] = $filtered_schema;
         update_option( 'bwb_imaps_options_data', $settings );
 
-        // 2. MySQL JSON Purge Query: Removes the JSON key from custom_attributes across all rows
         $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
         $json_path  = '$.' . $key;
 
@@ -1048,12 +1014,10 @@ class BWB_Federated_Imaps_API_Controller {
 
         $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
         
-        // 1. Fetch active category slugs from MySQL
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $active_cats = $wpdb->get_col( "SELECT DISTINCT category FROM {$table_spatial} WHERE category IS NOT NULL AND category != ''" );
         $active_set  = is_array( $active_cats ) ? array_flip( $active_cats ) : array();
 
-        // 2. Fetch current options
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
         
@@ -1061,7 +1025,6 @@ class BWB_Federated_Imaps_API_Controller {
         $cleaned_map = array();
         $pruned_count = 0;
 
-        // 3. Retain only categories present in active_set
         foreach ( $current_map as $cat_slug => $cat_data ) {
             if ( isset( $active_set[$cat_slug] ) ) {
                 $cleaned_map[$cat_slug] = $cat_data;
@@ -1070,7 +1033,6 @@ class BWB_Federated_Imaps_API_Controller {
             }
         }
 
-        // 4. Update option
         $config['categoryMap']      = $cleaned_map;
         $settings['categoryConfig'] = $config;
         update_option( 'bwb_imaps_options_data', $settings );
@@ -1080,7 +1042,7 @@ class BWB_Federated_Imaps_API_Controller {
         return new WP_REST_Response( array(
             'success'      => true,
             'pruned_count' => $pruned_count,
-            'categoryMap'  => (object) $cleaned_map, // 👈 FORCES JSON ENCODING AS `{}` INSTEAD OF `[]`
+            'categoryMap'  => (object) $cleaned_map,
             'message'      => sprintf( 'Cleanup complete. %d unused categories removed.', $pruned_count )
         ), 200 );
     }
