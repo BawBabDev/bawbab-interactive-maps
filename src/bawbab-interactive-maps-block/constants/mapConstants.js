@@ -21,7 +21,17 @@ export const SPATIAL_DATA_ENDPOINT = '/wp-json/bwb-imaps-federated-api/v1/get-sp
 export const normalizeSpatialFeature = (feature) => {
     const parsedFloor = Number.parseInt(feature?.properties?.floor, 10);
     const normalizedFloor = Number.isNaN(parsedFloor) ? 0 : parsedFloor;
-    const normalizedProperties = { ...feature.properties, floor: normalizedFloor };
+
+    // Convert string "0"/"false" from REST API into boolean false
+    const rawInteractive = feature?.properties?.is_interactive;
+    const isInteractive = rawInteractive !== false && rawInteractive !== 0 && rawInteractive !== '0' && rawInteractive !== 'false';
+
+    const normalizedProperties = { 
+        ...feature.properties, 
+        floor: normalizedFloor,
+        is_interactive: isInteractive 
+    };
+
     return { 
         ...feature, 
         properties: normalizedProperties, 

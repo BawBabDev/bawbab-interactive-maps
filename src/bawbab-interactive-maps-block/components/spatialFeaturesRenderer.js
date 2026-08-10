@@ -39,11 +39,15 @@ const SpatialFeatureItem = memo(({
     }), [shouldHighlight, isFloorMode, isForegroundFloorFeature, floorLayerZIndex, layer_type, fill_color, finalOpacity, isSelectable, isActiveFloorFeature]);
 
     const handleClick = useCallback(() => {
-        onSelect(feature, isSelectable);
+        if (isSelectable) {
+            onSelect(feature, isSelectable);
+        }
     }, [feature, isSelectable, onSelect]);
 
     const handleMouseEnter = useCallback(() => {
-        if (isSelectable) onHoverStart(fid, layer_type);
+        if (isSelectable) {
+            onHoverStart(fid, layer_type);
+        }
     }, [isSelectable, fid, layer_type, onHoverStart]);
 
     const polyProps = {
@@ -110,11 +114,15 @@ export const SpatialFeaturesRenderer = memo(({
 
             if (!shouldRenderFloorAwareFeature) return null;
 
-            const coords = formatCoords(feature.geometry.coordinates);
+            const coords = formatCoords(feature.geometry?.coordinates);
             if (!coords || coords.length === 0) return null;
 
+            // Check if feature is marked interactive in database (0/false means non-interactive)
+            const isInteractiveFlag = props.is_interactive !== false && props.is_interactive !== 0 && props.is_interactive !== '0';
             const hasContent = Boolean(props.name || props.description || (props.wp_page_id && parseInt(props.wp_page_id, 10) > 0) || (props.gallery && props.gallery.length > 0));
-            const isSelectable = layer_type !== 'parcels' && layer_type !== 'paths' && (hasContent || editMode);
+
+            // In editMode, non-interactive features can be selected via the sidebar, but on map hover/click they strictly respect is_interactive
+            const isSelectable = layer_type !== 'parcels' && layer_type !== 'paths' && isInteractiveFlag && (hasContent || editMode);
 
             return {
                 feature,
@@ -162,7 +170,7 @@ export const SpatialFeaturesRenderer = memo(({
 
                 // Fast string checks for selection and hover states
                 const isSelected = selectedLocation && String(selectedLocation.fid) === String(fid) && selectedLocation.layer_type === layer_type;
-                const isHovered = item.isSelectable && hoveredFeature && !editMode && String(hoveredFeature.fid) === String(fid) && hoveredFeature.layer_type === layer_type;
+                const isHovered = item.isSelectable && hoveredFeature && String(hoveredFeature.fid) === String(fid) && hoveredFeature.layer_type === layer_type;
 
                 return (
                     <SpatialFeatureItem
