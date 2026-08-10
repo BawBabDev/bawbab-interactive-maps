@@ -6,8 +6,7 @@ import {
 import { __, sprintf } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
-
-import { useCategoryManager, CURATED_CATEGORY_PALETTE } from '../hooks/useCategoryManager';
+import { useCategoryManager } from '../hooks/useCategoryManager';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -17,10 +16,10 @@ export const CategorySettingsPage = () => {
         setGroups, 
         categoryMap, 
         setCategoryMap, 
-        discoveredCategories, 
         isLoading, 
         isSaving, 
-        saveCategoryData 
+        saveCategoryData,
+        cleanupUnusedCategories
     } = useCategoryManager();
 
     const notices = useSelect((select) => select(noticesStore).getNotices(), []);
@@ -28,7 +27,6 @@ export const CategorySettingsPage = () => {
 
     const [newGroupTitle, setNewGroupTitle] = useState('');
 
-    // Group Management Actions
     const handleAddGroup = () => {
         if (!newGroupTitle.trim()) return;
         const newId = `group_${Date.now()}`;
@@ -46,10 +44,9 @@ export const CategorySettingsPage = () => {
             return;
         }
 
-        const fallbackGroupId = groups.find(g => g.id !== groupId)?.id;
+        const fallbackGroupId = groups.find(g => g.id !== groupId)?.id || '';
         const updatedGroups = groups.filter(g => g.id !== groupId);
 
-        // Reassign orphan categories to fallback group
         const updatedMap = { ...categoryMap };
         Object.keys(updatedMap).forEach(cat => {
             if (updatedMap[cat].groupId === groupId) {
@@ -65,7 +62,6 @@ export const CategorySettingsPage = () => {
         setGroups(prev => prev.map(g => g.id === groupId ? { ...g, [key]: value } : g));
     };
 
-    // Category Mutation Handlers
     const handleUpdateCategory = (catSlug, key, value) => {
         setCategoryMap(prev => ({
             ...prev,
@@ -84,7 +80,13 @@ export const CategorySettingsPage = () => {
         );
     }
 
-    const groupOptions = groups.map(g => ({ label: g.title, value: g.id }));
+    const groupOptions = [
+        { label: __('-- Unassigned / Hidden from Public Menu --', TEXT_DOMAIN), value: '' },
+        ...groups.map(g => ({ label: g.title, value: g.id }))
+    ];
+
+    // Primary List Source: All categories registered in categoryMap (wp_options)
+    const allCategorySlugs = Object.keys(categoryMap);
 
     return (
         <div className="wrap" style={{ maxWidth: '960px', margin: '20px auto' }}>
@@ -145,7 +147,6 @@ export const CategorySettingsPage = () => {
                         ))}
                     </div>
 
-                    {/* ADD NEW GROUP FORM */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', paddingTop: '10px', borderTop: '1px solid #eee' }}>
                         <div style={{ flex: 1 }}>
                             <TextControl
@@ -173,30 +174,31 @@ export const CategorySettingsPage = () => {
             {/* 2. UNIFIED CATEGORY ASSIGNMENT & COLOR TABLE */}
             <Panel style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '25px' }}>
                 <PanelBody title={__('2. Spatial Categories Configuration (1-to-1 Mapping)', TEXT_DOMAIN)} initialOpen={true}>
-                    {discoveredCategories.length === 0 ? (
+                    {allCategorySlugs.length === 0 ? (
                         <p style={{ fontStyle: 'italic', color: '#888', textAlign: 'center', padding: '20px' }}>
-                            {__('No spatial categories found in the database. Import features first to configure categories.', TEXT_DOMAIN)}
+                            {__('No categories found. Import spatial features to auto-register categories.', TEXT_DOMAIN)}
                         </p>
                     ) : (
                         <div style={{ border: '1px solid #e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 200px 80px', gap: '12px', padding: '10px 12px', background: '#f5f5f5', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 240px 80px', gap: '12px', padding: '10px 12px', background: '#f5f5f5', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
                                 <span>{__('Database Slug', TEXT_DOMAIN)}</span>
                                 <span>{__('Display Label', TEXT_DOMAIN)}</span>
                                 <span>{__('Assigned Group', TEXT_DOMAIN)}</span>
                                 <span style={{ textAlign: 'center' }}>{__('Color', TEXT_DOMAIN)}</span>
                             </div>
 
-                            {discoveredCategories.map((catSlug, index) => {
+                            {/* RENDER ALL SAVED CATEGORIES FROM wp_options */}
+                            {allCategorySlugs.map((catSlug, index) => {
                                 const catInfo = categoryMap[catSlug] || {};
                                 const currentColor = catInfo.color || '#007cba';
-                                const isLast = index === discoveredCategories.length - 1;
+                                const isLast = index === allCategorySlugs.length - 1;
 
                                 return (
                                     <div 
                                         key={catSlug} 
                                         style={{ 
                                             display: 'grid', 
-                                            gridTemplateColumns: '160px 1fr 200px 80px', 
+                                            gridTemplateColumns: '160px 1fr 240px 80px', 
                                             gap: '12px', 
                                             padding: '10px 12px', 
                                             alignItems: 'center',
@@ -217,14 +219,13 @@ export const CategorySettingsPage = () => {
                                         />
 
                                         <SelectControl
-                                            value={catInfo.groupId || groups[0]?.id || ''}
+                                            value={catInfo.groupId !== undefined ? catInfo.groupId : ''}
                                             options={groupOptions}
                                             onChange={(val) => handleUpdateCategory(catSlug, 'groupId', val)}
                                             style={{ height: '34px' }}
                                             __nextHasNoMarginBottom
                                         />
 
-                                        {/* DROPDOWN COLOR PICKER SWATCH */}
                                         <div style={{ textAlign: 'center' }}>
                                             <Dropdown
                                                 renderToggle={({ isOpen, onToggle }) => (
@@ -263,8 +264,18 @@ export const CategorySettingsPage = () => {
                 </PanelBody>
             </Panel>
 
-            {/* SAVE BUTTON CONTAINER */}
-            <div style={{ textAlign: 'right', marginTop: '25px' }}>
+            {/* ACTION BUTTONS CONTAINER */}
+            <Flex justify="space-between" align="center" style={{ marginTop: '25px' }}>
+                <Button
+                    variant="secondary"
+                    isDestructive
+                    onClick={cleanupUnusedCategories}
+                    isBusy={isSaving}
+                    disabled={isSaving}
+                >
+                    {__('Cleanup Unused Categories', TEXT_DOMAIN)}
+                </Button>
+
                 <Button
                     variant="primary"
                     onClick={() => saveCategoryData(groups, categoryMap)}
@@ -274,7 +285,7 @@ export const CategorySettingsPage = () => {
                 >
                     {isSaving ? __('Saving...', TEXT_DOMAIN) : __('Save Category Settings', TEXT_DOMAIN)}
                 </Button>
-            </div>
+            </Flex>
         </div>
     );
 };

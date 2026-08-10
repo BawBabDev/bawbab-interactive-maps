@@ -11,6 +11,7 @@ const TEXT_DOMAIN = 'bawbab-interactive-maps';
  * Dynamic navigation menu rendering feature hierarchies based on the 1-to-1
  * Group & Category settings. Accommodates grouped multi-unit accordions 
  * as well as flat facility/amenity lists and location pins.
+ * Ignores unassigned categories (groupId === '') from the public menu.
  */
 const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, onCloseMenu }) => {
     const [activeTab, setActiveTab] = useState(null);
@@ -51,9 +52,10 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
         const activeGroups = groups.length > 0 ? groups : DEFAULT_GROUPS;
         const activeMap = Object.keys(categoryMap).length > 0 ? categoryMap : DEFAULT_CATEGORY_MAPPINGS;
 
-        // Initialize empty group buckets matching the 1-to-1 group definitions
+        // Initialize empty group buckets matching valid, non-empty group definitions
         const groupBuckets = {};
         activeGroups.forEach(group => {
+            if (!group.id) return;
             groupBuckets[group.id] = {
                 id: group.id,
                 title: group.title,
@@ -67,7 +69,7 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
         spatialFeatures.forEach(f => {
             const props = f.properties || {};
 
-            // Exclude non-interactive features (patios, background parcels, etc.) and features without a label
+            // Exclude non-interactive features and unlabeled features
             if (props.is_interactive === false || (!props.name && !props.code)) {
                 return;
             }
@@ -75,11 +77,15 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
             const featureItem = { ...props, type: 'spatial', geometry: f.geometry };
             const category = props.category || '';
 
-            // Resolve target group ID via 1-to-1 mapping or fallback to first group
+            // Resolve target group ID via 1-to-1 mapping.
+            // If category is unassigned (groupId is '' or undefined), DO NOT map to public menu!
             const catInfo = activeMap[category];
-            const targetGroupId = catInfo?.groupId || activeGroups[0]?.id;
+            const targetGroupId = catInfo?.groupId;
 
-            if (!targetGroupId || !groupBuckets[targetGroupId]) return;
+            // Strict check: Ignore unassigned features or features mapped to non-existent groups
+            if (!targetGroupId || !groupBuckets[targetGroupId]) {
+                return;
+            }
 
             const bucket = groupBuckets[targetGroupId];
 
@@ -95,8 +101,8 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
             }
         });
 
-        // 2. Process Custom Location Pin Markers (added to flat items of the last group/amenities)
-        const fallbackFlatGroupId = groupBuckets['amenities'] ? 'amenities' : activeGroups[activeGroups.length - 1]?.id;
+        // 2. Process Custom Location Pin Markers (added to flat items of the 'amenities' group if present)
+        const fallbackFlatGroupId = groupBuckets['amenities'] ? 'amenities' : activeGroups.find(g => g.id)?.id;
         if (fallbackFlatGroupId && groupBuckets[fallbackFlatGroupId]) {
             locations.forEach(loc => {
                 if (loc.title && loc.showMarker !== false) {
@@ -113,6 +119,7 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
         const naturalSort = (a, b) => (a.code || a.name || '').localeCompare(b.code || b.name || '', undefined, { numeric: true });
 
         const formattedTabs = activeGroups.map(group => {
+            if (!group.id) return null;
             const bucket = groupBuckets[group.id];
             if (!bucket) return null;
 
@@ -149,6 +156,7 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
         const hasGroupedItems = tab.groups && tab.groups.length > 0;
         const hasFlatItems = tab.flatItems && tab.flatItems.length > 0;
 
+        // Skip rendering tabs that contain no items
         if (!hasGroupedItems && !hasFlatItems) return null;
 
         return (

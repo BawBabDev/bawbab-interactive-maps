@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { useDispatch } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { 
     CURATED_CATEGORY_PALETTE, 
@@ -30,7 +30,7 @@ export const useCategoryManager = () => {
     const loadCategoryData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // A. Fetch saved WP settings options
+            // A. Fetch saved WP settings options (Primary Source of Truth for Categories)
             const settingsRes = await apiFetch({ path: '/wp/v2/settings' });
             const savedData = settingsRes?.bwb_imaps_options_data || {};
             const savedConfig = savedData.categoryConfig;
@@ -67,7 +67,7 @@ export const useCategoryManager = () => {
             const discoveredList = Object.keys(discoveredMap);
             setDiscoveredCategories(discoveredList);
 
-            // C. Auto-register newly discovered categories using imported colors or palette fallbacks
+            // C. Auto-register newly discovered categories with palette fallbacks without wiping existing ones
             let paletteIdx = 0;
             const updatedMap = { ...currentCategoryMap };
 
@@ -76,8 +76,12 @@ export const useCategoryManager = () => {
 
                 if (!updatedMap[catSlug]) {
                     const fallbackColor = importedColor || CURATED_CATEGORY_PALETTE[paletteIdx % CURATED_CATEGORY_PALETTE.length];
-                    const defaultGroup = currentGroups[0]?.id || 'amenities';
                     
+                    let defaultGroup = '';
+                    if (/(apt|apartment|residential|building)/i.test(catSlug)) defaultGroup = 'apartments';
+                    else if (/(cottage|house|villa)/i.test(catSlug)) defaultGroup = 'cottages';
+                    else if (/(path|road|trail|patio|garage|carport|drive|support)/i.test(catSlug)) defaultGroup = 'infrastructure';
+
                     updatedMap[catSlug] = {
                         label: catSlug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
                         groupId: defaultGroup,
@@ -107,7 +111,6 @@ export const useCategoryManager = () => {
         const payloadMap = newCategoryMap || categoryMap;
 
         try {
-            // Fetch current settings to preserve googleApiKey, googleMapId, etc.
             const settingsRes = await apiFetch({ path: '/wp/v2/settings' });
             const currentOptions = settingsRes?.bwb_imaps_options_data || {};
 
@@ -120,8 +123,6 @@ export const useCategoryManager = () => {
                 ...currentOptions,
                 categoryConfig
             };
-
-            console.log('[useCategoryManager] Sending POST payload to /wp/v2/settings:', updatedOptions);
 
             await apiFetch({
                 path: '/wp/v2/settings',
@@ -156,20 +157,70 @@ export const useCategoryManager = () => {
             const cat = feature.properties?.category;
             const mappedInfo = categoryMap[cat] || {};
             
-            // Preference: Global Category Master Color > Row-level fill_color > Default Blue
-            const resolvedColor = mappedInfo.color || feature.properties?.fill_color || '#007cba';
+            const rowColor = feature.properties?.fill_color;
+            const globalColor = mappedInfo.color;
+
+            const resolvedColor = (rowColor && rowColor.trim() !== '') 
+                ? rowColor 
+                : (globalColor || '#007cba');
 
             return {
                 ...feature,
                 properties: {
                     ...feature.properties,
                     fill_color: resolvedColor,
-                    group_id: mappedInfo.groupId || 'amenities',
+                    group_id: mappedInfo.groupId !== undefined ? mappedInfo.groupId : '',
                     category_label: mappedInfo.label || cat
                 }
             };
         });
     }, [categoryMap]);
+
+    // 4. Explicit User Action: Cleanup categories from option data that are not assigned in MySQL
+    const cleanupUnusedCategories = useCallback(async () => {
+        setIsSaving(true);
+        try {
+            const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/cleanup-category-schema', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': window.wpApiSettings?.nonce || '' 
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Ensure result.categoryMap is treated as an Object, not an Array
+                const safeMap = (result.categoryMap && !Array.isArray(result.categoryMap) && typeof result.categoryMap === 'object') 
+                    ? result.categoryMap 
+                    : {};
+
+                setCategoryMap(safeMap);
+
+                if (!window.bwbimapsSettings) window.bwbimapsSettings = {};
+                if (!window.bwbimapsSettings.categoryConfig) window.bwbimapsSettings.categoryConfig = {};
+                window.bwbimapsSettings.categoryConfig.categoryMap = safeMap;
+
+                createSuccessNotice(
+                    sprintf(__('Cleanup complete: %d unused categories removed.', TEXT_DOMAIN), result.pruned_count || 0),
+                    { type: 'snackbar' }
+                );
+                
+                await loadCategoryData();
+                return true;
+            } else {
+                createErrorNotice(result.message || __('Category cleanup failed.', TEXT_DOMAIN));
+                return false;
+            }
+        } catch (err) {
+            console.error('[useCategoryManager] Cleanup Error:', err);
+            createErrorNotice(__('Error during category cleanup: ', TEXT_DOMAIN) + err.message);
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [loadCategoryData, createSuccessNotice, createErrorNotice]);
 
     return {
         groups,
@@ -181,6 +232,7 @@ export const useCategoryManager = () => {
         isSaving,
         loadCategoryData,
         saveCategoryData,
+        cleanupUnusedCategories,
         processSpatialFeatures
     };
 };

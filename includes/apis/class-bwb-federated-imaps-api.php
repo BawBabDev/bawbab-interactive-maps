@@ -94,6 +94,12 @@ class BWB_Federated_Imaps_API_Controller {
             'callback'            => array( $this, 'handle_delete_attribute_key' ),
             'permission_callback' => array( $this, 'check_admin_permissions' )
         ) );
+
+        register_rest_route( $namespace, '/cleanup-category-schema', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'handle_cleanup_category_schema' ),
+            'permission_callback' => array( $this, 'check_admin_permissions' )
+        ) );
     }
 
     public function check_admin_permissions() {
@@ -435,6 +441,7 @@ class BWB_Federated_Imaps_API_Controller {
 
     /**
      * Helper: Syncs newly imported spatial categories and their fill colors into categoryConfig option
+     * Auto-assigns groups via keyword matching; defaults to empty string (Unassigned).
      *
      * @param array $category_color_map Key-value pair of category_slug => hex_color
      */
@@ -447,9 +454,7 @@ class BWB_Federated_Imaps_API_Controller {
         $groups      = isset( $config['groups'] ) && is_array( $config['groups'] ) ? $config['groups'] : array();
         $categoryMap = isset( $config['categoryMap'] ) && is_array( $config['categoryMap'] ) ? $config['categoryMap'] : array();
 
-        // Default fallback group ID if no groups exist
-        $default_group_id = ! empty( $groups[0]['id'] ) ? $groups[0]['id'] : 'amenities';
-        $has_changes      = false;
+        $has_changes = false;
 
         foreach ( $category_color_map as $cat_slug => $hex_color ) {
             $clean_slug = sanitize_key( $cat_slug );
@@ -459,14 +464,24 @@ class BWB_Federated_Imaps_API_Controller {
                 $formatted_label = ucwords( str_replace( '_', ' ', $clean_slug ) );
                 $clean_color     = sanitize_hex_color( $hex_color );
 
+                // Default is empty string (Unassigned) unless a strong keyword matches
+                $target_group_id = '';
+                
+                if ( preg_match( '/(apt|apartment|residential|building)/i', $clean_slug ) ) {
+                    $target_group_id = 'apartments';
+                } elseif ( preg_match( '/(cottage|house|villa)/i', $clean_slug ) ) {
+                    $target_group_id = 'cottages';
+                } elseif ( preg_match( '/(path|road|trail|patio|garage|carport|drive|support)/i', $clean_slug ) ) {
+                    $target_group_id = 'infrastructure';
+                }
+
                 $categoryMap[$clean_slug] = array(
                     'label'   => $formatted_label,
-                    'groupId' => $default_group_id,
+                    'groupId' => $target_group_id,
                     'color'   => ! empty( $clean_color ) ? $clean_color : '#007cba',
                 );
                 $has_changes = true;
             } elseif ( empty( $categoryMap[$clean_slug]['color'] ) && ! empty( $hex_color ) ) {
-                // Update color if category existed without an explicit color
                 $clean_color = sanitize_hex_color( $hex_color );
                 if ( ! empty( $clean_color ) ) {
                     $categoryMap[$clean_slug]['color'] = $clean_color;
@@ -1000,6 +1015,52 @@ class BWB_Federated_Imaps_API_Controller {
         return new WP_REST_Response( array(
             'success' => true, 
             'message' => "Layer '$layer_type' deleted successfully."
+        ), 200 );
+    }
+
+    /**
+     * POST Route Callback: Explicit user action to prune categories from categoryConfig
+     * that are not assigned to any spatial feature in MySQL.
+     */
+    public function handle_cleanup_category_schema() {
+        global $wpdb;
+
+        $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
+        
+        // 1. Fetch active category slugs from MySQL
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $active_cats = $wpdb->get_col( "SELECT DISTINCT category FROM {$table_spatial} WHERE category IS NOT NULL AND category != ''" );
+        $active_set  = is_array( $active_cats ) ? array_flip( $active_cats ) : array();
+
+        // 2. Fetch current options
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
+        
+        $current_map = isset( $config['categoryMap'] ) && is_array( $config['categoryMap'] ) ? $config['categoryMap'] : array();
+        $cleaned_map = array();
+        $pruned_count = 0;
+
+        // 3. Retain only categories present in active_set
+        foreach ( $current_map as $cat_slug => $cat_data ) {
+            if ( isset( $active_set[$cat_slug] ) ) {
+                $cleaned_map[$cat_slug] = $cat_data;
+            } else {
+                $pruned_count++;
+            }
+        }
+
+        // 4. Update option
+        $config['categoryMap']      = $cleaned_map;
+        $settings['categoryConfig'] = $config;
+        update_option( 'bwb_imaps_options_data', $settings );
+
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+
+        return new WP_REST_Response( array(
+            'success'      => true,
+            'pruned_count' => $pruned_count,
+            'categoryMap'  => (object) $cleaned_map, // 👈 FORCES JSON ENCODING AS `{}` INSTEAD OF `[]`
+            'message'      => sprintf( 'Cleanup complete. %d unused categories removed.', $pruned_count )
         ), 200 );
     }
 

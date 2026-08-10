@@ -115,7 +115,9 @@ const EditPage = () => {
         const assignedFeatureFids = new Set();
 
         activeGroups.forEach(group => {
-            // Find categories assigned strictly to this group
+            if (!group.id) return;
+
+            // Find categories assigned strictly to this active group ID (ignoring unassigned/empty groupId)
             const groupCategorySlugs = Object.keys(activeMap).filter(catSlug => activeMap[catSlug].groupId === group.id);
 
             const matchingFeatures = filteredFeatures.filter(f => groupCategorySlugs.includes(f.properties?.category));
@@ -156,7 +158,7 @@ const EditPage = () => {
             });
         });
 
-        // Collect unassigned features
+        // Collect all unassigned features or features whose categories are unassigned (`groupId: ''`)
         const unassignedFeatures = filteredFeatures.filter(f => !assignedFeatureFids.has(`${f.properties.layer_type}-${f.properties.fid}`));
 
         if (unassignedFeatures.length > 0) {
