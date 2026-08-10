@@ -67,7 +67,7 @@ export const useCategoryManager = () => {
             const discoveredList = Object.keys(discoveredMap);
             setDiscoveredCategories(discoveredList);
 
-            // C. Auto-register newly discovered categories with palette fallbacks without wiping existing ones
+            // C. Auto-register newly discovered categories with palette fallbacks
             let paletteIdx = 0;
             const updatedMap = { ...currentCategoryMap };
 
@@ -76,11 +76,39 @@ export const useCategoryManager = () => {
 
                 if (!updatedMap[catSlug]) {
                     const fallbackColor = importedColor || CURATED_CATEGORY_PALETTE[paletteIdx % CURATED_CATEGORY_PALETTE.length];
-                    
+                    const lowerSlug = catSlug.toLowerCase();
+
+                    // Dynamic matching against active groups
                     let defaultGroup = '';
-                    if (/(apt|apartment|residential|building)/i.test(catSlug)) defaultGroup = 'apartments';
-                    else if (/(cottage|house|villa)/i.test(catSlug)) defaultGroup = 'cottages';
-                    else if (/(path|road|trail|patio|garage|carport|drive|support)/i.test(catSlug)) defaultGroup = 'infrastructure';
+
+                    for (const group of currentGroups) {
+                        const gId = (group.id || '').toLowerCase();
+                        const gTitle = (group.title || '').toLowerCase();
+
+                        // Title substring match (e.g. "utilities" vs "Utility")
+                        if (gTitle && (lowerSlug.includes(gTitle) || gTitle.includes(lowerSlug))) {
+                            defaultGroup = group.id;
+                            break;
+                        }
+
+                        // Keyword semantic checks against group title/id
+                        if (/(apt|apartment|residential|building)/i.test(lowerSlug) && /(apt|apartment|residential|building)/i.test(gTitle + ' ' + gId)) {
+                            defaultGroup = group.id;
+                            break;
+                        }
+                        if (/(cottage|house|villa)/i.test(lowerSlug) && /(cottage|house|villa)/i.test(gTitle + ' ' + gId)) {
+                            defaultGroup = group.id;
+                            break;
+                        }
+                        if (/(util|utility|service|maintenance)/i.test(lowerSlug) && /(util|utility|service|maintenance)/i.test(gTitle + ' ' + gId)) {
+                            defaultGroup = group.id;
+                            break;
+                        }
+                        if (/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i.test(lowerSlug) && /(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i.test(gTitle + ' ' + gId)) {
+                            defaultGroup = group.id;
+                            break;
+                        }
+                    }
 
                     updatedMap[catSlug] = {
                         label: catSlug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),

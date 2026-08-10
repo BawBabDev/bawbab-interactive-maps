@@ -38,6 +38,7 @@ Done
 
 🛠️ Immediate Fixes & Polish
 - Avoid constant page reload on data import / deletion or settings changes from the admin panel
+- Allow to create new categories and assign them to features
 - Editor
     - Allow to modify batch of feature (ex. is interactive etc)
     - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks. 

@@ -440,8 +440,8 @@ class BWB_Federated_Imaps_API_Controller {
     }
 
     /**
-     * Helper: Syncs newly imported spatial categories and their fill colors into categoryConfig option
-     * Auto-assigns groups via keyword matching; defaults to empty string (Unassigned).
+     * Helper: Syncs newly imported spatial categories and their fill colors into categoryConfig option.
+     * Dynamically matches category slugs against existing user-defined group titles and IDs.
      *
      * @param array $category_color_map Key-value pair of category_slug => hex_color
      */
@@ -464,15 +464,36 @@ class BWB_Federated_Imaps_API_Controller {
                 $formatted_label = ucwords( str_replace( '_', ' ', $clean_slug ) );
                 $clean_color     = sanitize_hex_color( $hex_color );
 
-                // Default is empty string (Unassigned) unless a strong keyword matches
+                // Dynamic matching against active groups
                 $target_group_id = '';
-                
-                if ( preg_match( '/(apt|apartment|residential|building)/i', $clean_slug ) ) {
-                    $target_group_id = 'apartments';
-                } elseif ( preg_match( '/(cottage|house|villa)/i', $clean_slug ) ) {
-                    $target_group_id = 'cottages';
-                } elseif ( preg_match( '/(path|road|trail|patio|garage|carport|drive|support)/i', $clean_slug ) ) {
-                    $target_group_id = 'infrastructure';
+
+                foreach ( $groups as $group ) {
+                    $g_id    = strtolower( $group['id'] ?? '' );
+                    $g_title = strtolower( $group['title'] ?? '' );
+
+                    // Direct match (e.g. category "utilities" vs group title "Utility" or "Utilities")
+                    if ( ! empty( $g_title ) && ( strpos( $clean_slug, $g_title ) !== false || strpos( $g_title, $clean_slug ) !== false ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+
+                    // Keyword semantic checks against group title/id
+                    if ( preg_match( '/(apt|apartment|residential|building)/i', $clean_slug ) && preg_match( '/(apt|apartment|residential|building)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(cottage|house|villa)/i', $clean_slug ) && preg_match( '/(cottage|house|villa)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(util|utility|service|maintenance)/i', $clean_slug ) && preg_match( '/(util|utility|service|maintenance)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i', $clean_slug ) && preg_match( '/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
                 }
 
                 $categoryMap[$clean_slug] = array(
