@@ -55,6 +55,7 @@ function bwb_imaps_sanitize_global_settings( $input ) {
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_print_r
         error_log( '[BWB iMaps Options Sanitizer] Processed option payload: ' . print_r( $input, true ) );
     }
 

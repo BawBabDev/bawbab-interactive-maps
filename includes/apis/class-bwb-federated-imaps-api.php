@@ -860,7 +860,14 @@ class BWB_Federated_Imaps_API_Controller {
 
         if ( empty( $schema ) ) {
             $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
-            $results    = $wpdb->get_results( "SELECT custom_attributes FROM {$table_name} WHERE custom_attributes IS NOT NULL AND custom_attributes != '' AND custom_attributes != '{}'", ARRAY_A );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT custom_attributes FROM %i WHERE custom_attributes IS NOT NULL AND custom_attributes != '' AND custom_attributes != '{}'",
+                    $table_name
+                ),
+                ARRAY_A
+            );
 
             if ( ! empty( $results ) ) {
                 $discovered_keys = array();
@@ -1015,7 +1022,12 @@ class BWB_Federated_Imaps_API_Controller {
         $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
         
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $active_cats = $wpdb->get_col( "SELECT DISTINCT category FROM {$table_spatial} WHERE category IS NOT NULL AND category != ''" );
+        $active_cats = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT DISTINCT category FROM %i WHERE category IS NOT NULL AND category != ''",
+                $table_spatial
+            )
+        );
         $active_set  = is_array( $active_cats ) ? array_flip( $active_cats ) : array();
 
         $settings = get_option( 'bwb_imaps_options_data', array() );
