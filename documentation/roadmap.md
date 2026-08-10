@@ -27,8 +27,10 @@
 
 ## 🔮 Next Steps & To-Do List
 
-Done
+### Done
 - Fix remove button for custom fields + Option to remove entire column
+- Editor
+    - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable 
 - Importer: make sure the predetermined data not imported don't end up in custom fields
 - Styling & Legend Verification:
     - Verify that color picker selections properly update both the UI legend and live map rendering.
