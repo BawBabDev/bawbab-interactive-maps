@@ -140,7 +140,7 @@ export const GeoJSONImportWizardModal = ({
                     const initialStandardMapping = {};
                     const initialStandardEnabled = {};
                     const initialAutoCompute = { lat: true, lng: true };
-                    const mappedSourceKeys = [];
+                    const allMappedSystemKeys = [];
 
                     standardFields.forEach(field => {
                         const match = autoMatchColumn(field.key, keys);
@@ -153,14 +153,15 @@ export const GeoJSONImportWizardModal = ({
                         const isEnabled = field.required || Boolean(match) || field.supportsAuto;
                         initialStandardEnabled[field.key] = isEnabled;
                         
-                        if (match && isEnabled) {
-                            mappedSourceKeys.push(match);
+                        if (match) {
+                            allMappedSystemKeys.push(match);
                         }
                     });
 
+                    // Only select custom attributes that are NOT mapped to any standard system field
                     const initialCustom = {};
                     keys.forEach(k => {
-                        initialCustom[k] = !mappedSourceKeys.includes(k);
+                        initialCustom[k] = !allMappedSystemKeys.includes(k);
                     });
 
                     setStandardMapping(initialStandardMapping);
@@ -213,11 +214,13 @@ export const GeoJSONImportWizardModal = ({
             }
         });
 
-        const mappedSourceColumns = Object.values(activeStandardMapping).filter(v => v !== '__AUTO_COMPUTE__');
-        
+        // Collect ALL GeoJSON source keys assigned to system fields (enabled OR disabled)
+        // to ensure they are NEVER imported as custom properties.
+        const reservedSystemColumns = Object.values(standardMapping).filter(Boolean);
+
         const selectedCustomList = [];
         Object.keys(customSelections).forEach(k => {
-            if (customSelections[k] && !mappedSourceColumns.includes(k)) {
+            if (customSelections[k] && !reservedSystemColumns.includes(k)) {
                 const sampleVal = sampleProps[k];
                 const inferred = inferDataType(sampleVal);
                 selectedCustomList.push({
@@ -251,12 +254,9 @@ export const GeoJSONImportWizardModal = ({
         }))
     ];
 
-    const mappedSourceColumns = Object.keys(enabledStandardFields)
-        .filter(k => enabledStandardFields[k])
-        .map(k => standardMapping[k])
-        .filter(Boolean);
-
-    const dynamicKeys = detectedKeys.filter(k => !mappedSourceColumns.includes(k));
+    // Filter out ANY GeoJSON column mapped to a system field (whether that field is checked or unchecked)
+    const reservedSystemColumns = Object.values(standardMapping).filter(Boolean);
+    const dynamicKeys = detectedKeys.filter(k => !reservedSystemColumns.includes(k));
 
     return (
         <Modal 
@@ -293,7 +293,7 @@ export const GeoJSONImportWizardModal = ({
                             {__('1. System Fields Mapping', TEXT_DOMAIN)}
                         </h3>
                         <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
-                            {__('Check fields to update in the database. Unchecked fields will be preserved.', TEXT_DOMAIN)}
+                            {__('Check fields to update in the database. Unchecked fields will be ignored on import.', TEXT_DOMAIN)}
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9f9f9', padding: '12px', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
                             {standardFields.map(field => {
@@ -353,7 +353,7 @@ export const GeoJSONImportWizardModal = ({
                         </h3>
                         {dynamicKeys.length === 0 ? (
                             <p style={{ fontStyle: 'italic', color: '#888' }}>
-                                {__('All GeoJSON attributes mapped to system fields above.', TEXT_DOMAIN)}
+                                {__('All GeoJSON attributes are mapped to system fields above.', TEXT_DOMAIN)}
                             </p>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', background: '#f9f9f9', padding: '12px', borderRadius: '4px', border: '1px solid #e0e0e0' }}>

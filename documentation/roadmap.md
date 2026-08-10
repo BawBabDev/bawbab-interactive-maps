@@ -29,25 +29,26 @@
 
 Done
 - Fix remove button for custom fields + Option to remove entire column
+- Importer: make sure the predetermined data not imported don't end up in custom fields
 - Styling & Legend Verification:
     - Verify that color picker selections properly update both the UI legend and live map rendering.
+    - Allow to create new categories and assign them to features
     - Adapt the legend to be dynamic
     - Simplify the category tool:
         - one ligne by category: label, pick color, pick group
         - simple tool to create new groups
 
+
 🛠️ Immediate Fixes & Polish
 - Avoid constant page reload on data import / deletion or settings changes from the admin panel
-- Allow to create new categories and assign them to features
 - Editor
     - Allow to modify batch of feature (ex. is interactive etc)
     - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks. 
     - Have option with pen button to edit actual name and code
-- Importer: make sure the predetermined data not imported don't end up in custom fields
 - Use custom confirmation modal everywhere
 - Styling & Legend Verification:
     - Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
-    - Have more customization options for legend (grouping classes etc, labels, item order)
+    - Have more customization options for legend (grouping classes etc, labels, item order, exclude layers / categories)
 - Weird zoom behavior in the preview map
 
 
