@@ -50,6 +50,8 @@ Done
     - Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
     - Have more customization options for legend (grouping classes etc, labels, item order, exclude layers / categories)
 - Weird zoom behavior in the preview map
+- Import the geom field
+- Update Info tab
 
 
 🗺️ Future Roadmap Items
