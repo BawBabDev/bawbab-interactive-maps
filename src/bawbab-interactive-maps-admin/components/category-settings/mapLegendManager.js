@@ -19,6 +19,15 @@ export const MapLegendManager = ({
 
     const allCategoryKeys = Object.keys(categoryMap);
 
+    // Compute set of categories that are ALREADY merged into existing merge lines
+    const alreadyMergedCategorySet = new Set(
+        (legendConfig.sections || []).flatMap(sec => 
+            (sec.items || [])
+                .filter(item => item.type === 'merged')
+                .flatMap(item => item.categories || [])
+        )
+    );
+
     // 1. Add Custom Legend Section
     const handleAddSection = () => {
         if (!newSectionTitle.trim()) return;
@@ -119,11 +128,11 @@ export const MapLegendManager = ({
         });
     };
 
-    // 7. Merge Categories into 1 Legend Line
+    // 7. Merge Categories into 1 Legend Line (FIXED: NEVER WIPES PREVIOUS MERGES)
     const handleConfirmMergeCategories = () => {
         if (!mergeLabel.trim() || selectedMergeCats.length < 2) return;
 
-        const newItem = {
+        const newMergedItem = {
             id: `merge_${Date.now()}`,
             label: mergeLabel.trim(),
             type: 'merged',
@@ -131,15 +140,27 @@ export const MapLegendManager = ({
             showInLegend: true
         };
 
-        const updatedSections = legendConfig.sections.map(sec => ({
-            ...sec,
-            items: sec.items.filter(item => !item.categories.some(c => selectedMergeCats.includes(c)))
-        }));
+        const targetCatSet = new Set(selectedMergeCats);
+
+        // Filter out single items that are being merged, while preserving existing merged items
+        const updatedSections = (legendConfig.sections || []).map(sec => {
+            const cleanItems = (sec.items || []).filter(item => {
+                if (item.type === 'merged') {
+                    // Always keep existing merged items unless every category in it was re-selected
+                    return true;
+                }
+                // For single items, remove if its category is in the new merge
+                return !item.categories.some(c => targetCatSet.has(c));
+            });
+
+            return { ...sec, items: cleanItems };
+        });
 
         const secToAddTo = targetSectionId || updatedSections[0]?.id;
-        const targetSec = updatedSections.find(s => s.id === secToAddTo);
+        const targetSec = updatedSections.find(s => s.id === secToAddTo) || updatedSections[0];
+
         if (targetSec) {
-            targetSec.items.unshift(newItem);
+            targetSec.items.unshift(newMergedItem);
         }
 
         setLegendConfig(prev => ({ ...prev, sections: updatedSections }));
@@ -188,7 +209,7 @@ export const MapLegendManager = ({
                     {__('Create custom section groups for the legend, rename headers, reorder entries, or move items across sections without altering underlying spatial keys.', TEXT_DOMAIN)}
                 </p>
 
-                {/* CONTROL HEADER - FIXED OVERFLOW WITH FLEX WRAP */}
+                {/* CONTROL HEADER */}
                 <div style={{ marginBottom: '20px', padding: '14px', background: '#f9f9f9', borderRadius: '6px', border: '1px solid #eee' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px' }}>
@@ -401,20 +422,24 @@ export const MapLegendManager = ({
                             <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #eee', padding: '10px', borderRadius: '4px' }}>
                                 {allCategoryKeys.map(compositeKey => {
                                     const isChecked = selectedMergeCats.includes(compositeKey);
+                                    const isAlreadyMerged = alreadyMergedCategorySet.has(compositeKey);
                                     const catInfo = categoryMap[compositeKey] || {};
+
                                     return (
-                                        <CheckboxControl
-                                            key={`merge_check_${compositeKey}`}
-                                            label={`${catInfo.label || compositeKey} [${catInfo.layer_type || 'buildings'}]`}
-                                            checked={isChecked}
-                                            onChange={(checked) => {
-                                                if (checked) {
-                                                    setSelectedMergeCats(prev => [...prev, compositeKey]);
-                                                } else {
-                                                    setSelectedMergeCats(prev => prev.filter(s => s !== compositeKey));
-                                                }
-                                            }}
-                                        />
+                                        <div key={`merge_wrap_${compositeKey}`} style={{ opacity: isAlreadyMerged ? 0.5 : 1 }}>
+                                            <CheckboxControl
+                                                label={`${catInfo.label || compositeKey} [${catInfo.layer_type || 'buildings'}] ${isAlreadyMerged ? __('(Already Merged)', TEXT_DOMAIN) : ''}`}
+                                                checked={isChecked}
+                                                disabled={isAlreadyMerged}
+                                                onChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedMergeCats(prev => [...prev, compositeKey]);
+                                                    } else {
+                                                        setSelectedMergeCats(prev => prev.filter(s => s !== compositeKey));
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     );
                                 })}
                             </div>
