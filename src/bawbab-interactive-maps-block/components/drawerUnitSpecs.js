@@ -19,19 +19,29 @@ const formatFieldLabel = (str) => {
  * UnitSpecs Component
  * 
  * Dynamically displays feature specifications in the side drawer.
- * Renders an icon grid for recognized spatial attributes (sq_ft, baths, fireplace, sunroom)
- * and generic key-value badges for any custom attributes.
+ * Renders an icon grid ONLY for recognized spatial attributes (sq_ft, baths, fireplace, sunroom)
+ * and generic key-value badges strictly for custom attributes inside custom_attributes JSON.
  */
 export const UnitSpecs = ({ specs }) => {
     if (!specs) return null;
 
-    // Merge root properties with custom_attributes bucket
-    const customAttrs = specs.custom_attributes || {};
-    const mergedSpecs = { ...specs, ...customAttrs };
+    // Safely extract custom_attributes JSON object
+    let customAttrs = specs.custom_attributes || {};
+    if (typeof customAttrs === 'string') {
+        try {
+            customAttrs = JSON.parse(customAttrs);
+        } catch (e) {
+            customAttrs = {};
+        }
+    }
 
-    const { sq_ft, baths, fireplace, sunroom } = mergedSpecs;
+    // Classic spec lookup: Check custom_attributes first, fallback to root specs
+    const sq_ft = customAttrs.sq_ft !== undefined ? customAttrs.sq_ft : specs.sq_ft;
+    const baths = customAttrs.baths !== undefined ? customAttrs.baths : specs.baths;
+    const fireplace = customAttrs.fireplace !== undefined ? customAttrs.fireplace : specs.fireplace;
+    const sunroom = customAttrs.sunroom !== undefined ? customAttrs.sunroom : specs.sunroom;
 
-    // Determine if any classic icon-supported attributes are present
+    // Determine if classic icon-supported attributes exist
     const hasSqFt = sq_ft !== undefined && sq_ft !== null && sq_ft !== '';
     const hasBaths = baths !== undefined && baths !== null && baths !== '';
     const hasFireplace = fireplace !== undefined && fireplace !== null;
@@ -39,13 +49,12 @@ export const UnitSpecs = ({ specs }) => {
 
     const hasClassicSpecs = hasSqFt || hasBaths || hasFireplace || hasSunroom;
 
-    // Filter out classic keys to extract purely dynamic custom attributes
-    const knownKeys = ['sq_ft', 'baths', 'fireplace', 'sunroom', 'fid', 'layer_type', 'name', 'category', 'code', 'fill_color', 'lat', 'lng', 'floor', 'is_interactive', 'show_label', 'title', 'description', 'wp_page_id', 'custom_video_url', 'custom_floorplan_url', 'append_description', 'hide_page_video', 'hide_page_floorplan', 'gallery', 'custom_attributes', 'geometry', 'type', 'manualOriginNode', 'onTriggerOriginPick'];
-    
-    const extraAttrKeys = Object.keys(mergedSpecs).filter(k => !knownKeys.includes(k));
+    // STRICT FILTERING: Only inspect keys directly inside custom_attributes JSON object
+    const classicKeys = ['sq_ft', 'baths', 'fireplace', 'sunroom'];
+    const extraAttrKeys = Object.keys(customAttrs).filter(k => !classicKeys.includes(k));
 
     if (!hasClassicSpecs && extraAttrKeys.length === 0) {
-        return null; // Render nothing if no specs or attributes exist
+        return null;
     }
 
     const valBaths = parseFloat(baths) || 0;
@@ -54,7 +63,7 @@ export const UnitSpecs = ({ specs }) => {
 
     return (
         <div className="location-specs-container">
-            {/* CLASSIC ICON GRID (Renders if classic specs exist) */}
+            {/* CLASSIC ICON GRID */}
             {hasClassicSpecs && (
                 <>
                     {hasSqFt && (
@@ -119,11 +128,11 @@ export const UnitSpecs = ({ specs }) => {
                 </>
             )}
 
-            {/* GENERIC ATTRIBUTE BADGES (Renders for any non-classic custom attributes) */}
+            {/* GENERIC ATTRIBUTE BADGES (Only for non-classic custom attributes inside custom_attributes) */}
             {extraAttrKeys.length > 0 && (
                 <div className="generic-specs-badges" style={{ marginTop: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {extraAttrKeys.map((key) => {
-                        const val = mergedSpecs[key];
+                        const val = customAttrs[key];
                         if (val === null || val === undefined || val === '') return null;
 
                         const displayVal = typeof val === 'boolean' ? (val ? __('Yes', TEXT_DOMAIN) : __('No', TEXT_DOMAIN)) : String(val);
