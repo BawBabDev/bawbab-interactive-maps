@@ -22,11 +22,21 @@ const formatLabel = (str) => {
     return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
+const LAYER_OPTIONS = [
+    { label: __('All Map Layers', TEXT_DOMAIN), value: 'all' },
+    { label: __('Buildings Layer', TEXT_DOMAIN), value: 'buildings' },
+    { label: __('Land Use Layer', TEXT_DOMAIN), value: 'land_use' },
+    { label: __('Pathways Layer', TEXT_DOMAIN), value: 'paths' },
+    { label: __('Parcels Layer', TEXT_DOMAIN), value: 'parcels' },
+    { label: __('Entries Layer', TEXT_DOMAIN), value: 'entries' }
+];
+
 /**
  * EditPage Component
  */
 const EditPage = () => {
     const [features, setFeatures] = useState([]);
+    const [selectedLayer, setSelectedLayer] = useState('all'); // Layer Selector Filter State
     const [searchQuery, setSearchQuery] = useState(''); 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -64,21 +74,19 @@ const EditPage = () => {
     const { removeNotice } = useDispatch( noticesStore );
     const notices = useSelect( ( select ) => select( noticesStore ).getNotices(), [] );
 
-    // 1. Fetch Features
+    // 1. Fetch Features (Preserves ALL layers so non-interactive features/metadata can be edited)
     const fetchFeatures = async () => {
         setIsLoading(true);
         try {
             const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/get-spatial-data');
             const data = await response.json();
-            const filtered = data.features?.filter(f => {
-                return f.properties.layer_type === 'buildings' || f.properties.layer_type === 'land_use';
-            }) || [];
+            const allFeatures = data.features || [];
             
-            setFeatures(filtered);
+            setFeatures(allFeatures);
 
             setActiveFeature(prevActive => {
                 if (!prevActive) return null;
-                const updated = filtered.find(f => 
+                const updated = allFeatures.find(f => 
                     String(f.properties.fid) === String(prevActive.properties.fid) && 
                     f.properties.layer_type === prevActive.properties.layer_type
                 );
@@ -100,14 +108,17 @@ const EditPage = () => {
         setDynamicFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // 3. Process Two-Level Category Accordion Structure Using 1-to-1 Groups
+    // 3. Process Two-Level Category Accordion Structure Using Composite Key Resolution
     const displayStructure = useMemo(() => {
         const activeGroups = groups.length > 0 ? groups : DEFAULT_GROUPS;
         const activeMap = Object.keys(categoryMap).length > 0 ? categoryMap : DEFAULT_CATEGORY_MAPPINGS;
 
-        const filteredFeatures = features.filter(f => 
-            matchesAllFilters(f, searchQuery, filterCategory, dynamicFilters)
-        );
+        // Apply layer filter + search & custom dynamic filters
+        const filteredFeatures = features.filter(f => {
+            const matchesLayer = selectedLayer === 'all' || f.properties?.layer_type === selectedLayer;
+            const matchesSearchAndCustom = matchesAllFilters(f, searchQuery, filterCategory, dynamicFilters);
+            return matchesLayer && matchesSearchAndCustom;
+        });
 
         const naturalSort = (a, b) => (a.properties?.code || a.properties?.name || '').localeCompare(b.properties?.code || b.properties?.name || '', undefined, { numeric: true });
 
@@ -117,9 +128,15 @@ const EditPage = () => {
         activeGroups.forEach(group => {
             if (!group.id) return;
 
-            const groupCategorySlugs = Object.keys(activeMap).filter(catSlug => activeMap[catSlug].groupId === group.id);
+            // Match features using composite key resolution (layer_type::category) or flat category fallback
+            const matchingFeatures = filteredFeatures.filter(f => {
+                const cat = f.properties?.category || '';
+                const layer = f.properties?.layer_type || 'buildings';
+                const compositeKey = `${layer}::${cat}`;
 
-            const matchingFeatures = filteredFeatures.filter(f => groupCategorySlugs.includes(f.properties?.category));
+                const mappedInfo = activeMap[compositeKey] || activeMap[cat];
+                return mappedInfo?.groupId === group.id;
+            });
 
             if (matchingFeatures.length === 0) return;
 
@@ -157,6 +174,7 @@ const EditPage = () => {
             });
         });
 
+        // Collect unassigned or uncategorized features into default bucket
         const unassignedFeatures = filteredFeatures.filter(f => !assignedFeatureFids.has(`${f.properties.layer_type}-${f.properties.fid}`));
 
         if (unassignedFeatures.length > 0) {
@@ -171,7 +189,7 @@ const EditPage = () => {
         }
 
         return mainCategories;
-    }, [features, searchQuery, filterCategory, dynamicFilters, groups, categoryMap]);
+    }, [features, selectedLayer, searchQuery, filterCategory, dynamicFilters, groups, categoryMap]);
 
     const updateDraft = (layerType, fid, data) => {
         const compositeKey = `${layerType}::${fid}`;
@@ -250,7 +268,6 @@ const EditPage = () => {
 
             await Promise.all(savePromises);
             
-            // Clear drafts and trigger immediate map + feature state refresh
             setDrafts({});
             setResetCounter(prev => prev + 1);
             await fetchFeatures();
@@ -371,6 +388,18 @@ const EditPage = () => {
                 <div style={{ flex: '0 0 350px', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     
                     <div style={{ padding: '15px', borderBottom: '1px solid #f0f0f0', background: '#f9f9f9', flexShrink: 0 }}>
+                        {/* LAYER SELECTION CONTROL */}
+                        <div style={{ marginBottom: '10px' }}>
+                            <SelectControl
+                                label={__('Target Map Layer', TEXT_DOMAIN)}
+                                value={selectedLayer}
+                                options={LAYER_OPTIONS}
+                                onChange={(val) => setSelectedLayer(val)}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
+
+                        {/* SEARCH & FILTER CONTROLS */}
                         <Flex align="center" gap={2}>
                             <FlexItem style={{ flex: 1 }}>
                                 <SearchControl 
@@ -608,7 +637,6 @@ const EditPage = () => {
                                             {__('Location Preview', TEXT_DOMAIN)}
                                         </h2>
                                         <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                            {/* DYNAMIC MAP RE-RENDER KEY BASED ON resetCounter */}
                                             <BawBabIMaps 
                                                 key={`preview-map-${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`}
                                                 height="450px"

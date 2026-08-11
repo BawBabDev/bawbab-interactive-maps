@@ -76,10 +76,11 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
 
             const featureItem = { ...props, type: 'spatial', geometry: f.geometry };
             const category = props.category || '';
+            const layer = props.layer_type || 'buildings';
 
-            // Resolve target group ID via 1-to-1 mapping.
-            // If category is unassigned (groupId is '' or undefined), DO NOT map to public menu!
-            const catInfo = activeMap[category];
+            // COMPOSITE KEY RESOLUTION: Match "layer_type::category_slug" or fallback to bare category
+            const compositeKey = `${layer}::${category}`;
+            const catInfo = activeMap[compositeKey] || activeMap[category];
             const targetGroupId = catInfo?.groupId;
 
             // Strict check: Ignore unassigned features or features mapped to non-existent groups
