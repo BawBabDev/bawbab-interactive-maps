@@ -10,15 +10,16 @@ import { SettingsTab } from './tabs/settingsTab';
 import { SpatialDataUploader } from './tabs/spatialDataUploader';
 import { InfoTab } from './tabs/infoTab';
 
-const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, locations, addLocation, removeLocation, 
+const AdminSidebar = ({ 
+    mapDescription, setMapDescription, mapType, setMapType, locations, addLocation, removeLocation, 
     updateLocation, addImageToLocation, removeImageFromLocation, onUploadSuccess, mapLogo, setMapLogo, navBackground, 
-    setNavBackground, colorTheme, setColorTheme, googleApiKey, setGoogleApiKey, googleMapId, setGoogleMapId }) => 
-    {
+    setNavBackground, colorTheme, setColorTheme, googleApiKey, setGoogleApiKey, googleMapId, setGoogleMapId 
+}) => {
     const tabs = [
         { name: 'map', title: (<div className="tab-label"><Dashicon icon="location-alt" /><span>{__('Map', 'bawbab-interactive-maps')}</span></div>) },
         { name: 'locations', title: (<div className="tab-label"><Dashicon icon="location" /><span>{__('Locations', 'bawbab-interactive-maps')}</span></div>) },
         { name: 'importer', title: (<div className="tab-label"><Dashicon icon="cloud-upload" /><span>{__('Importer', 'bawbab-interactive-maps')}</span></div>) },
-        { name: 'settings', title: (<div className="tab-label"><Dashicon icon="admin-settings" /><span>{__('Settings', 'bawbab-interactive-maps')}</span></div>) },
+        { name: 'settings', title: (<div className="tab-label"><Dashicon icon="admin-settings" /><span>{__('Layout Settings', 'bawbab-interactive-maps')}</span></div>) },
         { name: 'info', title: (<div className="tab-label"><Dashicon icon="info" /><span>{__('Info', 'bawbab-interactive-maps')}</span></div>) },
     ];
 
@@ -32,10 +33,12 @@ const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, 
                                 <MapsTab 
                                     mapDescription={mapDescription}
                                     setMapDescription={setMapDescription}
-                                    mapLogo={mapLogo}
-                                    setMapLogo={setMapLogo}
-                                    navBackground={navBackground}
-                                    setNavBackground={setNavBackground}
+                                    mapType={mapType}
+                                    setMapType={setMapType}
+                                    googleApiKey={googleApiKey}
+                                    setGoogleApiKey={setGoogleApiKey}
+                                    googleMapId={googleMapId}
+                                    setGoogleMapId={setGoogleMapId}
                                 />
                             )}
 
@@ -56,16 +59,15 @@ const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, 
 
                             {tab.name === 'settings' && (
                                 <SettingsTab
-                                    mapType={mapType}
-                                    setMapType={setMapType}
+                                    mapLogo={mapLogo}
+                                    setMapLogo={setMapLogo}
+                                    navBackground={navBackground}
+                                    setNavBackground={setNavBackground}
                                     colorTheme={colorTheme}
                                     setColorTheme={setColorTheme}
-                                    googleApiKey={googleApiKey}
-                                    setGoogleApiKey={setGoogleApiKey}
-                                    googleMapId={googleMapId}
-                                    setGoogleMapId={setGoogleMapId}
                                 />
                             )}
+
                             {tab.name === 'info' && (
                                 <InfoTab />
                             )}
