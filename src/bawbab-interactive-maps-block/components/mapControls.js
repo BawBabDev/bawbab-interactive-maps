@@ -72,7 +72,7 @@ export const MapLegend = ({ mapDimensions }) => {
                 display: 'flex', 
                 flexDirection: 'column',
                 width: isOpen ? 'max-content' : '40px',
-                maxHeight: isOpen ? '500px' : '40px', 
+                maxHeight: isOpen ? '450px' : '40px', 
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 overflow: 'hidden',
                 cursor: isOpen ? 'default' : 'pointer',

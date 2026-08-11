@@ -28,10 +28,12 @@
 ## 🔮 Next Steps & To-Do List
 
 ### Done
-- Fix remove button for custom fields + Option to remove entire column
+- Avoid constant page reload on data import / deletion or settings changes from the admin panel
 - Editor
     - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable 
-- Importer: make sure the predetermined data not imported don't end up in custom fields
+- Importer:
+    - Make sure the predetermined data not imported don't end up in custom fields
+    - Option to remove custom fields
 - Styling & Legend Verification:
     - Verify that color picker selections properly update both the UI legend and live map rendering.
     - Allow to create new categories and assign them to features
@@ -42,11 +44,12 @@
 
 
 🛠️ Immediate Fixes & Polish
-- Avoid constant page reload on data import / deletion or settings changes from the admin panel
+
 - Editor
     - Allow to modify batch of feature (ex. is interactive etc)
     - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks. 
     - Have option with pen button to edit actual name and code
+    - Fix the add attributes button to modify for all features
 - Use custom confirmation modal everywhere
 - Styling & Legend Verification:
     - Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
