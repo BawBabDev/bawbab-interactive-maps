@@ -620,11 +620,11 @@ const EditPage = () => {
                             {activeFeature ? (
                                 <div style={{ padding: '40px 20px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
                                     <DataEditor 
-                                        key={`${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`} 
+                                        key={`${activeFeature.properties.layer_type}-${activeFeature.properties.fid}`} 
                                         building={activeFeature} 
                                         draft={drafts[activeCompositeKey] || {}}
                                         globalSchema={schema}
-                                        updateSchemaKey={updateSchemaKey} // <-- PASS THIS PROP
+                                        updateSchemaKey={updateSchemaKey}
                                         updateDraft={(data) => updateDraft(activeFeature.properties.layer_type, activeFeature.properties.fid, data)}
                                         onUpdate={saveAllDrafts}
                                         onCancel={handleCancel}
@@ -638,8 +638,9 @@ const EditPage = () => {
                                             {__('Location Preview', TEXT_DOMAIN)}
                                         </h2>
                                         <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            {/* MAP KEY RE-RENDERS ONLY WHEN REFRESH/SAVE IS TRIGGERED VIA resetCounter */}
                                             <BawBabIMaps 
-                                                key={`preview-map-${activeFeature.properties.layer_type}-${activeFeature.properties.fid}-${resetCounter}`}
+                                                key={`preview-map-${resetCounter}`}
                                                 height="450px"
                                                 editMode={true}
                                                 selectedLocationProp={activeFeature}
