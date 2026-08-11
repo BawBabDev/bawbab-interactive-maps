@@ -227,13 +227,11 @@ const DataEditor = ({
 
     const handleToggleCustomColor = (enabled) => {
         if (enabled) {
-            // Toggle ON: Set flag to true and initialize color
             updateDraft({ 
                 use_custom_color: true, 
                 fill_color: activeFillColor || globalCategoryColor 
             });
         } else {
-            // Toggle OFF: Set flag to false and clear custom color
             updateDraft({ 
                 use_custom_color: false, 
                 fill_color: '' 
@@ -306,7 +304,9 @@ const DataEditor = ({
         }
     };
 
-    // Form Values
+    // Form Base Structure Values
+    const featureName = getValue('name', localProps.name);
+    const featureCode = getValue('code', localProps.code);
     const customTitle = getValue('title', localProps.title);
     const linkedPageId = getValue('wp_page_id', localProps.wp_page_id);
     const isInteractive = getValue('is_interactive', localProps.is_interactive !== undefined ? !!localProps.is_interactive : true);
@@ -339,17 +339,45 @@ const DataEditor = ({
         <div className="building-editor-container" style={{ maxWidth: '650px' }}>
             <div style={{ marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
                 <Text variant="title.medium" display="block">
-                    {__('Internal ID:', TEXT_DOMAIN)} {localProps.name || localProps.fid}
+                    {__('Internal ID:', TEXT_DOMAIN)} {localProps.fid}
                 </Text>
             </div>
 
-            {/* 1. DISPLAY TITLE OVERRIDE */}
-            <div style={{ marginBottom: '20px' }}>
+            {/* 1. BASE STRUCTURE: NAME AND CODE FIELDS */}
+            <div style={{ padding: '15px', background: '#fafafa', border: '1px solid #e0e0e0', borderRadius: '4px', marginBottom: '20px' }}>
+                <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
+                    {__('Core Identification & Canvas Label', TEXT_DOMAIN)}
+                </Text>
+                
+                <Flex gap={3} style={{ marginBottom: '12px' }}>
+                    <FlexItem style={{ flex: 1 }}>
+                        <TextControl 
+                            label={__('Feature Name', TEXT_DOMAIN)} 
+                            value={featureName} 
+                            onChange={(val) => updateDraft({ name: val })}
+                            placeholder={__('e.g. Building A or Main Entrance', TEXT_DOMAIN)}
+                            help={__('Primary name used in navigation and map labels.', TEXT_DOMAIN)}
+                            __nextHasNoMarginBottom
+                        />
+                    </FlexItem>
+                    <FlexItem style={{ flex: '0 0 180px' }}>
+                        <TextControl 
+                            label={__('Unit / Room Code', TEXT_DOMAIN)} 
+                            value={featureCode} 
+                            onChange={(val) => updateDraft({ code: val })}
+                            placeholder={__('e.g. 101A', TEXT_DOMAIN)}
+                            help={__('Room or unit code label.', TEXT_DOMAIN)}
+                            __nextHasNoMarginBottom
+                        />
+                    </FlexItem>
+                </Flex>
+
                 <TextControl 
-                    label={__('Display Title (Overrides WP Page Title)', TEXT_DOMAIN)} 
+                    label={__('Display Title (Overrides WP Page Title in Side Drawer)', TEXT_DOMAIN)} 
                     value={customTitle} 
                     onChange={(val) => updateDraft({ title: val })}
-                    placeholder={localProps.name}
+                    placeholder={featureName || localProps.name}
+                    help={__('Public header shown inside side drawer popups when selected.', TEXT_DOMAIN)}
                     __nextHasNoMarginBottom
                 />
             </div>

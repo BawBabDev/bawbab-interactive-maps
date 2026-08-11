@@ -34,6 +34,7 @@
     - Fix the add attributes button to apply to all features
     - Fix deletion to apply to all feature
     - Adapt editor to edit all layers
+    - Weird zoom behavior in the preview map
 - Importer:
     - Make sure the predetermined data not imported don't end up in custom fields
     - Option to remove custom fields
@@ -54,8 +55,9 @@
     - Allow to modify batch of feature (ex. is interactive etc)
     - Have option with pen button to edit actual name and code
 - Use custom confirmation modal everywhere
-- Styling: Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
-- Weird zoom behavior in the preview map
+- Map Side Drawer
+    - Insure proper styling for additionnal custom fields in side drawer
+    - Allow to choose icons from a library or WP library
 - Update Info tab
 - Reorganize files for admin page
 

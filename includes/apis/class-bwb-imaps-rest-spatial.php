@@ -171,6 +171,16 @@ class BWB_IMaps_REST_Spatial {
         $update_data = array();
         $format      = array();
 
+        if ( $request->has_param( 'name' ) ) {
+            $update_data['name'] = sanitize_text_field( $request->get_param( 'name' ) );
+            $format[] = '%s';
+        }
+
+        if ( $request->has_param( 'code' ) ) {
+            $update_data['code'] = sanitize_text_field( $request->get_param( 'code' ) );
+            $format[] = '%s';
+        }
+
         if ( $request->has_param( 'category' ) ) {
             $update_data['category'] = sanitize_text_field( $request->get_param( 'category' ) );
             $format[] = '%s';
