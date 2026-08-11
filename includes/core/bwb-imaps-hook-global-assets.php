@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'wp_enqueue_scripts', function() {
-    $script_handle = 'your-map-script-handle'; // Change to match your handle
+    $script_handle = 'bawbab-interactive-maps';
     $map_settings  = get_option( 'bawbab_imaps_options_data' );
     
     if ( $map_settings ) {
