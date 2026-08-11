@@ -2,7 +2,7 @@ import { Button, SelectControl, Flex, FlexItem, Dashicon, __experimentalText as 
 import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
-import { useNotify } from '../Notices';
+import { useNotify } from '../notices';
 import { GeoJSONImportWizardModal } from '../modals/GeoJSONImportWizardModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';

@@ -1,11 +1,11 @@
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import { Panel, Button, Flex, FlexItem, NoticeList, Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
 import BawBabIMaps from '../bawbab-interactive-maps-block/components/maps';
-import AdminSidebar from './components/AdminSidebar';
+import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 
 /**
@@ -30,6 +30,10 @@ const MainSettingsPage = () => {
     const [googleApiKey, setGoogleApiKey] = useState('');
     const [googleMapId, setGoogleMapId] = useState('');
 
+    // --- CREDENTIALS MEMORY TRACKER ---
+    // Tracks initial credentials from database to determine if a full page reload is required on save
+    const initialCredentialsRef = useRef({ apiKey: '', mapId: '' });
+
     // --- NOTICES SETUP ---
     const { createSuccessNotice, createErrorNotice } = useDispatch( noticesStore );
     const notices = useSelect( ( select ) => select( noticesStore ).getNotices(), [] );
@@ -50,8 +54,13 @@ const MainSettingsPage = () => {
                 setNavBackground ( data.navBackground || '');
                 setGoogleApiKey(data.googleApiKey || '');
                 setGoogleMapId( data.googleMapId || '' );
+
+                // Store baseline credentials
+                initialCredentialsRef.current = {
+                    apiKey: data.googleApiKey || '',
+                    mapId: data.googleMapId || ''
+                };
             } else {
-                // Instantiation default fallback values
                 setColorTheme('blue');
             }
             setIsLoaded(true);
@@ -61,7 +70,6 @@ const MainSettingsPage = () => {
             setIsLoaded(true);
         });
     }, [] );
-
 
     // --- SAVE DATA ACTION ---
     const handleSave = async () => {
@@ -79,6 +87,9 @@ const MainSettingsPage = () => {
             // 2. Helper to guarantee string types for REST API validation
             const safeString = ( val ) => ( typeof val === 'string' ? val : ( val?.url || '' ) );
 
+            const cleanApiKey = safeString( googleApiKey ).trim();
+            const cleanMapId  = safeString( googleMapId ).trim();
+
             // 3. POST merged payload to REST API
             await apiFetch( {
                 path: '/wp/v2/settings',
@@ -90,32 +101,48 @@ const MainSettingsPage = () => {
                         mapType: safeString( mapType ),
                         locations: Array.isArray( locations ) ? locations : [],
                         mapLogo: safeString( mapLogo ),
-                        navBackground: safeString( navBackground ), // Guarantees string type!
+                        navBackground: safeString( navBackground ),
                         colorTheme: safeString( colorTheme ),
-                        googleApiKey: safeString( googleApiKey ),
-                        googleMapId: safeString( googleMapId )
+                        googleApiKey: cleanApiKey,
+                        googleMapId: cleanMapId
                     }
                 },
             } );
             
-            // Explicit memory management sync parameters to window state
+            // 4. Update window memory object
             window.bwbimapsSettings = {
                 ...window.bwbimapsSettings,
                 mapType: safeString( mapType ),
                 colorTheme: safeString( colorTheme ),
                 mapLogo: safeString( mapLogo ),
-                googleApiKey: safeString( googleApiKey ),
-                googleMapId: safeString( googleMapId ),
+                googleApiKey: cleanApiKey,
+                googleMapId: cleanMapId,
                 navBackground: safeString( navBackground )
             };
 
-            createSuccessNotice( __( 'Settings saved successfully!', 'bawbab-interactive-maps' ), {
-                type: 'snackbar',
-            } );
-            
-            setTimeout(() => {
-                window.location.reload();
-            }, 800);
+            // 5. Smart Reload Check: Only reload full browser if Google API Key or Map ID changed
+            const credentialsChanged = 
+                cleanApiKey !== initialCredentialsRef.current.apiKey.trim() ||
+                cleanMapId  !== initialCredentialsRef.current.mapId.trim();
+
+            if ( credentialsChanged ) {
+                // Update baseline reference so future saves don't trigger reloads
+                initialCredentialsRef.current = { apiKey: cleanApiKey, mapId: cleanMapId };
+
+                createSuccessNotice( __( 'Google Maps API credentials updated! Reloading page...', 'bawbab-interactive-maps' ), {
+                    type: 'snackbar',
+                } );
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Smooth in-memory refresh for logo, colors, locations, and descriptions
+                triggerMapRefresh();
+                createSuccessNotice( __( 'Settings saved successfully!', 'bawbab-interactive-maps' ), {
+                    type: 'snackbar',
+                } );
+            }
         } catch ( error ) {
             console.error( 'Save settings REST error:', error );
             createErrorNotice( __( 'Error saving settings: ', 'bawbab-interactive-maps' ) + error.message );

@@ -7,7 +7,7 @@ import { useState } from '@wordpress/element';
 import { MapsTab } from './tabs/mapsTab';
 import { LocationsTab } from './tabs/locationsTab';
 import { SettingsTab } from './tabs/settingsTab';
-import { SpatialDataUploader } from './tabs/SpatialDataUploader';
+import { SpatialDataUploader } from './tabs/spatialDataUploader';
 import { InfoTab } from './tabs/infoTab';
 
 const AdminSidebar = ({ mapDescription, setMapDescription, mapType, setMapType, locations, addLocation, removeLocation, 

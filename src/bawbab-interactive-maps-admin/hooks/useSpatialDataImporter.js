@@ -1,16 +1,14 @@
+/**
+ * Custom React hook handling async multi-layer GeoJSON inspections, 
+ * field mapping execution, and layer truncations.
+ * File location: src/hooks/useSpatialDataImporter.js
+ */
+
 import { useState, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
-/**
- * useSpatialDataImporter
- * 
- * Custom React hook handling async multi-layer GeoJSON inspections, 
- * field mapping execution, and layer truncations.
- *
- * @returns {Object} Importer states and actions { inspectGeoJSON, importGeoJSON, isUploading, message, setMessage, deleteLayer }
- */
 export const useSpatialDataImporter = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState(null);
@@ -143,7 +141,7 @@ export const useSpatialDataImporter = () => {
                     type: 'success', 
                     text: sprintf(__('Layer %1$s deleted successfully.', TEXT_DOMAIN), layerType) 
                 });
-                setTimeout(() => window.location.reload(), 1500);
+                // No location reload needed! The state and map re-render dynamically.
             } else {
                 setMessage({ 
                     type: 'error', 
