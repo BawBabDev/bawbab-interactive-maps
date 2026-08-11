@@ -26,6 +26,41 @@ const LAYER_TITLES = {
     entries: 'Entries & Doors'
 };
 
+/**
+ * Helper: Auto-maps a category slug to a navigation group using fuzzy term matching
+ */
+const autoMatchCategoryToGroup = (catSlug, groups = []) => {
+    if (!catSlug || !groups.length) return '';
+
+    const cleanSlug = catSlug.toLowerCase().replace(/[-_]/g, ' ');
+
+    for (const group of groups) {
+        const gId = (group.id || '').toLowerCase();
+        const gTitle = (group.title || '').toLowerCase();
+
+        // 1. Direct substring matching
+        if (gTitle && (cleanSlug.includes(gTitle) || gTitle.includes(cleanSlug))) {
+            return group.id;
+        }
+
+        // 2. Fuzzy term matching
+        if (/(apt|apartment|residential|flat|housing|unit)/i.test(cleanSlug) && /(apt|apartment|residential|housing)/i.test(`${gTitle} ${gId}`)) {
+            return group.id;
+        }
+        if (/(cottage|house|villa|home)/i.test(cleanSlug) && /(cottage|house|villa|home)/i.test(`${gTitle} ${gId}`)) {
+            return group.id;
+        }
+        if (/(amenity|care|center|club|pool|park|gym|playground)/i.test(cleanSlug) && /(amenit|care|center|facility)/i.test(`${gTitle} ${gId}`)) {
+            return group.id;
+        }
+        if (/(path|road|trail|patio|drive|support|infra|utility)/i.test(cleanSlug) && /(path|road|trail|support|infra|util)/i.test(`${gTitle} ${gId}`)) {
+            return group.id;
+        }
+    }
+
+    return '';
+};
+
 export const useCategoryManager = () => {
     const [groups, setGroups] = useState(DEFAULT_GROUPS);
     const [categoryMap, setCategoryMap] = useState(DEFAULT_CATEGORY_MAPPINGS);
@@ -92,25 +127,23 @@ export const useCategoryManager = () => {
             Object.keys(currentCategoryMap).forEach(key => {
                 const item = currentCategoryMap[key] || {};
                 
-                let layer = item.layer_type;
-                let slug = key;
-
                 if (key.includes('::')) {
                     const parts = key.split('::');
-                    layer = parts[0];
-                    slug = parts[1];
+                    updatedMap[key] = {
+                        ...item,
+                        layer_type: item.layer_type || parts[0],
+                        label: item.label || parts[1].split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                    };
+                } else if (item.layer_type) {
+                    const compositeKey = `${item.layer_type}::${key}`;
+                    updatedMap[compositeKey] = {
+                        ...item,
+                        label: item.label || key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                    };
                 }
-
-                const compositeKey = layer ? `${layer}::${slug}` : key;
-
-                updatedMap[compositeKey] = {
-                    ...item,
-                    layer_type: layer || item.layer_type || 'buildings',
-                    label: item.label || slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                };
             });
 
-            // B. ONLY ADD newly discovered composite keys from active spatial data
+            // B. ADD newly discovered composite keys from active spatial data with AUTO-GROUP MATCHING
             Object.keys(discoveredCompositeMap).forEach(compositeKey => {
                 const info = discoveredCompositeMap[compositeKey];
 
@@ -118,13 +151,23 @@ export const useCategoryManager = () => {
                     const fallbackColor = info.color || CURATED_CATEGORY_PALETTE[paletteIdx % CURATED_CATEGORY_PALETTE.length];
                     const catSlug = info.category;
 
+                    // Automatically infer target group ID for newly discovered categories
+                    const matchedGroupId = autoMatchCategoryToGroup(catSlug, currentGroups);
+
                     updatedMap[compositeKey] = {
                         label: catSlug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-                        groupId: '',
+                        groupId: matchedGroupId,
                         layer_type: info.layer_type,
                         color: fallbackColor
                     };
                     paletteIdx++;
+                } else if (!updatedMap[compositeKey].groupId) {
+                    // Fallback auto-match for previously saved categories that were unassigned
+                    const catSlug = compositeKey.includes('::') ? compositeKey.split('::')[1] : compositeKey;
+                    const matchedGroupId = autoMatchCategoryToGroup(catSlug, currentGroups);
+                    if (matchedGroupId) {
+                        updatedMap[compositeKey].groupId = matchedGroupId;
+                    }
                 }
             });
 
@@ -263,7 +306,7 @@ export const useCategoryManager = () => {
         });
     }, [categoryMap]);
 
-    // 4. EXPLICIT USER ACTION ONLY: Prunes unused categories from categoryMap and legendConfig
+    // 4. EXPLICIT USER ACTION ONLY: Prunes unused categories
     const cleanupUnusedCategories = useCallback(async () => {
         setIsSaving(true);
         try {
@@ -297,11 +340,7 @@ export const useCategoryManager = () => {
 
                 const newLegendConfig = { ...legendConfig, sections: cleanedSections };
 
-                // Save pruned state explicitly to WP Options
                 await saveCategoryData(groups, cleanedMap, newLegendConfig);
-
-                // RE-SYNC STATE FROM DB IMMEDIATELY TO AVOID VISUAL DISCONNECT
-                await loadCategoryData();
 
                 createSuccessNotice(result.message || __('Unused categories pruned successfully.', TEXT_DOMAIN), {
                     type: 'snackbar'
@@ -318,7 +357,7 @@ export const useCategoryManager = () => {
         } finally {
             setIsSaving(false);
         }
-    }, [groups, legendConfig, saveCategoryData, loadCategoryData, createSuccessNotice, createErrorNotice]);
+    }, [groups, legendConfig, saveCategoryData, createSuccessNotice, createErrorNotice]);
 
     return {
         groups,

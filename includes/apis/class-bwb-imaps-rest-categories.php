@@ -49,17 +49,14 @@ class BWB_IMaps_REST_Categories {
         foreach ( $current_map as $cat_key => $cat_data ) {
             $composite_key = $cat_key;
 
-            // Normalize key if missing composite prefix
             if ( false === strpos( $cat_key, '::' ) ) {
-                $layer_type    = is_array( $cat_data ) && isset( $cat_data['layer_type'] ) ? $cat_data['layer_type'] : '';
+                $layer_type = is_array( $cat_data ) && isset( $cat_data['layer_type'] ) ? $cat_data['layer_type'] : '';
                 if ( ! empty( $layer_type ) ) {
                     $composite_key = $layer_type . '::' . $cat_key;
                 }
             }
 
-            // Strictly check if the layer_type::category_slug combination exists in MySQL
             if ( isset( $active_composite_set[ $composite_key ] ) ) {
-                // Ensure data payload preserves layer_type explicitly
                 if ( is_array( $cat_data ) && ! isset( $cat_data['layer_type'] ) && false !== strpos( $composite_key, '::' ) ) {
                     $parts = explode( '::', $composite_key );
                     $cat_data['layer_type'] = $parts[0];
@@ -85,7 +82,7 @@ class BWB_IMaps_REST_Categories {
     }
 
     /**
-     * Syncs newly imported spatial categories into categoryConfig option using composite keys.
+     * Syncs newly imported spatial categories into categoryConfig option using composite keys with fuzzy auto-group matching.
      */
     public static function sync_imported_categories_to_config( $category_color_map = array() ) {
         if ( empty( $category_color_map ) ) return;
@@ -99,11 +96,14 @@ class BWB_IMaps_REST_Categories {
         $has_changes = false;
 
         foreach ( $category_color_map as $raw_key => $hex_color ) {
-            if ( false === strpos( $raw_key, '::' ) ) continue; // Skip invalid flat keys during import sync
+            $layer_type = 'buildings';
+            $clean_slug = sanitize_key( $raw_key );
 
-            $parts      = explode( '::', $raw_key );
-            $layer_type = sanitize_key( $parts[0] );
-            $clean_slug = sanitize_key( $parts[1] );
+            if ( false !== strpos( $raw_key, '::' ) ) {
+                $parts      = explode( '::', $raw_key );
+                $layer_type = sanitize_key( $parts[0] );
+                $clean_slug = sanitize_key( $parts[1] );
+            }
 
             if ( empty( $clean_slug ) || empty( $layer_type ) ) continue;
 
@@ -114,10 +114,32 @@ class BWB_IMaps_REST_Categories {
                 $clean_color     = sanitize_hex_color( $hex_color );
 
                 $target_group_id = '';
+                $clean_readable  = strtolower( str_replace( array( '_', '-' ), ' ', $clean_slug ) );
 
                 foreach ( $groups as $group ) {
+                    $g_id    = strtolower( $group['id'] ?? '' );
                     $g_title = strtolower( $group['title'] ?? '' );
-                    if ( ! empty( $g_title ) && ( strpos( $clean_slug, $g_title ) !== false || strpos( $g_title, $clean_slug ) !== false ) ) {
+
+                    // Direct substring match
+                    if ( ! empty( $g_title ) && ( strpos( $clean_readable, $g_title ) !== false || strpos( $g_title, $clean_readable ) !== false ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+
+                    // Fuzzy term matching
+                    if ( preg_match( '/(apt|apartment|residential|flat|housing|unit)/i', $clean_readable ) && preg_match( '/(apt|apartment|residential|housing)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(cottage|house|villa|home)/i', $clean_readable ) && preg_match( '/(cottage|house|villa|home)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(amenity|care|center|club|pool|park|gym)/i', $clean_readable ) && preg_match( '/(amenit|care|center|facility)/i', $g_title . ' ' . $g_id ) ) {
+                        $target_group_id = $group['id'];
+                        break;
+                    }
+                    if ( preg_match( '/(path|road|trail|patio|drive|support|infra|util)/i', $clean_readable ) && preg_match( '/(path|road|trail|support|infra|util)/i', $g_title . ' ' . $g_id ) ) {
                         $target_group_id = $group['id'];
                         break;
                     }
