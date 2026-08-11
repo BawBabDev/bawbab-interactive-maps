@@ -69,8 +69,13 @@ const SearchList = ({ spatialFeatures = [], locations = [], onSelect, isOpen, on
         spatialFeatures.forEach(f => {
             const props = f.properties || {};
 
-            // Exclude non-interactive features and unlabeled features
-            if (props.is_interactive === false || (!props.name && !props.code)) {
+            // STRICT FILTERING: 
+            // 1. Must be explicitly interactive (is_interactive === true or 1)
+            // 2. Must have a valid, non-empty name property
+            const isInteractive = props.is_interactive === true || props.is_interactive === 1 || props.is_interactive === '1';
+            const hasValidName = props.name && typeof props.name === 'string' && props.name.trim() !== '';
+
+            if (!isInteractive || !hasValidName) {
                 return;
             }
 
