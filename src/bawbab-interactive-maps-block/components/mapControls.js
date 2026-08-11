@@ -3,18 +3,10 @@ import { useState, useEffect, useRef } from '@wordpress/element';
 import { Icon } from '@iconify/react';
 
 const LayersIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-        <polyline points="2 17 12 22 22 17"/>
-        <polyline points="2 12 12 17 22 12"/>
-    </svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
 );
-
 const CloseIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18" />
-        <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 );
 
 const FloorIcon = () => (
@@ -170,7 +162,7 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
         >
             <div style={{
                 display: 'flex',
-                justify: 'center',
+                justifyContent: 'center',
                 alignItems: 'center',
                 minHeight: '40px',
                 flexShrink: 0,

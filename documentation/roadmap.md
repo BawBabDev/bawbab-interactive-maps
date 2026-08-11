@@ -73,3 +73,4 @@
 
 Fix show legend toggle breaking map
 Think how to manage networ layer
+Adapt editor to edit all layers

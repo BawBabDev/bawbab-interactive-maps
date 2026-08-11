@@ -31,13 +31,14 @@ export const MapLegend = ({ mapDimensions }) => {
         }
     }, [width, height, isSmallUI]);
 
-    if (!legendConfig || legendConfig.enabled === false) {
-        return null;
-    }
+    const isLegendEnabled = Boolean(legendConfig?.enabled !== false);
+    const showHeaders = legendConfig?.showSectionHeaders !== false;
 
     // Process section groups for rendering
     const activeSections = useMemo(() => {
-        if (!legendConfig.sections || !Array.isArray(legendConfig.sections)) return [];
+        if (!isLegendEnabled || !legendConfig?.sections || !Array.isArray(legendConfig.sections)) {
+            return [];
+        }
 
         return legendConfig.sections.map(section => {
             const visibleItems = (section.items || [])
@@ -62,9 +63,17 @@ export const MapLegend = ({ mapDimensions }) => {
                 items: visibleItems
             };
         }).filter(Boolean);
-    }, [categoryMap, legendConfig]);
+    }, [categoryMap, legendConfig, isLegendEnabled]);
 
-    if (activeSections.length === 0) return null;
+    // Flatten all items if section headers are disabled
+    const flatItems = useMemo(() => {
+        return showHeaders ? [] : activeSections.flatMap(s => s.items);
+    }, [showHeaders, activeSections]);
+
+    // SAFE RENDER: Always keep the outer node mounted to preserve React tree stability
+    if (!isLegendEnabled || activeSections.length === 0) {
+        return <div style={{ display: 'none' }} className="map-legend-hidden" />;
+    }
 
     return (
         <div 
@@ -125,37 +134,70 @@ export const MapLegend = ({ mapDimensions }) => {
                 overflowY: 'auto',
                 maxHeight: '440px'
             }}>
-                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {activeSections.map(section => (
-                        <div key={section.id}>
-                            <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: '#2271b1', marginBottom: '6px', letterSpacing: '0.5px', borderBottom: '1px solid #e0f0ff', paddingBottom: '2px' }}>
-                                {section.title}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {section.items.map(item => (
-                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                                            {item.swatches.map((color, idx) => (
-                                                <div
-                                                    key={`${item.id}-swatch-${idx}`}
-                                                    style={{
-                                                        width: '12px',
-                                                        height: '12px',
-                                                        background: color,
-                                                        borderRadius: '3px',
-                                                        border: '1px solid rgba(0,0,0,0.1)'
-                                                    }}
-                                                />
-                                            ))}
+                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: showHeaders ? '14px' : '8px' }}>
+                    {showHeaders ? (
+                        activeSections.map(section => (
+                            <div key={section.id}>
+                                <div style={{ 
+                                    fontSize: '10px', 
+                                    fontWeight: '800', 
+                                    textTransform: 'uppercase', 
+                                    color: 'var(--map-primary, #2271b1)', 
+                                    marginBottom: '6px', 
+                                    letterSpacing: '0.5px', 
+                                    borderBottom: '1px solid var(--map-border, #e0e0e0)', 
+                                    paddingBottom: '2px' 
+                                }}>
+                                    {section.title}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {section.items.map(item => (
+                                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                                                {item.swatches.map((color, idx) => (
+                                                    <div
+                                                        key={`${item.id}-swatch-${idx}`}
+                                                        style={{
+                                                            width: '12px',
+                                                            height: '12px',
+                                                            background: color,
+                                                            borderRadius: '3px',
+                                                            border: '1px solid rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                                                {item.label}
+                                            </span>
                                         </div>
-                                        <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                                            {item.label}
-                                        </span>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        flatItems.map(item => (
+                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                                    {item.swatches.map((color, idx) => (
+                                        <div
+                                            key={`${item.id}-swatch-${idx}`}
+                                            style={{
+                                                width: '12px',
+                                                height: '12px',
+                                                background: color,
+                                                borderRadius: '3px',
+                                                border: '1px solid rgba(0,0,0,0.1)'
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

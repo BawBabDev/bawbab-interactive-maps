@@ -73,14 +73,12 @@ export const CategoryMappingTable = ({
         ...groups.map(g => ({ label: g.title, value: g.id }))
     ];
 
-    // Group categories strictly by layer_type
+    // Group categories strictly by layer_type, never dropping valid keys
     const categoriesByLayer = useMemo(() => {
         const grouped = {};
         Object.keys(categoryMap).forEach(compositeKey => {
             const info = categoryMap[compositeKey] || {};
-            const layer = info.layer_type || (compositeKey.includes('::') ? compositeKey.split('::')[0] : null);
-
-            if (!layer) return;
+            const layer = info.layer_type || (compositeKey.includes('::') ? compositeKey.split('::')[0] : 'buildings');
 
             if (!grouped[layer]) grouped[layer] = [];
             grouped[layer].push({ compositeKey, ...info });

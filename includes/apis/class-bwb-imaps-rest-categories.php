@@ -21,13 +21,14 @@ class BWB_IMaps_REST_Categories {
     /**
      * POST Route Callback: Prunes categories from categoryConfig
      * that are no longer assigned to any spatial feature in MySQL.
+     * Evaluates STRICTLY against layer_type::category_slug composite keys.
      */
     public static function handle_cleanup_category_schema() {
         global $wpdb;
 
         $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
         
-        // Query distinct composite keys (layer_type::category) from database
+        // Query distinct composite keys (layer_type::category) directly from MySQL
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $active_composites = $wpdb->get_col(
             $wpdb->prepare(
@@ -36,7 +37,7 @@ class BWB_IMaps_REST_Categories {
             )
         );
 
-        $active_set = is_array( $active_composites ) ? array_flip( $active_composites ) : array();
+        $active_composite_set = is_array( $active_composites ) ? array_flip( $active_composites ) : array();
 
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
@@ -47,11 +48,22 @@ class BWB_IMaps_REST_Categories {
 
         foreach ( $current_map as $cat_key => $cat_data ) {
             $composite_key = $cat_key;
-            if ( false === strpos( $cat_key, '::' ) && isset( $cat_data['layer_type'] ) ) {
-                $composite_key = $cat_data['layer_type'] . '::' . $cat_key;
+
+            // Normalize key if missing composite prefix
+            if ( false === strpos( $cat_key, '::' ) ) {
+                $layer_type    = is_array( $cat_data ) && isset( $cat_data['layer_type'] ) ? $cat_data['layer_type'] : '';
+                if ( ! empty( $layer_type ) ) {
+                    $composite_key = $layer_type . '::' . $cat_key;
+                }
             }
 
-            if ( isset( $active_set[ $composite_key ] ) ) {
+            // Strictly check if the layer_type::category_slug combination exists in MySQL
+            if ( isset( $active_composite_set[ $composite_key ] ) ) {
+                // Ensure data payload preserves layer_type explicitly
+                if ( is_array( $cat_data ) && ! isset( $cat_data['layer_type'] ) && false !== strpos( $composite_key, '::' ) ) {
+                    $parts = explode( '::', $composite_key );
+                    $cat_data['layer_type'] = $parts[0];
+                }
                 $cleaned_map[ $composite_key ] = $cat_data;
             } else {
                 $pruned_count++;
@@ -72,6 +84,9 @@ class BWB_IMaps_REST_Categories {
         ), 200 );
     }
 
+    /**
+     * Syncs newly imported spatial categories into categoryConfig option using composite keys.
+     */
     public static function sync_imported_categories_to_config( $category_color_map = array() ) {
         if ( empty( $category_color_map ) ) return;
 
@@ -84,16 +99,13 @@ class BWB_IMaps_REST_Categories {
         $has_changes = false;
 
         foreach ( $category_color_map as $raw_key => $hex_color ) {
-            $layer_type = 'buildings';
-            $clean_slug = sanitize_key( $raw_key );
+            if ( false === strpos( $raw_key, '::' ) ) continue; // Skip invalid flat keys during import sync
 
-            if ( false !== strpos( $raw_key, '::' ) ) {
-                $parts      = explode( '::', $raw_key );
-                $layer_type = sanitize_key( $parts[0] );
-                $clean_slug = sanitize_key( $parts[1] );
-            }
+            $parts      = explode( '::', $raw_key );
+            $layer_type = sanitize_key( $parts[0] );
+            $clean_slug = sanitize_key( $parts[1] );
 
-            if ( empty( $clean_slug ) ) continue;
+            if ( empty( $clean_slug ) || empty( $layer_type ) ) continue;
 
             $composite_key = $layer_type . '::' . $clean_slug;
 
@@ -104,9 +116,7 @@ class BWB_IMaps_REST_Categories {
                 $target_group_id = '';
 
                 foreach ( $groups as $group ) {
-                    $g_id    = strtolower( $group['id'] ?? '' );
                     $g_title = strtolower( $group['title'] ?? '' );
-
                     if ( ! empty( $g_title ) && ( strpos( $clean_slug, $g_title ) !== false || strpos( $g_title, $clean_slug ) !== false ) ) {
                         $target_group_id = $group['id'];
                         break;

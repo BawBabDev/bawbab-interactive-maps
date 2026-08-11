@@ -88,26 +88,26 @@ export const useCategoryManager = () => {
             let paletteIdx = 0;
             const updatedMap = {};
 
-            // A. Preserve ALL existing saved categories from WP options without deleting or converting to 'general'
+            // A. Preserve ALL existing saved composite categories from WP options
             Object.keys(currentCategoryMap).forEach(key => {
                 const item = currentCategoryMap[key] || {};
                 
-                // If key already has 'layer::cat', keep it as is
+                let layer = item.layer_type;
+                let slug = key;
+
                 if (key.includes('::')) {
                     const parts = key.split('::');
-                    updatedMap[key] = {
-                        ...item,
-                        layer_type: item.layer_type || parts[0],
-                        label: item.label || parts[1].split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                    };
-                } else if (item.layer_type) {
-                    // Migrate legacy flat key using its stored layer_type
-                    const compositeKey = `${item.layer_type}::${key}`;
-                    updatedMap[compositeKey] = {
-                        ...item,
-                        label: item.label || key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                    };
+                    layer = parts[0];
+                    slug = parts[1];
                 }
+
+                const compositeKey = layer ? `${layer}::${slug}` : key;
+
+                updatedMap[compositeKey] = {
+                    ...item,
+                    layer_type: layer || item.layer_type || 'buildings',
+                    label: item.label || slug.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                };
             });
 
             // B. ONLY ADD newly discovered composite keys from active spatial data
@@ -140,12 +140,12 @@ export const useCategoryManager = () => {
                 });
             });
 
-            // Auto-assign newly discovered unassigned composite keys into their default layer section
+            // Auto-assign newly discovered unassigned composite keys into default layer sections
             const unassignedKeys = [...activeCompositeKeys].filter(ck => !existingLegendCompositeKeys.has(ck));
 
             if (unassignedKeys.length > 0) {
                 unassignedKeys.forEach(ck => {
-                    const layer = updatedMap[ck]?.layer_type || (ck.includes('::') ? ck.split('::')[0] : 'general');
+                    const layer = updatedMap[ck]?.layer_type || (ck.includes('::') ? ck.split('::')[0] : 'buildings');
                     const catSlug = ck.includes('::') ? ck.split('::')[1] : ck;
 
                     let targetSec = sections.find(s => s.layer_type === layer || s.id === `sec_layer_${layer}`);
@@ -239,7 +239,7 @@ export const useCategoryManager = () => {
     const processSpatialFeatures = useCallback((features = []) => {
         return features.map(feature => {
             const cat = feature.properties?.category;
-            const layer = feature.properties?.layer_type || 'general';
+            const layer = feature.properties?.layer_type || 'buildings';
             const compositeKey = `${layer}::${cat}`;
 
             const mappedInfo = categoryMap[compositeKey] || categoryMap[cat] || {};
@@ -297,8 +297,11 @@ export const useCategoryManager = () => {
 
                 const newLegendConfig = { ...legendConfig, sections: cleanedSections };
 
-                // Save pruned state explicitly
+                // Save pruned state explicitly to WP Options
                 await saveCategoryData(groups, cleanedMap, newLegendConfig);
+
+                // RE-SYNC STATE FROM DB IMMEDIATELY TO AVOID VISUAL DISCONNECT
+                await loadCategoryData();
 
                 createSuccessNotice(result.message || __('Unused categories pruned successfully.', TEXT_DOMAIN), {
                     type: 'snackbar'
@@ -315,7 +318,7 @@ export const useCategoryManager = () => {
         } finally {
             setIsSaving(false);
         }
-    }, [groups, legendConfig, saveCategoryData, createSuccessNotice, createErrorNotice]);
+    }, [groups, legendConfig, saveCategoryData, loadCategoryData, createSuccessNotice, createErrorNotice]);
 
     return {
         groups,

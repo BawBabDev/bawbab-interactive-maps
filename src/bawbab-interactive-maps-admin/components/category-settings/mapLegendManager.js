@@ -1,5 +1,5 @@
 import { useState } from '@wordpress/element';
-import { Panel, PanelBody, Button, CheckboxControl, ToggleControl, Flex, FlexItem, TextControl, Modal } from '@wordpress/components';
+import { Panel, PanelBody, Button, CheckboxControl, ToggleControl, Flex, FlexItem, TextControl, SelectControl, Modal } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
@@ -15,11 +15,11 @@ export const MapLegendManager = ({
     const [mergeLabel, setMergeLabel] = useState('');
     const [selectedMergeCats, setSelectedMergeCats] = useState([]);
     const [targetSectionId, setTargetSectionId] = useState('');
-
     const [newSectionTitle, setNewSectionTitle] = useState('');
 
     const allCategoryKeys = Object.keys(categoryMap);
 
+    // 1. Add Custom Legend Section
     const handleAddSection = () => {
         if (!newSectionTitle.trim()) return;
         const newSec = {
@@ -34,25 +34,27 @@ export const MapLegendManager = ({
         setNewSectionTitle('');
     };
 
+    // 2. Remove Section Header
     const handleRemoveSection = (secId) => {
         setLegendConfig(prev => {
+            if ((prev.sections || []).length <= 1) {
+                alert(__('You must keep at least one legend section group.', TEXT_DOMAIN));
+                return prev;
+            }
+
             const targetSec = prev.sections.find(s => s.id === secId);
             if (!targetSec) return prev;
 
             const remainingSections = prev.sections.filter(s => s.id !== secId);
-            if (targetSec.items.length === 0) return { ...prev, sections: remainingSections };
-
-            // Move items from deleted section into first remaining section
-            if (remainingSections.length > 0) {
+            if (targetSec.items.length > 0) {
                 remainingSections[0].items = [...remainingSections[0].items, ...targetSec.items];
-            } else {
-                remainingSections.push({ id: 'sec_uncategorized', title: 'General & Other Features', items: targetSec.items });
             }
 
             return { ...prev, sections: remainingSections };
         });
     };
 
+    // 3. Rename Section Header
     const handleRenameSection = (secId, title) => {
         setLegendConfig(prev => ({
             ...prev,
@@ -60,6 +62,7 @@ export const MapLegendManager = ({
         }));
     };
 
+    // 4. Toggle Visibility Checkbox for Legend Item
     const handleToggleItem = (secId, itemId, checked) => {
         setLegendConfig(prev => ({
             ...prev,
@@ -73,7 +76,8 @@ export const MapLegendManager = ({
         }));
     };
 
-    const handleMoveItem = (secIndex, itemIndex, direction) => {
+    // 5. Reorder Items Within Section
+    const handleMoveItemOrder = (secIndex, itemIndex, direction) => {
         const sections = [...legendConfig.sections];
         const items = [...sections[secIndex].items];
         const targetIndex = itemIndex + direction;
@@ -88,6 +92,34 @@ export const MapLegendManager = ({
         setLegendConfig(prev => ({ ...prev, sections }));
     };
 
+    // 6. TRANSFER ITEM TO A DIFFERENT SECTION
+    const handleTransferItemToSection = (currentSecId, itemId, newSecId) => {
+        if (!newSecId || currentSecId === newSecId) return;
+
+        setLegendConfig(prev => {
+            let itemToMove = null;
+
+            const updatedSections = (prev.sections || []).map(sec => {
+                if (sec.id === currentSecId) {
+                    const found = sec.items.find(i => i.id === itemId);
+                    if (found) itemToMove = found;
+                    return { ...sec, items: sec.items.filter(i => i.id !== itemId) };
+                }
+                return sec;
+            });
+
+            if (itemToMove) {
+                const targetSec = updatedSections.find(s => s.id === newSecId);
+                if (targetSec) {
+                    targetSec.items.push(itemToMove);
+                }
+            }
+
+            return { ...prev, sections: updatedSections };
+        });
+    };
+
+    // 7. Merge Categories into 1 Legend Line
     const handleConfirmMergeCategories = () => {
         if (!mergeLabel.trim() || selectedMergeCats.length < 2) return;
 
@@ -99,15 +131,11 @@ export const MapLegendManager = ({
             showInLegend: true
         };
 
-        // Remove selected categories from all existing sections
-        const updatedSections = legendConfig.sections.map(sec => {
-            return {
-                ...sec,
-                items: sec.items.filter(item => !item.categories.some(c => selectedMergeCats.includes(c)))
-            };
-        });
+        const updatedSections = legendConfig.sections.map(sec => ({
+            ...sec,
+            items: sec.items.filter(item => !item.categories.some(c => selectedMergeCats.includes(c)))
+        }));
 
-        // Add merged item to target section
         const secToAddTo = targetSectionId || updatedSections[0]?.id;
         const targetSec = updatedSections.find(s => s.id === secToAddTo);
         if (targetSec) {
@@ -120,6 +148,7 @@ export const MapLegendManager = ({
         setShowMergeModal(false);
     };
 
+    // 8. Unmerge Multi-Color Category Item
     const handleUnmergeItem = (secId, itemId) => {
         const sections = [...legendConfig.sections];
         const sec = sections.find(s => s.id === secId);
@@ -143,6 +172,11 @@ export const MapLegendManager = ({
         setLegendConfig(prev => ({ ...prev, sections }));
     };
 
+    const sectionDropdownOptions = (legendConfig.sections || []).map(s => ({
+        label: s.title || s.id,
+        value: s.id
+    }));
+
     return (
         <Panel style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '25px' }}>
             <PanelBody 
@@ -151,26 +185,39 @@ export const MapLegendManager = ({
                 onToggle={onToggle}
             >
                 <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
-                    {__('Create custom section groups for the legend, rename headers, reorder entries, or merge multiple categories into 1 legend line.', TEXT_DOMAIN)}
+                    {__('Create custom section groups for the legend, rename headers, reorder entries, or move items across sections without altering underlying spatial keys.', TEXT_DOMAIN)}
                 </p>
 
-                <Flex align="center" justify="space-between" style={{ marginBottom: '20px', padding: '12px', background: '#f9f9f9', borderRadius: '4px', border: '1px solid #eee' }}>
-                    <ToggleControl
-                        label={__('Enable Public Map Legend', TEXT_DOMAIN)}
-                        checked={Boolean(legendConfig.enabled)}
-                        onChange={(val) => setLegendConfig(prev => ({ ...prev, enabled: val }))}
-                        __nextHasNoMarginBottom
-                    />
+                {/* CONTROL HEADER - FIXED OVERFLOW WITH FLEX WRAP */}
+                <div style={{ marginBottom: '20px', padding: '14px', background: '#f9f9f9', borderRadius: '6px', border: '1px solid #eee' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px' }}>
+                            <ToggleControl
+                                label={__('Enable Public Map Legend', TEXT_DOMAIN)}
+                                checked={Boolean(legendConfig.enabled)}
+                                onChange={(val) => setLegendConfig(prev => ({ ...prev, enabled: val }))}
+                                __nextHasNoMarginBottom
+                            />
 
-                    <Button
-                        variant="secondary"
-                        icon="groups"
-                        onClick={() => setShowMergeModal(true)}
-                        disabled={!legendConfig.enabled}
-                    >
-                        {__('Merge Categories into 1 Line', TEXT_DOMAIN)}
-                    </Button>
-                </Flex>
+                            <ToggleControl
+                                label={__('Show Section Titles in Public Legend', TEXT_DOMAIN)}
+                                checked={legendConfig.showSectionHeaders !== false}
+                                onChange={(val) => setLegendConfig(prev => ({ ...prev, showSectionHeaders: val }))}
+                                disabled={!legendConfig.enabled}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
+
+                        <Button
+                            variant="secondary"
+                            icon="groups"
+                            onClick={() => setShowMergeModal(true)}
+                            disabled={!legendConfig.enabled}
+                        >
+                            {__('Merge Categories into 1 Line', TEXT_DOMAIN)}
+                        </Button>
+                    </div>
+                </div>
 
                 {legendConfig.enabled && (
                     <div>
@@ -198,10 +245,10 @@ export const MapLegendManager = ({
                                 </div>
 
                                 <div style={{ borderBottom: '1px solid #eee' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 100px 180px 100px 80px', gap: '8px', padding: '8px 12px', background: '#fafafa', fontSize: '11px', fontWeight: '600', color: '#666' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr 140px 120px 80px 70px', gap: '8px', padding: '8px 12px', background: '#fafafa', fontSize: '11px', fontWeight: '600', color: '#666' }}>
                                         <span style={{ textAlign: 'center' }}>{__('Show', TEXT_DOMAIN)}</span>
                                         <span>{__('Legend Label', TEXT_DOMAIN)}</span>
-                                        <span>{__('Layer', TEXT_DOMAIN)}</span>
+                                        <span>{__('Move to Section', TEXT_DOMAIN)}</span>
                                         <span>{__('Swatches', TEXT_DOMAIN)}</span>
                                         <span style={{ textAlign: 'center' }}>{__('Reorder', TEXT_DOMAIN)}</span>
                                         <span style={{ textAlign: 'center' }}>{__('Action', TEXT_DOMAIN)}</span>
@@ -210,14 +257,13 @@ export const MapLegendManager = ({
                                     {section.items.map((item, itemIdx) => {
                                         const isFirst = itemIdx === 0;
                                         const isLast = itemIdx === section.items.length - 1;
-                                        const layerType = item.categories?.[0] ? (categoryMap[item.categories[0]]?.layer_type || 'general') : 'general';
 
                                         return (
                                             <div 
                                                 key={item.id}
                                                 style={{ 
                                                     display: 'grid', 
-                                                    gridTemplateColumns: '60px 1fr 100px 180px 100px 80px', 
+                                                    gridTemplateColumns: '50px 1fr 140px 120px 80px 70px', 
                                                     gap: '8px', 
                                                     padding: '8px 12px', 
                                                     alignItems: 'center',
@@ -225,6 +271,7 @@ export const MapLegendManager = ({
                                                     opacity: item.showInLegend ? 1 : 0.5
                                                 }}
                                             >
+                                                {/* Visibility Checkbox */}
                                                 <div style={{ textAlign: 'center' }}>
                                                     <CheckboxControl
                                                         checked={Boolean(item.showInLegend)}
@@ -233,6 +280,7 @@ export const MapLegendManager = ({
                                                     />
                                                 </div>
 
+                                                {/* Title / Label */}
                                                 <div>
                                                     <strong>{item.label}</strong>
                                                     {item.type === 'merged' && (
@@ -242,12 +290,18 @@ export const MapLegendManager = ({
                                                     )}
                                                 </div>
 
+                                                {/* TRANSFER TO SECTION DROPDOWN */}
                                                 <div>
-                                                    <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666', background: '#eee', padding: '2px 6px', borderRadius: '3px' }}>
-                                                        {layerType}
-                                                    </span>
+                                                    <SelectControl
+                                                        value={section.id}
+                                                        options={sectionDropdownOptions}
+                                                        onChange={(newSecId) => handleTransferItemToSection(section.id, item.id, newSecId)}
+                                                        style={{ height: '28px', fontSize: '11px', padding: '0 6px' }}
+                                                        __nextHasNoMarginBottom
+                                                    />
                                                 </div>
 
+                                                {/* Color Swatches */}
                                                 <Flex align="center" gap={1}>
                                                     {item.categories.map(compositeKey => {
                                                         const catColor = categoryMap[compositeKey]?.color || '#007cba';
@@ -267,11 +321,13 @@ export const MapLegendManager = ({
                                                     })}
                                                 </Flex>
 
+                                                {/* Up/Down Reorder */}
                                                 <Flex justify="center" gap={1}>
-                                                    <Button isSmall icon="arrow-up-alt2" disabled={isFirst} onClick={() => handleMoveItem(secIdx, itemIdx, -1)} />
-                                                    <Button isSmall icon="arrow-down-alt2" disabled={isLast} onClick={() => handleMoveItem(secIdx, itemIdx, 1)} />
+                                                    <Button isSmall icon="arrow-up-alt2" disabled={isFirst} onClick={() => handleMoveItemOrder(secIdx, itemIdx, -1)} />
+                                                    <Button isSmall icon="arrow-down-alt2" disabled={isLast} onClick={() => handleMoveItemOrder(secIdx, itemIdx, 1)} />
                                                 </Flex>
 
+                                                {/* Unmerge Action */}
                                                 <div style={{ textAlign: 'center' }}>
                                                     {item.type === 'merged' && (
                                                         <Button
@@ -349,7 +405,7 @@ export const MapLegendManager = ({
                                     return (
                                         <CheckboxControl
                                             key={`merge_check_${compositeKey}`}
-                                            label={`${catInfo.label || compositeKey} [${catInfo.layer_type || 'general'}]`}
+                                            label={`${catInfo.label || compositeKey} [${catInfo.layer_type || 'buildings'}]`}
                                             checked={isChecked}
                                             onChange={(checked) => {
                                                 if (checked) {
