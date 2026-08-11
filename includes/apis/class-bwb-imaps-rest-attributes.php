@@ -107,6 +107,10 @@ class BWB_IMaps_REST_Attributes {
         return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
     }
 
+    /**
+     * POST Route Callback: Purges a key from the schema registry AND from custom_attributes JSON on ALL MySQL rows.
+     * Uses JSON_CONTAINS_PATH to ensure unconditionally full removal across all rows regardless of saved value type.
+     */
     public static function handle_delete_attribute_key( $request ) {
         global $wpdb;
 
@@ -115,6 +119,7 @@ class BWB_IMaps_REST_Attributes {
             return new WP_Error( 'missing_key', 'Attribute key is required for deletion.', array( 'status' => 400 ) );
         }
 
+        // 1. Remove from global options schema array
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
@@ -125,13 +130,14 @@ class BWB_IMaps_REST_Attributes {
         $settings['attribute_schema'] = $filtered_schema;
         update_option( 'bwb_imaps_options_data', $settings );
 
+        // 2. Unconditionally remove key from custom_attributes JSON column across ALL MySQL database rows
         $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
         $json_path  = '$.' . $key;
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
             $wpdb->prepare(
-                "UPDATE %i SET custom_attributes = JSON_REMOVE(custom_attributes, %s) WHERE JSON_EXTRACT(custom_attributes, %s) IS NOT NULL",
+                "UPDATE %i SET custom_attributes = JSON_REMOVE(custom_attributes, %s) WHERE JSON_CONTAINS_PATH(custom_attributes, 'one', %s) = 1",
                 $table_name,
                 $json_path,
                 $json_path

@@ -624,6 +624,7 @@ const EditPage = () => {
                                         building={activeFeature} 
                                         draft={drafts[activeCompositeKey] || {}}
                                         globalSchema={schema}
+                                        updateSchemaKey={updateSchemaKey} // <-- PASS THIS PROP
                                         updateDraft={(data) => updateDraft(activeFeature.properties.layer_type, activeFeature.properties.fid, data)}
                                         onUpdate={saveAllDrafts}
                                         onCancel={handleCancel}

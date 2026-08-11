@@ -30,14 +30,16 @@
 ### Done
 - Avoid constant page reload on data import / deletion or settings changes from the admin panel
 - Editor
-    - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable 
+    - Fixed Interactivity Toggles
 - Importer:
     - Make sure the predetermined data not imported don't end up in custom fields
     - Option to remove custom fields
 - Styling & Legend Verification:
     - Verify that color picker selections properly update both the UI legend and live map rendering.
     - Allow to create new categories and assign them to features
-    - Adapt the legend to be dynamic
+    - Adapt the legend
+        - Dynamic
+        - Toggable
     - Simplify the category tool:
         - one ligne by category: label, pick color, pick group
         - simple tool to create new groups
@@ -47,7 +49,6 @@
 
 - Editor
     - Allow to modify batch of feature (ex. is interactive etc)
-    - Enforce Interactivity Toggles: Debug and enforce the feature interactivity switch so non-interactive/non-selectable features properly block user clicks. 
     - Have option with pen button to edit actual name and code
     - Fix the add attributes button to modify for all features
 - Use custom confirmation modal everywhere
@@ -71,6 +72,6 @@
     - Integrated with Bawbab DAI for external navigation
 
 
-Fix show legend toggle breaking map
+
 Think how to manage networ layer
 Adapt editor to edit all layers

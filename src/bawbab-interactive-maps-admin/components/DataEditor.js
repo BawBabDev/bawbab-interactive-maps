@@ -147,6 +147,7 @@ const DataEditor = ({
     building, 
     draft = {}, 
     globalSchema = [], 
+    updateSchemaKey, // Hook function passed down to register property globally
     updateDraft, 
     onUpdate, 
     onCancel, 
@@ -167,6 +168,7 @@ const DataEditor = ({
     const [newPropValue, setNewPropValue] = useState('');
     const [newPropType, setNewPropType] = useState('text');
     const [showAddPropModal, setShowAddPropModal] = useState(false);
+    const [isAddingProp, setIsAddingProp] = useState(false);
 
     // Category Manager
     const { categoryMap } = useCategoryManager();
@@ -210,9 +212,6 @@ const DataEditor = ({
         setLocalProps(building.properties);
     }, [building.properties]); 
 
-    // Custom Fill Color Toggle Logic:
-    // Check if a draft overrides fill_color FIRST.
-    // Otherwise, toggle is ON only if localProps.fill_color exists and differs from globalCategoryColor.
     const activeFillColor = draft.hasOwnProperty('fill_color') 
         ? draft.fill_color 
         : (localProps.fill_color && localProps.fill_color !== globalCategoryColor ? localProps.fill_color : '');
@@ -221,10 +220,8 @@ const DataEditor = ({
 
     const handleToggleCustomColor = (enabled) => {
         if (enabled) {
-            // Toggle ON: Start with active color, local color, or global category color
             updateDraft({ fill_color: activeFillColor || localProps.fill_color || globalCategoryColor });
         } else {
-            // Toggle OFF: Clear fill_color to "" so MySQL row reverts to category default
             updateDraft({ fill_color: '' });
         }
     };
@@ -260,22 +257,41 @@ const DataEditor = ({
         updateCustomAttr(key, null);
     };
 
-    const handleAddCustomProperty = () => {
+    // FIXED: Register custom property globally in schema AND set initial value in current draft
+    const handleAddCustomProperty = async () => {
         if (!newPropLabel.trim() || !derivedSlugKey) return;
 
-        let formattedValue = newPropValue;
-        if (newPropType === 'number' || newPropType === 'bathrooms') {
-            formattedValue = newPropValue !== '' ? Number(newPropValue) : null;
-        } else if (newPropType === 'boolean') {
-            formattedValue = newPropValue === 'true' || newPropValue === true;
+        setIsAddingProp(true);
+
+        try {
+            // 1. Register the field globally via REST API so all features get this property
+            if (updateSchemaKey) {
+                await updateSchemaKey({
+                    key: derivedSlugKey,
+                    label: newPropLabel.trim(),
+                    type: newPropType
+                });
+            }
+
+            // 2. Format initial value and update active feature's draft
+            let formattedValue = newPropValue;
+            if (newPropType === 'number' || newPropType === 'bathrooms') {
+                formattedValue = newPropValue !== '' ? Number(newPropValue) : null;
+            } else if (newPropType === 'boolean') {
+                formattedValue = newPropValue === 'true' || newPropValue === true;
+            }
+
+            updateCustomAttr(derivedSlugKey, formattedValue);
+
+            setNewPropLabel('');
+            setNewPropValue('');
+            setNewPropType('text');
+            setShowAddPropModal(false);
+        } catch (err) {
+            console.error('Error adding global custom property:', err);
+        } finally {
+            setIsAddingProp(false);
         }
-
-        updateCustomAttr(derivedSlugKey, formattedValue);
-
-        setNewPropLabel('');
-        setNewPropValue('');
-        setNewPropType('text');
-        setShowAddPropModal(false);
     };
 
     // Form Values
@@ -596,7 +612,7 @@ const DataEditor = ({
 
             {/* MODAL: ADD CUSTOM PROPERTY */}
             {showAddPropModal && (
-                <Modal title={__('Add Custom Property', TEXT_DOMAIN)} onRequestClose={() => setShowAddPropModal(false)}>
+                <Modal title={__('Add Custom Property Globally', TEXT_DOMAIN)} onRequestClose={() => setShowAddPropModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         <TextControl
                             label={__('Property Field Name', TEXT_DOMAIN)}
@@ -617,17 +633,17 @@ const DataEditor = ({
                             onChange={setNewPropType}
                         />
                         <TextControl
-                            label={__('Initial Value', TEXT_DOMAIN)}
+                            label={__('Initial Value for Active Feature', TEXT_DOMAIN)}
                             placeholder="e.g. 1.5, 980, or true"
                             value={newPropValue}
                             onChange={setNewPropValue}
                         />
                         <Flex justify="flex-end" style={{ marginTop: '10px' }}>
-                            <Button variant="tertiary" onClick={() => setShowAddPropModal(false)}>
+                            <Button variant="tertiary" onClick={() => setShowAddPropModal(false)} disabled={isAddingProp}>
                                 {__('Cancel', TEXT_DOMAIN)}
                             </Button>
-                            <Button variant="primary" onClick={handleAddCustomProperty} disabled={!newPropLabel.trim()}>
-                                {__('Add Property', TEXT_DOMAIN)}
+                            <Button variant="primary" onClick={handleAddCustomProperty} disabled={!newPropLabel.trim() || isAddingProp} isBusy={isAddingProp}>
+                                {__('Add Property Globally', TEXT_DOMAIN)}
                             </Button>
                         </Flex>
                     </div>

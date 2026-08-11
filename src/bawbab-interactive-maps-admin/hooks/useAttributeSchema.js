@@ -1,11 +1,13 @@
+/**
+ * Custom hook to interact with the central attribute schema registry via REST API.
+ * File location: src/hooks/useAttributeSchema.js
+ */
+
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
-/**
- * Custom hook to interact with the central attribute schema registry via REST API.
- */
 export const useAttributeSchema = () => {
     const [schema, setSchema] = useState([]);
     const [isLoadingSchema, setIsLoadingSchema] = useState(true);
@@ -13,18 +15,11 @@ export const useAttributeSchema = () => {
     // 1. Fetch current global attribute schema
     const fetchSchema = useCallback(async () => {
         setIsLoadingSchema(true);
-        console.log('[useAttributeSchema] Fetching schema from /get-attribute-schema...');
         try {
             const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/get-attribute-schema');
-            console.log('[useAttributeSchema] Raw fetch response status:', response.status);
-            
             if (response.ok) {
                 const data = await response.json();
-                console.log('[useAttributeSchema] Received schema payload:', data);
-                console.log('[useAttributeSchema] Extracted schema array:', data.schema || []);
                 setSchema(data.schema || []);
-            } else {
-                console.error('[useAttributeSchema] Failed REST response:', response.statusText);
             }
         } catch (err) {
             console.error('[useAttributeSchema] Error fetching attribute schema:', err);
@@ -39,7 +34,6 @@ export const useAttributeSchema = () => {
 
     // 2. Add or update a key in the central attribute schema
     const updateSchemaKey = useCallback(async ({ key, label, type }) => {
-        console.log('[useAttributeSchema] Sending update request for key:', { key, label, type });
         try {
             const response = await fetch('/wp-json/bwb-imaps-federated-api/v1/update-attribute-schema', {
                 method: 'POST',
@@ -50,10 +44,8 @@ export const useAttributeSchema = () => {
                 body: JSON.stringify({ key, label, type })
             });
 
-            console.log('[useAttributeSchema] Update response status:', response.status);
             if (response.ok) {
                 const data = await response.json();
-                console.log('[useAttributeSchema] Schema update successful. New schema:', data.schema);
                 setSchema(data.schema || []);
                 return { success: true };
             }
@@ -65,7 +57,6 @@ export const useAttributeSchema = () => {
 
     // 3. Purge a key from central schema AND all MySQL spatial rows
     const deleteSchemaKey = useCallback(async (key) => {
-        console.log('[useAttributeSchema] Initiating purge request for key:', key);
         const confirmPhrase = sprintf(
             __('Are you sure you want to PERMANENTLY delete "%s" from ALL features in the database?', TEXT_DOMAIN),
             key
@@ -82,10 +73,8 @@ export const useAttributeSchema = () => {
                 body: JSON.stringify({ key })
             });
 
-            console.log('[useAttributeSchema] Delete response status:', response.status);
             if (response.ok) {
                 const data = await response.json();
-                console.log('[useAttributeSchema] Schema purge successful. Remaining schema:', data.schema);
                 setSchema(data.schema || []);
                 return { success: true };
             }
