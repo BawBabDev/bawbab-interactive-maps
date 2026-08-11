@@ -191,6 +191,60 @@ const EditPage = () => {
         return mainCategories;
     }, [features, selectedLayer, searchQuery, filterCategory, dynamicFilters, groups, categoryMap]);
 
+    // AUTO-EXPAND AND SCROLL TO MATCHING SIDEBAR UNIT WHEN A MAP FEATURE IS SELECTED
+    useEffect(() => {
+        if (!activeFeature || !activeFeature.properties) return;
+
+        const targetFid = String(activeFeature.properties.fid);
+        const targetLayer = activeFeature.properties.layer_type || 'buildings';
+
+        let matchingTopTabId = null;
+        let matchingSubGroupId = null;
+
+        // Locate which accordion bucket contains the selected feature
+        displayStructure.forEach(topTab => {
+            const inFlat = topTab.flatItems.some(f => 
+                String(f.properties.fid) === targetFid && f.properties.layer_type === targetLayer
+            );
+            if (inFlat) {
+                matchingTopTabId = topTab.id;
+            }
+
+            topTab.subGroups.forEach(subGroup => {
+                const inSub = subGroup.items.some(f => 
+                    String(f.properties.fid) === targetFid && f.properties.layer_type === targetLayer
+                );
+                if (inSub) {
+                    matchingTopTabId = topTab.id;
+                    matchingSubGroupId = subGroup.id;
+                }
+            });
+        });
+
+        if (matchingTopTabId) {
+            setOpenedGroup(matchingTopTabId);
+        }
+
+        if (matchingSubGroupId) {
+            setOpenedSubGroup(prev => ({ ...prev, [matchingSubGroupId]: true }));
+        }
+
+        // Scroll sidebar container to the unit element smoothly
+        const scrollTimer = setTimeout(() => {
+            const targetElementId = `item-${targetLayer}-${targetFid}`;
+            const targetEl = document.getElementById(targetElementId);
+
+            if (targetEl && sidebarListRef.current) {
+                targetEl.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+        }, 120);
+
+        return () => clearTimeout(scrollTimer);
+    }, [activeFeature, displayStructure]);
+
     const updateDraft = (layerType, fid, data) => {
         const compositeKey = `${layerType}::${fid}`;
         setDrafts(prev => {
@@ -638,7 +692,7 @@ const EditPage = () => {
                                             {__('Location Preview', TEXT_DOMAIN)}
                                         </h2>
                                         <div style={{ height: '450px', border: '1px solid #ddd', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                                            {/* MAP KEY RE-RENDERS ONLY WHEN REFRESH/SAVE IS TRIGGERED VIA resetCounter */}
+                                            {/* PREVIEW MAP STAYS MOUNTED AND RE-RENDERS ONLY WHEN SAVED VIA resetCounter */}
                                             <BawBabIMaps 
                                                 key={`preview-map-${resetCounter}`}
                                                 height="450px"
