@@ -1,6 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { useState, useMemo } from '@wordpress/element';
-import SearchList from './map-search-list'; // Path to your new file
+import SearchList from './mapSearchList'; // Path to your new file
 
 export const MapSearch = ({ spatialFeatures, locations, onSelect, navBackgroundProp, logoProp }) => {
     const [searchQuery, setSearchQuery] = useState('');

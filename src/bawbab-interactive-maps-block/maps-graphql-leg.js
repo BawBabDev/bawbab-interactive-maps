@@ -4,7 +4,7 @@ import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow, useMap } from '@vis.
 import { useCoordinateFormatter } from '../admin/coordinateFormatter';
 import DrawingSidebar from './drawer';
 import { MapLegend, LayerToggler } from './components/mapControls';
-import { MapSearch } from './components/map-search';
+import { MapSearch } from './components/mapSearch';
 import { __ } from '@wordpress/i18n';
 
 export default function Map({ locations: propsLocations = [],  zoom = 16, tilt = 0 , onMarkerClick, width = '100%', height = 'stretch' }) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from '@wordpress/element';
 import { Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { UnitSpecs } from './drawer-unit-specs';
+import { UnitSpecs } from './drawerUnitSpecs';
 import { useWpLinkedContent } from '../hooks/useWpLinkedContent';
 import { SidebarHeader } from './sidebarHeader';
 import { MediaCarousel } from './mediaCarousel';

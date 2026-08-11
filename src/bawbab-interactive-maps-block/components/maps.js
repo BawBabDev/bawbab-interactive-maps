@@ -5,9 +5,9 @@ import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps
 import { useCoordinateFormatter } from '../hooks/useCoordinateFormatter';
 import DrawingSidebar from './drawer';
 import { MapLegend, LayerToggler, FloorSwitcher } from './mapControls';
-import { MapSearch } from './map-search';
+import { MapSearch } from './mapSearch';
 import { ZoomHandler } from './mapsZoomHandler';
-import { MapLabels } from './map-labels';
+import { MapLabels } from './mapLabels';
 import { Spinner } from '@wordpress/components';
 import MapErrorBoundary from './mapErrorBoundary';
 import { __ } from '@wordpress/i18n'; 
