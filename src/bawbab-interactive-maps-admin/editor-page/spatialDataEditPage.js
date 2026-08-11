@@ -9,11 +9,11 @@ import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
 import DataEditor from './components/dataEditor';
 import { AttributeSchemaManager } from './components/attributeSchemaManager';
-import BawBabIMaps from '../bawbab-interactive-maps-block/components/maps';
+import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
 import { discoverCustomAttributes, matchesAllFilters } from './utils/editFilters';
 import { useAttributeSchema } from './hooks/useAttributeSchema';
-import { useCategoryManager } from '../hooks/useCategoryManager';
-import { DEFAULT_GROUPS, DEFAULT_CATEGORY_MAPPINGS } from '../constants/defaultCategories';
+import { useCategoryManager } from '../category-settings-page/hooks/useCategoryManager';
+import { DEFAULT_GROUPS, DEFAULT_CATEGORY_MAPPINGS } from '../category-settings-page/constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

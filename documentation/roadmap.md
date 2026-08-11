@@ -35,6 +35,7 @@
     - Fix deletion to apply to all feature
     - Adapt editor to edit all layers
     - Weird zoom behavior in the preview map
+    - Have option with pen button to edit actual name and code
 - Importer:
     - Make sure the predetermined data not imported don't end up in custom fields
     - Option to remove custom fields
@@ -51,16 +52,12 @@
 
 
 🛠️ Immediate Fixes & Polish
-- Editor
-    - Allow to modify batch of feature (ex. is interactive etc)
-    - Have option with pen button to edit actual name and code
+- Editor: allow to modify batch of feature (ex. is interactive etc)
 - Use custom confirmation modal everywhere
 - Map Side Drawer
     - Insure proper styling for additionnal custom fields in side drawer
     - Allow to choose icons from a library or WP library
 - Update Info tab
-- Reorganize files for admin page
-
 
 🗺️ Future Roadmap Items
 - Multi-Layer Support: Build the architecture to add and toggle multiple layers.

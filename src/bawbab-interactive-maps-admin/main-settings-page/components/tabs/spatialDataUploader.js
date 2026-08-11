@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
 import { useNotify } from '../notices';
-import { GeoJSONImportWizardModal } from '../modals/GeoJSONImportWizardModal';
+import { GeoJSONImportWizardModal } from '../importWizard';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

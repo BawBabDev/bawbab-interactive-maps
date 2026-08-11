@@ -1,7 +1,7 @@
 import { __ } from '@wordpress/i18n';
 import { useState, useMemo, useEffect, useRef } from '@wordpress/element';
-import { useCategoryManager } from '../../hooks/useCategoryManager';
-import { DEFAULT_GROUPS, DEFAULT_CATEGORY_MAPPINGS } from '../../constants/defaultCategories';
+import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-settings-page/hooks/useCategoryManager';
+import { DEFAULT_GROUPS, DEFAULT_CATEGORY_MAPPINGS } from '../../bawbab-interactive-maps-admin/category-settings-page/constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

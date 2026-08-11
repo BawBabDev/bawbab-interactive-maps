@@ -5,7 +5,7 @@ import {
 import { useState, useEffect, useMemo } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
-import { useCategoryManager } from '../../hooks/useCategoryManager';
+import { useCategoryManager } from '../../category-settings-page/hooks/useCategoryManager';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

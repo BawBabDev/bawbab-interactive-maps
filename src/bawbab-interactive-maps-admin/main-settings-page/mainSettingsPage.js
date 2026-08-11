@@ -4,7 +4,7 @@ import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
-import BawBabIMaps from '../bawbab-interactive-maps-block/components/maps';
+import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
 import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 

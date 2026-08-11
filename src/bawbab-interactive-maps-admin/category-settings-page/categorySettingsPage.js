@@ -4,10 +4,10 @@ import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
 
-import { useCategoryManager } from '../hooks/useCategoryManager';
-import { CategoryGroupManager } from './components/category-settings/categoryGroupManager';
-import { CategoryMappingTable } from './components/category-settings/categoryMappingTable';
-import { MapLegendManager } from './components/category-settings/mapLegendManager';
+import { useCategoryManager } from './hooks/useCategoryManager';
+import { CategoryGroupManager } from './components/categoryGroupManager';
+import { CategoryMappingTable } from './components/categoryMappingTable';
+import { MapLegendManager } from './components/mapLegendManager';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

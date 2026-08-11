@@ -1,10 +1,10 @@
 import domReady from '@wordpress/dom-ready';
 import { createRoot } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import MainSettingsPage from './mainSettingsPage';
-import SpatialDataEditPage from './spatialDataEditPage';
+import MainSettingsPage from './main-settings-page/mainSettingsPage';
+import SpatialDataEditPage from './editor-page/spatialDataEditPage';
 import './admin-styles.css';
-import CategorySettingsPage from './categorySettingsPage';
+import CategorySettingsPage from './category-settings-page/categorySettingsPage';
 
 const App = () => {
     // Determine the current page from the URL query string
