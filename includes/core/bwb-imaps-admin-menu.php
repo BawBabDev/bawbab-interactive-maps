@@ -26,7 +26,7 @@ function bwb_imaps_add_admin_menu() {
     add_submenu_page(
         'bawbab-interactive-maps-settings', 
         'Bawbab Interactive Maps Settings',  
-        '<span class="dashicons dashicons-admin-settings"></span> Maps Settings',               
+        '<span class="dashicons dashicons-admin-settings"></span>'. __( 'Maps Settings', 'bawbab-interactive-maps' ),               
         'manage_options',
         'bawbab-interactive-maps-settings', 
         'bwb_imaps_render_admin_page'
@@ -36,7 +36,7 @@ function bwb_imaps_add_admin_menu() {
     add_submenu_page(
         'bawbab-interactive-maps-settings',
         'Edition Tool',
-        '<span class="dashicons dashicons-edit"></span> Edit Spatial Data',
+        '<span class="dashicons dashicons-edit"></span>'. __( 'Edit Spatial Data', 'bawbab-interactive-maps' ),
         'manage_options',
         'bawbab-interactive-maps-edit-spatial-data',
         'bwb_imaps_render_admin_page'
