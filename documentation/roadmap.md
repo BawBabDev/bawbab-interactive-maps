@@ -72,3 +72,4 @@
 
 
 Fix show legend toggle breaking map
+Think how to manage networ layer

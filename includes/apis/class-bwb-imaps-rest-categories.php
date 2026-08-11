@@ -18,19 +18,25 @@ class BWB_IMaps_REST_Categories {
         ) );
     }
 
+    /**
+     * POST Route Callback: Prunes categories from categoryConfig
+     * that are no longer assigned to any spatial feature in MySQL.
+     */
     public static function handle_cleanup_category_schema() {
         global $wpdb;
 
         $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
         
+        // Query distinct composite keys (layer_type::category) from database
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $active_cats = $wpdb->get_col(
+        $active_composites = $wpdb->get_col(
             $wpdb->prepare(
-                "SELECT DISTINCT category FROM %i WHERE category IS NOT NULL AND category != ''",
+                "SELECT DISTINCT CONCAT(layer_type, '::', category) FROM %i WHERE category IS NOT NULL AND category != '' AND layer_type IS NOT NULL AND layer_type != ''",
                 $table_spatial
             )
         );
-        $active_set  = is_array( $active_cats ) ? array_flip( $active_cats ) : array();
+
+        $active_set = is_array( $active_composites ) ? array_flip( $active_composites ) : array();
 
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
@@ -39,9 +45,14 @@ class BWB_IMaps_REST_Categories {
         $cleaned_map  = array();
         $pruned_count = 0;
 
-        foreach ( $current_map as $cat_slug => $cat_data ) {
-            if ( isset( $active_set[$cat_slug] ) ) {
-                $cleaned_map[$cat_slug] = $cat_data;
+        foreach ( $current_map as $cat_key => $cat_data ) {
+            $composite_key = $cat_key;
+            if ( false === strpos( $cat_key, '::' ) && isset( $cat_data['layer_type'] ) ) {
+                $composite_key = $cat_data['layer_type'] . '::' . $cat_key;
+            }
+
+            if ( isset( $active_set[ $composite_key ] ) ) {
+                $cleaned_map[ $composite_key ] = $cat_data;
             } else {
                 $pruned_count++;
             }
@@ -72,11 +83,21 @@ class BWB_IMaps_REST_Categories {
 
         $has_changes = false;
 
-        foreach ( $category_color_map as $cat_slug => $hex_color ) {
-            $clean_slug = sanitize_key( $cat_slug );
+        foreach ( $category_color_map as $raw_key => $hex_color ) {
+            $layer_type = 'buildings';
+            $clean_slug = sanitize_key( $raw_key );
+
+            if ( false !== strpos( $raw_key, '::' ) ) {
+                $parts      = explode( '::', $raw_key );
+                $layer_type = sanitize_key( $parts[0] );
+                $clean_slug = sanitize_key( $parts[1] );
+            }
+
             if ( empty( $clean_slug ) ) continue;
 
-            if ( ! isset( $categoryMap[$clean_slug] ) ) {
+            $composite_key = $layer_type . '::' . $clean_slug;
+
+            if ( ! isset( $categoryMap[ $composite_key ] ) ) {
                 $formatted_label = ucwords( str_replace( '_', ' ', $clean_slug ) );
                 $clean_color     = sanitize_hex_color( $hex_color );
 
@@ -90,37 +111,15 @@ class BWB_IMaps_REST_Categories {
                         $target_group_id = $group['id'];
                         break;
                     }
-
-                    if ( preg_match( '/(apt|apartment|residential|building)/i', $clean_slug ) && preg_match( '/(apt|apartment|residential|building)/i', $g_title . ' ' . $g_id ) ) {
-                        $target_group_id = $group['id'];
-                        break;
-                    }
-                    if ( preg_match( '/(cottage|house|villa)/i', $clean_slug ) && preg_match( '/(cottage|house|villa)/i', $g_title . ' ' . $g_id ) ) {
-                        $target_group_id = $group['id'];
-                        break;
-                    }
-                    if ( preg_match( '/(util|utility|service|maintenance)/i', $clean_slug ) && preg_match( '/(util|utility|service|maintenance)/i', $g_title . ' ' . $g_id ) ) {
-                        $target_group_id = $group['id'];
-                        break;
-                    }
-                    if ( preg_match( '/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i', $clean_slug ) && preg_match( '/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i', $g_title . ' ' . $g_id ) ) {
-                        $target_group_id = $group['id'];
-                        break;
-                    }
                 }
 
-                $categoryMap[$clean_slug] = array(
-                    'label'   => $formatted_label,
-                    'groupId' => $target_group_id,
-                    'color'   => ! empty( $clean_color ) ? $clean_color : '#007cba',
+                $categoryMap[ $composite_key ] = array(
+                    'label'      => $formatted_label,
+                    'groupId'    => $target_group_id,
+                    'layer_type' => $layer_type,
+                    'color'      => ! empty( $clean_color ) ? $clean_color : '#007cba',
                 );
                 $has_changes = true;
-            } elseif ( empty( $categoryMap[$clean_slug]['color'] ) && ! empty( $hex_color ) ) {
-                $clean_color = sanitize_hex_color( $hex_color );
-                if ( ! empty( $clean_color ) ) {
-                    $categoryMap[$clean_slug]['color'] = $clean_color;
-                    $has_changes = true;
-                }
             }
         }
 

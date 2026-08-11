@@ -1,8 +1,16 @@
-import { useState } from '@wordpress/element';
+import { useState, useMemo } from '@wordpress/element';
 import { Panel, PanelBody, Button, TextControl, SelectControl, Flex, ColorPicker, Dropdown, Modal } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
+
+const LAYER_LABELS = {
+    buildings: __('Buildings Layer', TEXT_DOMAIN),
+    land_use: __('Land Use Layer', TEXT_DOMAIN),
+    paths: __('Pathways Layer', TEXT_DOMAIN),
+    parcels: __('Parcels Layer', TEXT_DOMAIN),
+    entries: __('Entries Layer', TEXT_DOMAIN)
+};
 
 export const CategoryMappingTable = ({ 
     groups, 
@@ -14,6 +22,7 @@ export const CategoryMappingTable = ({
     const [showAddCatModal, setShowAddCatModal] = useState(false);
     const [newCatLabel, setNewCatLabel] = useState('');
     const [newCatGroupId, setNewCatGroupId] = useState('');
+    const [newCatLayerType, setNewCatLayerType] = useState('buildings');
     const [newCatColor, setNewCatColor] = useState('#007cba');
 
     const derivedCatSlug = (newCatLabel || '')
@@ -22,11 +31,11 @@ export const CategoryMappingTable = ({
         .replace(/[^a-z0-9\s_]/g, '')
         .replace(/\s+/g, '_');
 
-    const handleUpdateCategory = (catSlug, key, value) => {
+    const handleUpdateCategory = (compositeKey, key, value) => {
         setCategoryMap(prev => ({
             ...prev,
-            [catSlug]: {
-                ...(prev[catSlug] || {}),
+            [compositeKey]: {
+                ...(prev[compositeKey] || {}),
                 [key]: value
             }
         }));
@@ -35,22 +44,26 @@ export const CategoryMappingTable = ({
     const handleConfirmAddCategory = () => {
         if (!newCatLabel.trim() || !derivedCatSlug) return;
 
-        if (categoryMap[derivedCatSlug]) {
-            alert(__('A category with this database slug already exists.', TEXT_DOMAIN));
+        const compositeKey = `${newCatLayerType}::${derivedCatSlug}`;
+
+        if (categoryMap[compositeKey]) {
+            alert(__('A category with this database slug already exists in this layer.', TEXT_DOMAIN));
             return;
         }
 
         setCategoryMap(prev => ({
             ...prev,
-            [derivedCatSlug]: {
+            [compositeKey]: {
                 label: newCatLabel.trim(),
                 groupId: newCatGroupId,
+                layer_type: newCatLayerType,
                 color: newCatColor
             }
         }));
 
         setNewCatLabel('');
         setNewCatGroupId('');
+        setNewCatLayerType('buildings');
         setNewCatColor('#007cba');
         setShowAddCatModal(false);
     };
@@ -60,18 +73,33 @@ export const CategoryMappingTable = ({
         ...groups.map(g => ({ label: g.title, value: g.id }))
     ];
 
-    const allCategorySlugs = Object.keys(categoryMap);
+    // Group categories strictly by layer_type
+    const categoriesByLayer = useMemo(() => {
+        const grouped = {};
+        Object.keys(categoryMap).forEach(compositeKey => {
+            const info = categoryMap[compositeKey] || {};
+            const layer = info.layer_type || (compositeKey.includes('::') ? compositeKey.split('::')[0] : null);
+
+            if (!layer) return;
+
+            if (!grouped[layer]) grouped[layer] = [];
+            grouped[layer].push({ compositeKey, ...info });
+        });
+        return grouped;
+    }, [categoryMap]);
+
+    const activeLayers = Object.keys(categoriesByLayer);
 
     return (
         <Panel style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '15px' }}>
             <PanelBody 
-                title={__('2. Spatial Categories Configuration (1-to-1 Mapping)', TEXT_DOMAIN)} 
+                title={__('2. Spatial Categories Configuration (Grouped by Layer)', TEXT_DOMAIN)} 
                 opened={isOpen}
                 onToggle={onToggle}
             >
                 <Flex justify="space-between" align="center" style={{ marginBottom: '15px' }}>
                     <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
-                        {__('Categories map 1-to-1 to navigation groups and determine feature styling across the map.', TEXT_DOMAIN)}
+                        {__('Categories map 1-to-1 to navigation groups and set feature colors for each layer.', TEXT_DOMAIN)}
                     </p>
                     <Button
                         variant="secondary"
@@ -82,91 +110,104 @@ export const CategoryMappingTable = ({
                     </Button>
                 </Flex>
 
-                {allCategorySlugs.length === 0 ? (
+                {activeLayers.length === 0 ? (
                     <p style={{ fontStyle: 'italic', color: '#888', textAlign: 'center', padding: '20px' }}>
                         {__('No categories found. Click "Add Category" above or import spatial features.', TEXT_DOMAIN)}
                     </p>
                 ) : (
-                    <div style={{ border: '1px solid #e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 240px 80px', gap: '12px', padding: '10px 12px', background: '#f5f5f5', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
-                            <span>{__('Database Slug', TEXT_DOMAIN)}</span>
-                            <span>{__('Display Label', TEXT_DOMAIN)}</span>
-                            <span>{__('Assigned Group', TEXT_DOMAIN)}</span>
-                            <span style={{ textAlign: 'center' }}>{__('Color', TEXT_DOMAIN)}</span>
-                        </div>
+                    activeLayers.map(layerKey => {
+                        const items = categoriesByLayer[layerKey];
+                        const layerTitle = LAYER_LABELS[layerKey] || `${layerKey.toUpperCase()} Layer`;
 
-                        {allCategorySlugs.map((catSlug, index) => {
-                            const catInfo = categoryMap[catSlug] || {};
-                            const currentColor = catInfo.color || '#007cba';
-                            const isLast = index === allCategorySlugs.length - 1;
-
-                            return (
-                                <div 
-                                    key={catSlug} 
-                                    style={{ 
-                                        display: 'grid', 
-                                        gridTemplateColumns: '160px 1fr 240px 80px', 
-                                        gap: '12px', 
-                                        padding: '10px 12px', 
-                                        alignItems: 'center',
-                                        borderBottom: isLast ? 'none' : '1px solid #eee',
-                                        background: index % 2 === 0 ? '#fff' : '#fafafa'
-                                    }}
-                                >
-                                    <code style={{ background: '#f0f0f0', padding: '3px 6px', borderRadius: '3px', fontSize: '12px', width: 'fit-content' }}>
-                                        {catSlug}
-                                    </code>
-
-                                    <TextControl
-                                        value={catInfo.label || ''}
-                                        onChange={(val) => handleUpdateCategory(catSlug, 'label', val)}
-                                        placeholder={catSlug}
-                                        style={{ height: '34px' }}
-                                        __nextHasNoMarginBottom
-                                    />
-
-                                    <SelectControl
-                                        value={catInfo.groupId !== undefined ? catInfo.groupId : ''}
-                                        options={groupOptions}
-                                        onChange={(val) => handleUpdateCategory(catSlug, 'groupId', val)}
-                                        style={{ height: '34px' }}
-                                        __nextHasNoMarginBottom
-                                    />
-
-                                    <div style={{ textAlign: 'center' }}>
-                                        <Dropdown
-                                            renderToggle={({ isOpen: isDropdownOpen, onToggle: toggleDropdown }) => (
-                                                <Button
-                                                    onClick={toggleDropdown}
-                                                    aria-expanded={isDropdownOpen}
-                                                    style={{
-                                                        width: '28px',
-                                                        height: '28px',
-                                                        minWidth: '28px',
-                                                        padding: 0,
-                                                        borderRadius: '4px',
-                                                        background: currentColor,
-                                                        border: '2px solid #fff',
-                                                        boxShadow: '0 0 0 1px #ccc',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                            )}
-                                            renderContent={() => (
-                                                <div style={{ padding: '12px' }}>
-                                                    <ColorPicker
-                                                        color={currentColor}
-                                                        onChangeComplete={(val) => handleUpdateCategory(catSlug, 'color', val.hex)}
-                                                        disableAlpha
-                                                    />
-                                                </div>
-                                            )}
-                                        />
-                                    </div>
+                        return (
+                            <div key={layerKey} style={{ marginBottom: '20px', border: '1px solid #e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ padding: '8px 12px', background: '#e8f0f8', borderBottom: '1px solid #d0e0f0', fontWeight: '700', fontSize: '12px', color: '#1d2327', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>{layerTitle}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666' }}>{sprintf(__('%d categories', TEXT_DOMAIN), items.length)}</span>
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 240px 80px', gap: '12px', padding: '8px 12px', background: '#f5f5f5', borderBottom: '1px solid #e0e0e0', fontWeight: '600', fontSize: '11px', color: '#555' }}>
+                                    <span>{__('Database Slug', TEXT_DOMAIN)}</span>
+                                    <span>{__('Display Label', TEXT_DOMAIN)}</span>
+                                    <span>{__('Assigned Group', TEXT_DOMAIN)}</span>
+                                    <span style={{ textAlign: 'center' }}>{__('Color', TEXT_DOMAIN)}</span>
+                                </div>
+
+                                {items.map((catItem, index) => {
+                                    const { compositeKey } = catItem;
+                                    const catSlug = compositeKey.includes('::') ? compositeKey.split('::')[1] : compositeKey;
+                                    const currentColor = catItem.color || '#007cba';
+                                    const isLast = index === items.length - 1;
+
+                                    return (
+                                        <div 
+                                            key={compositeKey} 
+                                            style={{ 
+                                                display: 'grid', 
+                                                gridTemplateColumns: '160px 1fr 240px 80px', 
+                                                gap: '12px', 
+                                                padding: '8px 12px', 
+                                                alignItems: 'center',
+                                                borderBottom: isLast ? 'none' : '1px solid #eee',
+                                                background: index % 2 === 0 ? '#fff' : '#fafafa'
+                                            }}
+                                        >
+                                            <code style={{ background: '#f0f0f0', padding: '3px 6px', borderRadius: '3px', fontSize: '11px', width: 'fit-content' }}>
+                                                {catSlug}
+                                            </code>
+
+                                            <TextControl
+                                                value={catItem.label || ''}
+                                                onChange={(val) => handleUpdateCategory(compositeKey, 'label', val)}
+                                                placeholder={catSlug}
+                                                style={{ height: '32px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+
+                                            <SelectControl
+                                                value={catItem.groupId !== undefined ? catItem.groupId : ''}
+                                                options={groupOptions}
+                                                onChange={(val) => handleUpdateCategory(compositeKey, 'groupId', val)}
+                                                style={{ height: '32px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+
+                                            <div style={{ textAlign: 'center' }}>
+                                                <Dropdown
+                                                    renderToggle={({ isOpen: isDropdownOpen, onToggle: toggleDropdown }) => (
+                                                        <Button
+                                                            onClick={toggleDropdown}
+                                                            aria-expanded={isDropdownOpen}
+                                                            style={{
+                                                                width: '26px',
+                                                                height: '26px',
+                                                                minWidth: '26px',
+                                                                padding: 0,
+                                                                borderRadius: '4px',
+                                                                background: currentColor,
+                                                                border: '2px solid #fff',
+                                                                boxShadow: '0 0 0 1px #ccc',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        />
+                                                    )}
+                                                    renderContent={() => (
+                                                        <div style={{ padding: '12px' }}>
+                                                            <ColorPicker
+                                                                color={currentColor}
+                                                                onChangeComplete={(val) => handleUpdateCategory(compositeKey, 'color', val.hex)}
+                                                                disableAlpha
+                                                            />
+                                                        </div>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })
                 )}
             </PanelBody>
 
@@ -187,7 +228,19 @@ export const CategoryMappingTable = ({
                         />
 
                         <SelectControl
-                            label={__('Assigned Group', TEXT_DOMAIN)}
+                            label={__('Target Layer Type', TEXT_DOMAIN)}
+                            value={newCatLayerType}
+                            options={[
+                                { label: __('Buildings', TEXT_DOMAIN), value: 'buildings' },
+                                { label: __('Land Use', TEXT_DOMAIN), value: 'land_use' },
+                                { label: __('Pathways', TEXT_DOMAIN), value: 'paths' },
+                                { label: __('Parcels', TEXT_DOMAIN), value: 'parcels' }
+                            ]}
+                            onChange={setNewCatLayerType}
+                        />
+
+                        <SelectControl
+                            label={__('Assigned Navigation Group', TEXT_DOMAIN)}
                             value={newCatGroupId}
                             options={groupOptions}
                             onChange={setNewCatGroupId}

@@ -16,31 +16,12 @@ export const DEFAULT_GROUPS = [
     { id: 'infrastructure', title: 'Pathways & Support', displayType: 'flat' }
 ];
 
-export const DEFAULT_CATEGORY_MAPPINGS = {
-    residential_apartment: { label: 'Residential Apartments', groupId: 'apartments', color: '#d70f4f' },
-    cottage: { label: 'Cottages', groupId: 'cottages', color: '#d776e9' },
-    community_center: { label: 'Community Center', groupId: 'amenities', color: '#ed8401' },
-    personal_care: { label: 'Personal Care', groupId: 'amenities', color: '#f6e395' },
-    skilled_care: { label: 'Skilled Care', groupId: 'amenities', color: '#ede770' },
-    amenity: { label: 'Amenities', groupId: 'amenities', color: '#48dad0' },
-    fitness_center: { label: 'Fitness Center', groupId: 'amenities', color: '#6ab6ea' },
-    utilities: { label: 'Utilities', groupId: 'amenities', color: '#0f73d7' },
-    support_structures: { label: 'Carport / Garage / Support', groupId: 'infrastructure', color: '#ce6787' },
-    pathways: { label: 'Pathways / Patios', groupId: 'infrastructure', color: '#ddebaf' },
-    trail: { label: 'Trail', groupId: 'infrastructure', color: '#7c4e1c' },
-    covered_pathways: { 
-        label: 'Indoor / Covered Pathways', 
-        groupId: 'infrastructure', 
-        color: '#e39cb2',
-        colors: ['#e39cb2', '#feba67', '#ede79f']
-    }
-};
+// Clean empty defaults - categories populate dynamically upon GeoJSON import
+export const DEFAULT_CATEGORY_MAPPINGS = {};
 
-// ADD THIS EXPORT:
 export const DEFAULT_LEGEND_CONFIG = {
     enabled: true,
-    groupByLayer: false,
-    items: []
+    sections: []
 };
 
 export const DEFAULT_CATEGORY_CONFIG = {

@@ -15,10 +15,6 @@ const CloseIcon = () => (
     </svg>
 );
 
-/**
- * MapLegend Component
- * Renders an expandable map legend supporting single and multi-color merged category swatches.
- */
 export const MapLegend = ({ mapDimensions }) => {
     const { width = 0, height = 0 } = mapDimensions || {};
     const isSmallUI = width > 0 && (width < 800 || height < 500);
@@ -35,45 +31,40 @@ export const MapLegend = ({ mapDimensions }) => {
         }
     }, [width, height, isSmallUI]);
 
-    // Don't render anything if the legend is globally disabled in settings
-    if (legendConfig && legendConfig.enabled === false) {
+    if (!legendConfig || legendConfig.enabled === false) {
         return null;
     }
 
-    // Process legend items based on legendConfig or fallback to active categoryMap
-    const visibleLegendItems = useMemo(() => {
-        // Option A: Use saved legendConfig items if configured
-        if (legendConfig && Array.isArray(legendConfig.items) && legendConfig.items.length > 0) {
-            return legendConfig.items
+    // Process section groups for rendering
+    const activeSections = useMemo(() => {
+        if (!legendConfig.sections || !Array.isArray(legendConfig.sections)) return [];
+
+        return legendConfig.sections.map(section => {
+            const visibleItems = (section.items || [])
                 .filter(item => item.showInLegend !== false)
                 .map(item => {
-                    // Resolve swatches for merged or single category items
-                    const swatches = (item.categories || []).map(catSlug => {
-                        return categoryMap[catSlug]?.color || '#007cba';
+                    const swatches = (item.categories || []).map(compositeKey => {
+                        return categoryMap[compositeKey]?.color || '#007cba';
                     });
 
                     return {
-                        id: item.id || item.label,
+                        id: item.id,
                         label: item.label,
                         swatches: swatches.length > 0 ? swatches : ['#007cba']
                     };
                 });
-        }
 
-        // Option B: Fallback to all categories in categoryMap
-        return Object.keys(categoryMap).map(catSlug => {
-            const cat = categoryMap[catSlug] || {};
+            if (visibleItems.length === 0) return null;
+
             return {
-                id: catSlug,
-                label: cat.label || catSlug,
-                swatches: [cat.color || '#007cba']
+                id: section.id,
+                title: section.title,
+                items: visibleItems
             };
-        });
+        }).filter(Boolean);
     }, [categoryMap, legendConfig]);
 
-    if (visibleLegendItems.length === 0) {
-        return null;
-    }
+    if (activeSections.length === 0) return null;
 
     return (
         <div 
@@ -96,10 +87,10 @@ export const MapLegend = ({ mapDimensions }) => {
             }}
             onClick={() => !isOpen && setIsOpen(true)}
         >
-            {/* HEADER / ICON SECTION */}
+            {/* HEADER */}
             <div style={{ 
                 display: 'flex', 
-                justify: 'space-between', 
+                justifyContent: 'space-between', 
                 alignItems: 'center', 
                 minHeight: '40px',
                 padding: '0 11px',
@@ -125,7 +116,7 @@ export const MapLegend = ({ mapDimensions }) => {
                 )}
             </div>
 
-            {/* CONTENT SECTION */}
+            {/* CONTENT */}
             <div style={{ 
                 padding: '0 16px 16px 16px', 
                 opacity: isOpen ? 1 : 0,
@@ -134,27 +125,35 @@ export const MapLegend = ({ mapDimensions }) => {
                 overflowY: 'auto',
                 maxHeight: '440px'
             }}>
-                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {visibleLegendItems.map((item) => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {/* Color Swatch Container (Supports Multi-Color Merged Entries) */}
-                            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                                {item.swatches.map((color, idx) => (
-                                    <div
-                                        key={`${item.id}-swatch-${idx}`}
-                                        style={{
-                                            width: '12px',
-                                            height: '12px',
-                                            background: color,
-                                            borderRadius: '3px',
-                                            border: '1px solid rgba(0,0,0,0.1)'
-                                        }}
-                                    />
+                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {activeSections.map(section => (
+                        <div key={section.id}>
+                            <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: '#2271b1', marginBottom: '6px', letterSpacing: '0.5px', borderBottom: '1px solid #e0f0ff', paddingBottom: '2px' }}>
+                                {section.title}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {section.items.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                                            {item.swatches.map((color, idx) => (
+                                                <div
+                                                    key={`${item.id}-swatch-${idx}`}
+                                                    style={{
+                                                        width: '12px',
+                                                        height: '12px',
+                                                        background: color,
+                                                        borderRadius: '3px',
+                                                        border: '1px solid rgba(0,0,0,0.1)'
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                                            {item.label}
+                                        </span>
+                                    </div>
                                 ))}
                             </div>
-                            <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                                {item.label}
-                            </span>
                         </div>
                     ))}
                 </div>
