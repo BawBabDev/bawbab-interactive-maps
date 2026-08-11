@@ -71,3 +71,4 @@
     - Integrated with Bawbab DAI for external navigation
 
 
+Fix show legend toggle breaking map

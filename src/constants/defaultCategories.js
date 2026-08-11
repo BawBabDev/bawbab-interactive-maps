@@ -32,11 +32,19 @@ export const DEFAULT_CATEGORY_MAPPINGS = {
         label: 'Indoor / Covered Pathways', 
         groupId: 'infrastructure', 
         color: '#e39cb2',
-        colors: ['#e39cb2', '#feba67', '#ede79f'] // Multi-swatch for composite legend item
+        colors: ['#e39cb2', '#feba67', '#ede79f']
     }
+};
+
+// ADD THIS EXPORT:
+export const DEFAULT_LEGEND_CONFIG = {
+    enabled: true,
+    groupByLayer: false,
+    items: []
 };
 
 export const DEFAULT_CATEGORY_CONFIG = {
     groups: DEFAULT_GROUPS,
-    categoryMap: DEFAULT_CATEGORY_MAPPINGS
+    categoryMap: DEFAULT_CATEGORY_MAPPINGS,
+    legendConfig: DEFAULT_LEGEND_CONFIG
 };

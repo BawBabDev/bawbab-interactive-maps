@@ -1,16 +1,20 @@
 import { __ } from '@wordpress/i18n';
-import { useState, useEffect, useRef, useMemo } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import { Icon } from '@iconify/react';
-import { useCategoryManager } from '../../hooks/useCategoryManager';
 
-const LegendIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/></svg>
-);
 const LayersIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+        <polyline points="2 17 12 22 22 17"/>
+        <polyline points="2 12 12 17 22 12"/>
+    </svg>
 );
+
 const CloseIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
 );
 
 const FloorIcon = () => (
@@ -25,125 +29,6 @@ const FloorIcon = () => (
         }}
     />
 );
-
-export const MapLegend = ({ mapDimensions }) => {
-    const { width = 0, height = 0 } = mapDimensions || {};
-    const isSmallUI = width > 0 && (width < 800 || height < 500);
-    
-    const [isOpen, setIsOpen] = useState(true);
-    const hasInitialized = useRef(false);
-
-    const { categoryMap, discoveredCategories } = useCategoryManager();
-
-    useEffect(() => {
-        if (width > 0 && !hasInitialized.current) {
-            if (isSmallUI) setIsOpen(false);
-            hasInitialized.current = true;
-        }
-    }, [width, height, isSmallUI]);
-
-    // Build dynamic legend items from categoryMap (discovered or mapped categories)
-    const legendItems = useMemo(() => {
-        const categoriesToRender = discoveredCategories.length > 0 
-            ? discoveredCategories 
-            : Object.keys(categoryMap);
-
-        return categoriesToRender.map(catSlug => {
-            const item = categoryMap[catSlug] || {};
-            return {
-                slug: catSlug,
-                label: item.label || catSlug,
-                color: item.color || '#007cba',
-                colors: item.colors || null // Supports multi-color swatch array if defined
-            };
-        });
-    }, [categoryMap, discoveredCategories]);
-
-    return (
-        <div 
-            style={{
-                position: 'absolute', 
-                bottom: '20px', 
-                left: '20px', 
-                zIndex: 400,
-                background: 'rgba(255, 255, 255, 0.98)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                display: 'flex', 
-                flexDirection: 'column',
-                width: isOpen ? 'max-content' : '40px',
-                maxHeight: isOpen ? '450px' : '40px', 
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                overflow: 'hidden',
-                cursor: isOpen ? 'default' : 'pointer',
-                transformOrigin: 'bottom left' 
-            }}
-            onClick={() => !isOpen && setIsOpen(true)}
-        >
-            {/* HEADER / ICON SECTION */}
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                minHeight: '40px',
-                padding: '0 11px',
-                width: '100%',
-                boxSizing: 'border-box'
-            }}>
-                {!isOpen ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                        <LegendIcon />
-                    </div>
-                ) : (
-                    <>
-                        <span style={{ color: '#333', fontSize: '13px', fontWeight: '800', marginLeft: '5px' }}>
-                            {__('Legend', 'bawbab-interactive-maps')}
-                        </span>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} 
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', padding: '4px', display: 'flex' }}
-                        >
-                            <CloseIcon />
-                        </button>
-                    </>
-                )}
-            </div>
-
-            {/* CONTENT SECTION */}
-            <div style={{ 
-                padding: '0 16px 16px 16px', 
-                opacity: isOpen ? 1 : 0,
-                transition: 'opacity 0.2s ease',
-                pointerEvents: isOpen ? 'auto' : 'none',
-                overflowY: 'auto',
-                maxHeight: '440px'
-            }}>
-                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {legendItems.map((item) => (
-                        <div key={item.slug} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                                {(item.colors || [item.color]).map((swatchColor, swatchIdx) => (
-                                    <div
-                                        key={`${item.slug}-${swatchIdx}`}
-                                        style={{
-                                            width: '12px',
-                                            height: '12px',
-                                            background: swatchColor,
-                                            borderRadius: '3px',
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                            <span style={{ fontSize: '11px', color: '#333', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                                {item.label}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export const LayerToggler = ({ visibleLayers, layerOpacity, onToggle, onOpacityChange, mapDimensions }) => {
     const { width = 0, height = 0 } = mapDimensions || {};
@@ -285,7 +170,7 @@ export const FloorSwitcher = ({ mapDimensions, activeFloor = 0, onFloorChange, a
         >
             <div style={{
                 display: 'flex',
-                justifyContent: 'center',
+                justify: 'center',
                 alignItems: 'center',
                 minHeight: '40px',
                 flexShrink: 0,

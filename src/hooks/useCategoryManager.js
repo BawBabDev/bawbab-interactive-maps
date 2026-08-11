@@ -12,7 +12,8 @@ import { __, sprintf } from '@wordpress/i18n';
 import { 
     CURATED_CATEGORY_PALETTE, 
     DEFAULT_GROUPS, 
-    DEFAULT_CATEGORY_MAPPINGS 
+    DEFAULT_CATEGORY_MAPPINGS,
+    DEFAULT_LEGEND_CONFIG 
 } from '../constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
@@ -20,34 +21,39 @@ const TEXT_DOMAIN = 'bawbab-interactive-maps';
 export const useCategoryManager = () => {
     const [groups, setGroups] = useState(DEFAULT_GROUPS);
     const [categoryMap, setCategoryMap] = useState(DEFAULT_CATEGORY_MAPPINGS);
+    const [legendConfig, setLegendConfig] = useState(DEFAULT_LEGEND_CONFIG);
     const [discoveredCategories, setDiscoveredCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
     const { createSuccessNotice, createErrorNotice } = useDispatch(noticesStore);
 
-    // Fetch saved WP options + discover spatial categories from database
+    // 1. Fetch saved WP options + discover spatial categories from database
     const loadCategoryData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // A. Fetch saved WP settings options (Primary Source of Truth for Categories)
             const settingsRes = await apiFetch({ path: '/wp/v2/settings' });
             const savedData = settingsRes?.bwb_imaps_options_data || {};
-            const savedConfig = savedData.categoryConfig;
+            const savedConfig = savedData.categoryConfig || {};
 
             let currentGroups = DEFAULT_GROUPS;
             let currentCategoryMap = DEFAULT_CATEGORY_MAPPINGS;
+            let currentLegendConfig = DEFAULT_LEGEND_CONFIG;
 
-            if (savedConfig) {
-                if (Array.isArray(savedConfig.groups) && savedConfig.groups.length > 0) {
-                    currentGroups = savedConfig.groups;
-                }
-                if (savedConfig.categoryMap && typeof savedConfig.categoryMap === 'object') {
-                    currentCategoryMap = savedConfig.categoryMap;
-                }
+            if (savedConfig.groups && Array.isArray(savedConfig.groups) && savedConfig.groups.length > 0) {
+                currentGroups = savedConfig.groups;
+            }
+            if (savedConfig.categoryMap && typeof savedConfig.categoryMap === 'object') {
+                currentCategoryMap = savedConfig.categoryMap;
+            }
+            if (savedConfig.legendConfig && typeof savedConfig.legendConfig === 'object') {
+                currentLegendConfig = {
+                    ...DEFAULT_LEGEND_CONFIG,
+                    ...savedConfig.legendConfig
+                };
             }
 
-            // B. Fetch spatial data to discover active category slugs and initial row colors
+            // Fetch spatial data to discover active category slugs
             const spatialRes = await fetch('/wp-json/bwb-imaps-federated-api/v1/get-spatial-data');
             const spatialData = await spatialRes.json();
 
@@ -56,10 +62,8 @@ export const useCategoryManager = () => {
                 spatialData.features.forEach(f => {
                     const cat = f.properties?.category;
                     const color = f.properties?.fill_color;
-                    if (cat) {
-                        if (!discoveredMap[cat]) {
-                            discoveredMap[cat] = color || null;
-                        }
+                    if (cat && !discoveredMap[cat]) {
+                        discoveredMap[cat] = color || null;
                     }
                 });
             }
@@ -67,7 +71,6 @@ export const useCategoryManager = () => {
             const discoveredList = Object.keys(discoveredMap);
             setDiscoveredCategories(discoveredList);
 
-            // C. Auto-register newly discovered categories with palette fallbacks
             let paletteIdx = 0;
             const updatedMap = { ...currentCategoryMap };
 
@@ -78,31 +81,12 @@ export const useCategoryManager = () => {
                     const fallbackColor = importedColor || CURATED_CATEGORY_PALETTE[paletteIdx % CURATED_CATEGORY_PALETTE.length];
                     const lowerSlug = catSlug.toLowerCase();
 
-                    // Dynamic matching against active groups
                     let defaultGroup = '';
-
                     for (const group of currentGroups) {
                         const gId = (group.id || '').toLowerCase();
                         const gTitle = (group.title || '').toLowerCase();
 
                         if (gTitle && (lowerSlug.includes(gTitle) || gTitle.includes(lowerSlug))) {
-                            defaultGroup = group.id;
-                            break;
-                        }
-
-                        if (/(apt|apartment|residential|building)/i.test(lowerSlug) && /(apt|apartment|residential|building)/i.test(gTitle + ' ' + gId)) {
-                            defaultGroup = group.id;
-                            break;
-                        }
-                        if (/(cottage|house|villa)/i.test(lowerSlug) && /(cottage|house|villa)/i.test(gTitle + ' ' + gId)) {
-                            defaultGroup = group.id;
-                            break;
-                        }
-                        if (/(util|utility|service|maintenance)/i.test(lowerSlug) && /(util|utility|service|maintenance)/i.test(gTitle + ' ' + gId)) {
-                            defaultGroup = group.id;
-                            break;
-                        }
-                        if (/(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i.test(lowerSlug) && /(path|road|trail|patio|garage|carport|drive|support|infrastructure)/i.test(gTitle + ' ' + gId)) {
                             defaultGroup = group.id;
                             break;
                         }
@@ -117,8 +101,60 @@ export const useCategoryManager = () => {
                 }
             });
 
+            // Set of all active/valid category slugs currently in categoryMap
+            const activeCategorySlugs = new Set(Object.keys(updatedMap));
+
+            let rawLegendItems = Array.isArray(currentLegendConfig.items) ? [...currentLegendConfig.items] : [];
+
+            // A. PURGE: Remove items referencing categories that no longer exist in categoryMap
+            let cleanedLegendItems = [];
+
+            rawLegendItems.forEach(item => {
+                const validCategories = (item.categories || []).filter(slug => activeCategorySlugs.has(slug));
+
+                if (validCategories.length === 0) {
+                    // Category was purged -> drop this legend item completely
+                    return;
+                }
+
+                if (item.type === 'merged' && validCategories.length === 1) {
+                    // Merged item reduced to 1 category -> convert back to 'single'
+                    const singleSlug = validCategories[0];
+                    cleanedLegendItems.push({
+                        ...item,
+                        type: 'single',
+                        categories: [singleSlug],
+                        label: item.label || updatedMap[singleSlug]?.label || singleSlug
+                    });
+                } else {
+                    // Keep valid item
+                    cleanedLegendItems.push({
+                        ...item,
+                        categories: validCategories
+                    });
+                }
+            });
+
+            // B. SYNC: Ensure every active category in categoryMap exists in legendConfig
+            const existingLegendCatSlugs = new Set(cleanedLegendItems.flatMap(i => i.categories || []));
+
+            activeCategorySlugs.forEach(slug => {
+                if (!existingLegendCatSlugs.has(slug)) {
+                    cleanedLegendItems.push({
+                        id: `leg_${slug}_${Date.now()}`,
+                        label: updatedMap[slug]?.label || slug,
+                        type: 'single',
+                        categories: [slug],
+                        showInLegend: true
+                    });
+                }
+            });
+
+            currentLegendConfig.items = cleanedLegendItems;
+
             setGroups(currentGroups);
             setCategoryMap(updatedMap);
+            setLegendConfig(currentLegendConfig);
         } catch (err) {
             console.error('Error loading category data:', err);
         } finally {
@@ -130,11 +166,12 @@ export const useCategoryManager = () => {
         loadCategoryData();
     }, [loadCategoryData]);
 
-    // Persist updated configuration back to WP options
-    const saveCategoryData = async (newGroups, newCategoryMap) => {
+    // 2. Persist updated configuration back to WP options
+    const saveCategoryData = async (newGroups, newCategoryMap, newLegendConfig) => {
         setIsSaving(true);
         const payloadGroups = newGroups || groups;
         const payloadMap = newCategoryMap || categoryMap;
+        const payloadLegend = newLegendConfig || legendConfig;
 
         try {
             const settingsRes = await apiFetch({ path: '/wp/v2/settings' });
@@ -142,7 +179,8 @@ export const useCategoryManager = () => {
 
             const categoryConfig = {
                 groups: payloadGroups,
-                categoryMap: payloadMap
+                categoryMap: payloadMap,
+                legendConfig: payloadLegend
             };
 
             const updatedOptions = {
@@ -153,9 +191,7 @@ export const useCategoryManager = () => {
             await apiFetch({
                 path: '/wp/v2/settings',
                 method: 'POST',
-                data: {
-                    bwb_imaps_options_data: updatedOptions
-                }
+                data: { bwb_imaps_options_data: updatedOptions }
             });
 
             if (!window.bwbimapsSettings) window.bwbimapsSettings = {};
@@ -163,6 +199,7 @@ export const useCategoryManager = () => {
 
             setGroups(payloadGroups);
             setCategoryMap(payloadMap);
+            setLegendConfig(payloadLegend);
 
             createSuccessNotice(__('Category & Navigation settings saved successfully!', TEXT_DOMAIN), {
                 type: 'snackbar'
@@ -170,17 +207,14 @@ export const useCategoryManager = () => {
             return true;
         } catch (err) {
             console.error('[useCategoryManager] REST Save Error:', err);
-            createErrorNotice(__('Error saving category settings: ', TEXT_DOMAIN) + err.message);
+            createErrorNotice(__('Error saving settings: ', TEXT_DOMAIN) + err.message);
             return false;
         } finally {
             setIsSaving(false);
         }
     };
 
-    /**
-     * Helper: Enrich features with resolved colors and group assignments for rendering.
-     * Rule: Default to Category Color. Use fill_color ONLY if explicit custom override is set.
-     */
+    // 3. Helper: Enrich features with resolved colors and group assignments for rendering
     const processSpatialFeatures = useCallback((features = []) => {
         return features.map(feature => {
             const cat = feature.properties?.category;
@@ -189,9 +223,6 @@ export const useCategoryManager = () => {
             const rowColor = feature.properties?.fill_color;
             const globalColor = mappedInfo.color;
 
-            // Tier 1: Custom Unit Override (if fill_color is explicitly set on row AND non-empty)
-            // Tier 2: Global Category Color
-            // Tier 3: Default Blue Fallback
             const resolvedColor = (rowColor && rowColor.trim() !== '')
                 ? rowColor
                 : ((globalColor && globalColor.trim() !== '') ? globalColor : '#007cba');
@@ -208,7 +239,7 @@ export const useCategoryManager = () => {
         });
     }, [categoryMap]);
 
-    // 4. Explicit User Action: Cleanup categories from option data that are not assigned in MySQL
+    // 4. Explicit User Action: Cleanup unused categories
     const cleanupUnusedCategories = useCallback(async () => {
         setIsSaving(true);
         try {
@@ -228,16 +259,6 @@ export const useCategoryManager = () => {
                     : {};
 
                 setCategoryMap(safeMap);
-
-                if (!window.bwbimapsSettings) window.bwbimapsSettings = {};
-                if (!window.bwbimapsSettings.categoryConfig) window.bwbimapsSettings.categoryConfig = {};
-                window.bwbimapsSettings.categoryConfig.categoryMap = safeMap;
-
-                createSuccessNotice(
-                    sprintf(__('Cleanup complete: %d unused categories removed.', TEXT_DOMAIN), result.pruned_count || 0),
-                    { type: 'snackbar' }
-                );
-                
                 await loadCategoryData();
                 return true;
             } else {
@@ -258,6 +279,8 @@ export const useCategoryManager = () => {
         setGroups,
         categoryMap,
         setCategoryMap,
+        legendConfig,
+        setLegendConfig,
         discoveredCategories,
         isLoading,
         isSaving,
