@@ -24,6 +24,7 @@ function bwb_create_general_spatial_dbtable() {
         category varchar(50) DEFAULT '',
         code varchar(50) DEFAULT '',
         fill_color varchar(20) DEFAULT '',
+        use_custom_color tinyint(1) DEFAULT 0,
         lat decimal(10, 8) DEFAULT NULL,
         lng decimal(10, 8) DEFAULT NULL,
         floor int(11) DEFAULT 0,
@@ -46,5 +47,5 @@ function bwb_create_general_spatial_dbtable() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $sql_spatial );
 
-    update_option( 'bwb_maps_version_db_version', '1.1.0' );
+    update_option( 'bwb_maps_version_db_version', '1.1.1' );
 }

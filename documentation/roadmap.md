@@ -31,6 +31,9 @@
 - Avoid constant page reload on data import / deletion or settings changes from the admin panel
 - Editor
     - Fixed Interactivity Toggles
+    - Fix the add attributes button to apply to all features
+    - Fix deletion to apply to all feature
+    - Adapt editor to edit all layers
 - Importer:
     - Make sure the predetermined data not imported don't end up in custom fields
     - Option to remove custom fields
@@ -39,6 +42,7 @@
     - Allow to create new categories and assign them to features
     - Adapt the legend
         - Dynamic
+        - Have more customization options for legend (grouping classes etc, labels, item order, exclude categories)
         - Toggable
     - Simplify the category tool:
         - one ligne by category: label, pick color, pick group
@@ -46,18 +50,14 @@
 
 
 🛠️ Immediate Fixes & Polish
-
 - Editor
     - Allow to modify batch of feature (ex. is interactive etc)
     - Have option with pen button to edit actual name and code
-    - Fix the add attributes button to modify for all features
 - Use custom confirmation modal everywhere
-- Styling & Legend Verification:
-    - Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
-    - Have more customization options for legend (grouping classes etc, labels, item order, exclude layers / categories)
+- Styling: Insure proper styling for additionnal custom fields in side drawer + Allow to choose icons from a library or WP library
 - Weird zoom behavior in the preview map
-- Import the geom field
 - Update Info tab
+- Reorganize files for admin page
 
 
 🗺️ Future Roadmap Items
@@ -72,6 +72,4 @@
     - Integrated with Bawbab DAI for external navigation
 
 
-
 Think how to manage networ layer
-Adapt editor to edit all layers

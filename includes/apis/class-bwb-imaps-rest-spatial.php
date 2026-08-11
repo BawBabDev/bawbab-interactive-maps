@@ -99,6 +99,7 @@ class BWB_IMaps_REST_Spatial {
                     'category'             => $row['category'] ?? '',
                     'code'                 => $row['code'] ?? '',
                     'fill_color'           => $row['fill_color'] ?? '',
+                    'use_custom_color'     => ! empty( $row['use_custom_color'] ),
                     'lat'                  => ! empty( $row['lat'] ) ? (float) $row['lat'] : null,
                     'lng'                  => ! empty( $row['lng'] ) ? (float) $row['lng'] : null,
                     'floor'                => isset( $row['floor'] ) ? (int) $row['floor'] : 0,
@@ -176,8 +177,14 @@ class BWB_IMaps_REST_Spatial {
         }
 
         if ( $request->has_param( 'fill_color' ) ) {
-            $update_data['fill_color'] = sanitize_hex_color( $request->get_param( 'fill_color' ) );
+            $raw_color = $request->get_param( 'fill_color' );
+            $update_data['fill_color'] = ! empty( $raw_color ) ? sanitize_hex_color( $raw_color ) : '';
             $format[] = '%s';
+        }
+
+        if ( $request->has_param( 'use_custom_color' ) ) {
+            $update_data['use_custom_color'] = ! empty( $request->get_param( 'use_custom_color' ) ) ? 1 : 0;
+            $format[] = '%d';
         }
 
         if ( $request->has_param( 'title' ) ) {

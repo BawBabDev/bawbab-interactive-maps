@@ -38,12 +38,10 @@ const autoMatchCategoryToGroup = (catSlug, groups = []) => {
         const gId = (group.id || '').toLowerCase();
         const gTitle = (group.title || '').toLowerCase();
 
-        // 1. Direct substring matching
         if (gTitle && (cleanSlug.includes(gTitle) || gTitle.includes(cleanSlug))) {
             return group.id;
         }
 
-        // 2. Fuzzy term matching
         if (/(apt|apartment|residential|flat|housing|unit)/i.test(cleanSlug) && /(apt|apartment|residential|housing)/i.test(`${gTitle} ${gId}`)) {
             return group.id;
         }
@@ -151,7 +149,6 @@ export const useCategoryManager = () => {
                     const fallbackColor = info.color || CURATED_CATEGORY_PALETTE[paletteIdx % CURATED_CATEGORY_PALETTE.length];
                     const catSlug = info.category;
 
-                    // Automatically infer target group ID for newly discovered categories
                     const matchedGroupId = autoMatchCategoryToGroup(catSlug, currentGroups);
 
                     updatedMap[compositeKey] = {
@@ -162,7 +159,6 @@ export const useCategoryManager = () => {
                     };
                     paletteIdx++;
                 } else if (!updatedMap[compositeKey].groupId) {
-                    // Fallback auto-match for previously saved categories that were unassigned
                     const catSlug = compositeKey.includes('::') ? compositeKey.split('::')[1] : compositeKey;
                     const matchedGroupId = autoMatchCategoryToGroup(catSlug, currentGroups);
                     if (matchedGroupId) {
@@ -183,7 +179,6 @@ export const useCategoryManager = () => {
                 });
             });
 
-            // Auto-assign newly discovered unassigned composite keys into default layer sections
             const unassignedKeys = [...activeCompositeKeys].filter(ck => !existingLegendCompositeKeys.has(ck));
 
             if (unassignedKeys.length > 0) {
@@ -288,11 +283,13 @@ export const useCategoryManager = () => {
             const mappedInfo = categoryMap[compositeKey] || categoryMap[cat] || {};
             
             const rowColor = feature.properties?.fill_color;
+            const useCustomColor = Boolean(feature.properties?.use_custom_color);
             const globalColor = mappedInfo.color;
 
-            const resolvedColor = (rowColor && rowColor.trim() !== '')
-                ? rowColor
-                : ((globalColor && globalColor.trim() !== '') ? globalColor : '#007cba');
+            // DYNAMIC RESOLUTION BASED ON DIRECT FLAG
+            const resolvedColor = (useCustomColor && rowColor && typeof rowColor === 'string' && rowColor.trim() !== '')
+                ? rowColor.trim()
+                : ((globalColor && globalColor.trim() !== '') ? globalColor.trim() : '#007cba');
 
             return {
                 ...feature,
@@ -327,7 +324,6 @@ export const useCategoryManager = () => {
 
                 const activeCompositeKeys = new Set(Object.keys(cleanedMap));
 
-                // Clean legend sections directly against pruned active composite keys
                 const cleanedSections = (legendConfig.sections || []).map(section => {
                     const validItems = (section.items || []).map(item => {
                         const validCats = (item.categories || []).filter(ck => activeCompositeKeys.has(ck));

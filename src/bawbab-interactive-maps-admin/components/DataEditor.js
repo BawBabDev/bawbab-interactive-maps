@@ -147,7 +147,7 @@ const DataEditor = ({
     building, 
     draft = {}, 
     globalSchema = [], 
-    updateSchemaKey, // Hook function passed down to register property globally
+    updateSchemaKey,
     updateDraft, 
     onUpdate, 
     onCancel, 
@@ -182,15 +182,23 @@ const DataEditor = ({
         return '';
     };
 
-    // Category Selection State
+    // Category Selection State (using layer_type::category_slug)
     const currentCategory = getValue('category', localProps.category);
-    const globalCategoryColor = categoryMap[currentCategory]?.color || '#007cba';
+    const layerType = localProps.layer_type || 'buildings';
+    const compositeCategoryKey = `${layerType}::${currentCategory}`;
+
+    const globalCategoryColor = categoryMap[compositeCategoryKey]?.color 
+        || categoryMap[currentCategory]?.color 
+        || '#007cba';
 
     const categoryOptions = useMemo(() => {
-        return Object.keys(categoryMap).map(slug => ({
-            label: categoryMap[slug].label || formatFieldLabel(slug),
-            value: slug
-        }));
+        return Object.keys(categoryMap).map(key => {
+            const catSlug = key.includes('::') ? key.split('::')[1] : key;
+            return {
+                label: categoryMap[key].label || formatFieldLabel(catSlug),
+                value: catSlug
+            };
+        });
     }, [categoryMap]);
 
     const derivedSlugKey = createKeySlug(newPropLabel);
@@ -212,17 +220,24 @@ const DataEditor = ({
         setLocalProps(building.properties);
     }, [building.properties]); 
 
-    const activeFillColor = draft.hasOwnProperty('fill_color') 
-        ? draft.fill_color 
-        : (localProps.fill_color && localProps.fill_color !== globalCategoryColor ? localProps.fill_color : '');
+    // --- DIRECT FLAG OVERRIDE STATUS ---
+    const hasCustomFillColor = getValue('use_custom_color', localProps.use_custom_color) === true || getValue('use_custom_color', localProps.use_custom_color) === 1;
 
-    const hasCustomFillColor = Boolean(activeFillColor && activeFillColor.trim() !== '');
+    const activeFillColor = getValue('fill_color', localProps.fill_color) || globalCategoryColor;
 
     const handleToggleCustomColor = (enabled) => {
         if (enabled) {
-            updateDraft({ fill_color: activeFillColor || localProps.fill_color || globalCategoryColor });
+            // Toggle ON: Set flag to true and initialize color
+            updateDraft({ 
+                use_custom_color: true, 
+                fill_color: activeFillColor || globalCategoryColor 
+            });
         } else {
-            updateDraft({ fill_color: '' });
+            // Toggle OFF: Set flag to false and clear custom color
+            updateDraft({ 
+                use_custom_color: false, 
+                fill_color: '' 
+            });
         }
     };
 
@@ -257,14 +272,12 @@ const DataEditor = ({
         updateCustomAttr(key, null);
     };
 
-    // FIXED: Register custom property globally in schema AND set initial value in current draft
     const handleAddCustomProperty = async () => {
         if (!newPropLabel.trim() || !derivedSlugKey) return;
 
         setIsAddingProp(true);
 
         try {
-            // 1. Register the field globally via REST API so all features get this property
             if (updateSchemaKey) {
                 await updateSchemaKey({
                     key: derivedSlugKey,
@@ -273,7 +286,6 @@ const DataEditor = ({
                 });
             }
 
-            // 2. Format initial value and update active feature's draft
             let formattedValue = newPropValue;
             if (newPropType === 'number' || newPropType === 'bathrooms') {
                 formattedValue = newPropValue !== '' ? Number(newPropValue) : null;
