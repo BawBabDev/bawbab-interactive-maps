@@ -137,7 +137,7 @@ Yes. Our team provides complete digitization services. We can map your buildings
 
 For technical troubleshooting, manual setup, GIS digitization, or feature requests, contact our core support team directly via email:
 * **Corentin Sanchez Trenado:** corentins@bawbab.com
-* **Marcellus Otieno:** oketchmarcellus@bawbab.com
+* **Marcellus Oketch:** oketchmarcellus@bawbab.com
 
 == Developer Guide ==
 
