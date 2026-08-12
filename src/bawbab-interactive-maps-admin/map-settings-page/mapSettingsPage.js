@@ -16,12 +16,12 @@ import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 
 /**
- * MainSettingsPage Component
+ * MapSettingsPage Component
  *
  * Root administration core panel orchestrated around the interactive mapping systems.
  * Provides high-level asynchronous data persistence interfacing with native core WP Options APIs.
  */
-const MainSettingsPage = () => {
+const MapSettingsPage = () => {
 	// --- STATE MANAGEMENT ---
 	const [ mapDescription, setMapDescription ] = useState( '' );
 	const [ mapType, setMapType ] = useState( 'hybrid' );
@@ -364,4 +364,4 @@ const MainSettingsPage = () => {
 	);
 };
 
-export default MainSettingsPage;
+export default MapSettingsPage;

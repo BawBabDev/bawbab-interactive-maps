@@ -1,10 +1,10 @@
 import domReady from '@wordpress/dom-ready';
 import { createRoot } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import MainSettingsPage from './main-settings-page/mainSettingsPage';
-import SpatialDataEditPage from './editor-page/spatialDataEditPage';
+import MapSettingsPage from './map-settings-page/mapSettingsPage';
+import SpatialDataEditorPage from './spatial-data-editor-page/spatialDataEditorPage';
 import './admin-styles.css';
-import CategoryEditorPage from './category-editor/categoryEditorPage';
+import CategoryEditorPage from './category-editor-page/categoryEditorPage';
 
 const App = () => {
 	// Determine the current page from the URL query string
@@ -13,7 +13,7 @@ const App = () => {
 
 	// Route logic
 	if ( currentPage === 'bawbab-interactive-maps-edit-spatial-data' ) {
-		return <SpatialDataEditPage />;
+		return <SpatialDataEditorPage />;
 	}
 
 	if ( currentPage === 'bawbab-interactive-maps-edit-category' ) {
@@ -21,7 +21,7 @@ const App = () => {
 	}
 
 	// Default route
-	return <MainSettingsPage />;
+	return <MapSettingsPage />;
 };
 
 /**

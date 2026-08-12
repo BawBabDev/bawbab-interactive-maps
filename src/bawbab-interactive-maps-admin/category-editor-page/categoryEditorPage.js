@@ -108,7 +108,7 @@ export const CategoryEditorPage = () => {
 				className="wp-heading-inline"
 				style={ { marginBottom: '10px' } }
 			>
-				{ __( 'Edit Category & Navigation', TEXT_DOMAIN ) }
+				{ __( 'Edit Categories & Navigation', TEXT_DOMAIN ) }
 			</h1>
 			<p style={ { color: '#666', marginBottom: '25px' } }>
 				{ __(

@@ -6,7 +6,7 @@
 	"title": "BawBab Interactive Map Widget",
 	"category": "widgets",
 	"icon": "location-alt",
-	"description": "BawBab InteractiveMap Widget to add your interactive map on your sitefront.",
+	"description": "BawBab Interactive Maps Widget to add your interactive map on your sitefront.",
 	"example": {},
 	"supports": {
 		"html": false

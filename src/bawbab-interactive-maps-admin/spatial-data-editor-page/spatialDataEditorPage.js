@@ -25,11 +25,11 @@ import {
 	matchesAllFilters,
 } from './utils/editFilters';
 import { useAttributeSchema } from './hooks/useAttributeSchema';
-import { useCategoryManager } from '../category-editor/hooks/useCategoryManager';
+import { useCategoryManager } from '../category-editor-page/hooks/useCategoryManager';
 import {
 	DEFAULT_GROUPS,
 	DEFAULT_CATEGORY_MAPPINGS,
-} from '../category-editor/constants/defaultCategories';
+} from '../category-editor-page/constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -53,7 +53,7 @@ const LAYER_OPTIONS = [
 /**
  * EditPage Component
  */
-const EditPage = () => {
+const SpatialDataEditorPage = () => {
 	const [ features, setFeatures ] = useState( [] );
 	const [ selectedLayer, setSelectedLayer ] = useState( 'all' ); // Layer Selector Filter State
 	const [ searchQuery, setSearchQuery ] = useState( '' );
@@ -1257,4 +1257,4 @@ const EditPage = () => {
 	);
 };
 
-export default EditPage;
+export default SpatialDataEditorPage;

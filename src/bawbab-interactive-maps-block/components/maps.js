@@ -26,7 +26,7 @@ import { __ } from '@wordpress/i18n';
 
 import { useMapDimensions } from '../hooks/useMapDimensions';
 import { useMapLayers } from '../hooks/useMapLayers';
-import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor/hooks/useCategoryManager';
+import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor-page/hooks/useCategoryManager';
 import { calculateSpatialBounds } from '../utils/mapBounds';
 import { SpatialFeaturesRenderer } from './spatialFeaturesRenderer';
 import {

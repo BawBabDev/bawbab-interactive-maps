@@ -1,6 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect, useRef, useMemo } from '@wordpress/element';
-import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor/hooks/useCategoryManager';
+import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor-page/hooks/useCategoryManager';
 
 const LegendIcon = () => (
 	<svg
