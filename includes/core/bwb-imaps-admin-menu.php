@@ -25,7 +25,7 @@ function bwb_imaps_add_admin_menu() {
     // Main settings page
     add_submenu_page(
         'bawbab-interactive-maps-settings', 
-        'Bawbab Interactive Maps Settings',  
+        __( 'Bawbab Interactive Maps Settings', 'bawbab-interactive-maps' ),  
         '<span class="dashicons dashicons-admin-settings"></span>'. __( 'Maps Settings', 'bawbab-interactive-maps' ),               
         'manage_options',
         'bawbab-interactive-maps-settings', 
@@ -35,20 +35,20 @@ function bwb_imaps_add_admin_menu() {
     // Feature edition page
     add_submenu_page(
         'bawbab-interactive-maps-settings',
-        'Edition Tool',
+        __( 'Spatial data editing tool', 'bawbab-interactive-maps' ),
         '<span class="dashicons dashicons-edit"></span>'. __( 'Edit Spatial Data', 'bawbab-interactive-maps' ),
         'manage_options',
         'bawbab-interactive-maps-edit-spatial-data',
         'bwb_imaps_render_admin_page'
     );
 
-    // Category settings page
+    // Category edition page
     add_submenu_page(
         'bawbab-interactive-maps-settings',
-        __( 'Category Settings', 'bawbab-interactive-maps' ),
-        '<span class="dashicons dashicons-category"></span> ' . __( 'Category Settings', 'bawbab-interactive-maps' ),
+        __( 'Category editor', 'bawbab-interactive-maps' ),
+        '<span class="dashicons dashicons-category"></span> ' . __( 'Edit Categories', 'bawbab-interactive-maps' ),
         'manage_options',
-        'bawbab-interactive-maps-category-settings',
+        'bawbab-interactive-maps-edit-category',
         'bwb_imaps_render_admin_page'
     );
 }

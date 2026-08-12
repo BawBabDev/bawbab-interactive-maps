@@ -16,7 +16,7 @@ function bwb_imaps_enqueue_admin_assets( $hook ) {
     $allowed_pages = array(
         'toplevel_page_bawbab-interactive-maps-settings',
         'bawbab-interactive-maps-settings_page_bawbab-interactive-maps-edit-spatial-data',
-        'bawbab-interactive-maps-settings_page_bawbab-interactive-maps-category-settings',
+        'bawbab-interactive-maps-settings_page_bawbab-interactive-maps-edit-category',
     );
 
     // Fail-safe check: match exact hook array OR any subpage under our plugin menu

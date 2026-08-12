@@ -16,23 +16,25 @@ import { useBlockProps } from '@wordpress/block-editor';
  * @return {Element} Element to render.
  */
 
-export default function save({ attributes }) {
-    const blockProps = useBlockProps.save();
-    const { zoom, tilt, mapType, width, height } = attributes;
-    return (
-        <div 
-            { ...useBlockProps.save({ 
-                className: 'bawbab-imaps-container' // Match this in your view.js
-            }) } 
-            data-zoom={zoom}
-            data-tilt={tilt}
-            data-map-type={mapType}
-            data-width={width}
-            data-height={height}
-            //locations come from Global Settings therefore only need to view.js
-            //data-locations={JSON.stringify(attributes.locations)}
-        >
-            <div className="map-placeholder">Loading Bawbab Interactive Map...</div>
-        </div>
-    );
+export default function save( { attributes } ) {
+	const blockProps = useBlockProps.save();
+	const { zoom, tilt, mapType, width, height } = attributes;
+	return (
+		<div
+			{ ...useBlockProps.save( {
+				className: 'bawbab-imaps-container', // Match this in your view.js
+			} ) }
+			data-zoom={ zoom }
+			data-tilt={ tilt }
+			data-map-type={ mapType }
+			data-width={ width }
+			data-height={ height }
+			//locations come from Global Settings therefore only need to view.js
+			//data-locations={JSON.stringify(attributes.locations)}
+		>
+			<div className="map-placeholder">
+				Loading Bawbab Interactive Map...
+			</div>
+		</div>
+	);
 }

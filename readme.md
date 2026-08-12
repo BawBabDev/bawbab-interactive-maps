@@ -9,13 +9,13 @@ License URI:        https://gnu.org
 
 Bawbab Interactive Maps WordPress Plugin.
 
-**== Description ==**
+== Description ==
 
 Bawbab Interactive Maps lets you build intuitive, explorable digital maps for campuses, residential communities, commercial facilities, and business parks. Move beyond static images and let visitors search locations, explore layouts, and view detailed building or amenity information instantly.
 
 The plugin integrates seamlessly with WordPress, allowing administrators to manage map content using familiar dashboard tools. Eliminate duplicate work by linking existing WordPress pages directly to map features to reuse your content automatically.
 
-**== Features ==**
+== Features ==
 
 * **Explorable Interface:** Search locations and view detailed building or amenity data.
 * **WordPress Integration:** Manage all map content within your own website using standard WordPress tools. You own the data 100% unlike other peer plugins.
@@ -25,29 +25,29 @@ The plugin integrates seamlessly with WordPress, allowing administrators to mana
 * **Fully Responsive:** The interface fluidly adapts layout, menus, and controls across desktops, laptops, tablets, and phones.
 * **Future Roadmap:** Planned updates include advanced campus routing, multi-floor indoor navigation, and native Google Maps directions integration.
 
-**== Installation ==**
+== Installation ==
 
 1. Navigate to **Plugins → Add New Plugin** in your WordPress dashboard.
 2. Click **Upload Plugin** at the top of the page.
 3. Choose the plugin ZIP file provided by our team.
 4. Click **Install Now** and activate the plugin.
 
-**= Plugin Management Safety =**
+= Plugin Management Safety =
 * **Deactivation:** Disabling the plugin stops the map from rendering publicly but safely preserves all map data, settings, and custom layouts.
 * **Uninstallation:** Warning! Deleting the plugin via the WordPress dashboard permanently wipes all imported map data and configurations. This cannot be undone.
 
-**== User Guide ==**
+== User Guide ==
 
-*= 1. Data Importing & Maintenance =*
+= 1. Data Importing & Maintenance =
 * **How to Import:** Select your target layer (Parcels, Buildings, Roads, or Land Use), choose your local GeoJSON file, and click import. 
 * **Safe Updates:** Re-importing updated GeoJSON files is non-destructive. It refreshes geometries and identifiers while preserving your custom descriptions, images, and linked pages.
 * **Clearing Layers:** Warning! The "Clear Layer" button permanently wipes all geographic features and custom metadata linked to that specific layer.
 
-*= 2. Advanced Map Configuration =*
+= 2. Advanced Map Configuration =
 * **Visual Styling:** Toggle the global background map style (Road Map, Satellite, or Hybrid) and select an interface highlight accent color (Green, Blue, or Yellow).
 * **Google API Credentials:** The plugin requires a Google Maps API Key and a Map ID. Generating your own via the Google Cloud Console offers independent quota management, usage tracking, and domain restriction security.
 
-*= 3. The Feature Editor (Edit Tools) =*
+= 3. The Feature Editor (Edit Tools) =
 Manage individual feature metadata using a split-screen dashboard featuring a searchable directory on the left and an editing form on the right.
 * **Smart Organization:** Map features are dynamically categorized into custom layout groups (e.g., specific apartment floor plans, studio models, or cottage styles).
 * **Advanced Filtering:** Narrow down your assets using search bars or attribute filters to isolate specific unit types instantly.
@@ -59,12 +59,12 @@ Manage individual feature metadata using a split-screen dashboard featuring a se
 * **Dynamic Descriptions:** Choose whether a marker’s custom summary completely overwrites the synchronized WordPress page text, or appends cleanly to the top of it for temporary promotions and renovation notes.
 * **Batch Processing:** Edit multiple locations, adjust individual unit fields, and preview live location pins on a miniature embedded map simultaneously before pushing your changes live via a single batch save.
 
-*= 4. Shortcode & Block Integration =*
+= 4. Shortcode & Block Integration =
 * **Classic Editor Integration:** Adds a dedicated "Map" utility icon directly into the tinyMCE editor toolbar to auto-inject your map shortcode configuration instantly.
 * **Layout Scaling:** Maps display out-of-the-box at 100% available container width with an adjustable default viewport canvas profile height of 640px.
 * **Gutenberg Compatibility:** Fully supports modern Block Editor placements alongside the legacy shortcode engine for seamless multi-theme integration.
 
-*= 5. Visitor Front-End Experience =*
+= 5. Visitor Front-End Experience =
 The interactive map provides a modern, responsive layout that adapts to desktops, tablets, and mobile devices. Instead of navigating multiple webpages, visitors can visually browse your facility and view real-time building or amenity data.
 * **Multi-Method Search:** Visitors can search directly by name via the top search bar to auto-center the map, or browse features grouped by custom categories (e.g., residential units, amenities, services).
 * **Familiar Map Controls:** Supports standard panning, zooming, and selection. 
@@ -75,13 +75,13 @@ The interactive map provides a modern, responsive layout that adapts to desktops
 * **Map Styles:** Users can toggle freely between standard road maps and satellite views.
 * **Google Integration:** Built-in support for native zoom, compass, and Street View.
 
-*= 6. The Information Panel Side-Drawer =*
+= 6. The Information Panel Side-Drawer =
 Selecting any map feature opens a rich information panel compiled from custom map data and synced WordPress pages:
 * **Media Gallery:** Supports full-screen photographs, floor plans, and promotional videos.
 * **Quick Specifications:** Displays key property metadata like square footage, room counts, or specific amenities.
 * **Dynamic Descriptions:** Merges map-specific notes with imported WordPress content seamlessly.
 
-**== Technical Details ==**
+== Technical Details ==
 
 This plugin is built using modern WordPress block development standards and advanced GIS rendering engines. It utilizes the following core libraries and technologies:
 * **WordPress Block Editor (@wordpress/block-editor):** Powers the user interface, block configurations, and side-panel inspector controls inside Gutenberg.
@@ -94,23 +94,23 @@ This plugin is built using modern WordPress block development standards and adva
 
 For deep technical setups, see the developer guide at the end of this documentation.
 
-**== Screenshots ==**
+== Screenshots ==
 
 1. The main interactive map interface showing an overview of the campus layout.
 2. The category browser filtering locations by unit types and amenities.
 3. Detailed information panel displaying media galleries and synced WordPress content.
 
-**== Changelog ==**
+== Changelog ==
 
-*= 0.1.0 =*
+= 0.1.0 =
 * Initial release.
 * Added support for custom vector layer maps (Parcels, Buildings, Roads, Land Use).
 * Implemented live-sync mechanics linking core WordPress pages to interactive map sidebar frames.
 * Integrated `@wordpress/block-editor` and `@wordpress/element` modules for administration setup modules.
 
-**== FAQ ==**
+== FAQ ==
 
-*= My changes are not visible on the website =*
+= My changes are not visible on the website =
 This is usually caused by caching. If updates do not show instantly, try these steps:
 1. Force a browser reload using **Ctrl + F5** (Windows) or **Cmd + Shift + R** (Mac).
 2. Clear your local browser cache entirely.
@@ -118,39 +118,39 @@ This is usually caused by caching. If updates do not show instantly, try these s
 4. Clear any persistent hosting provider server-level caches.
 If issues persist, contact our support team.
 
-*= Can I update metadata by importing a new GeoJSON? =*
+= Can I update metadata by importing a new GeoJSON? =
 No. The importer updates spatial geometries (outlines, paths, boundaries) without affecting custom WordPress database entries. Changes to metadata inside a new GeoJSON will not overwrite existing site content. To completely replace metadata, you must use the "Clear Layer" option first, which permanently deletes all existing customizations for that layer.
 
-*= What happens when new buildings are added to the GeoJSON? =*
+= What happens when new buildings are added to the GeoJSON? =
 The plugin automatically detects and creates any new features found in the dataset. Meanwhile, existing features are updated with the new structural geometries while completely preserving their custom descriptions, links, and media.
 
-*= How do I prepare GeoJSON data for import? =*
+= How do I prepare GeoJSON data for import? =
 Files must follow standard GeoJSON specifications. Each feature requires a unique Feature ID (FID) along with layer attributes like Name, Category, Code, and Coordinates. Content management fields like galleries, videos, and descriptions are managed directly within WordPress and should be omitted from the GIS file. You can export compatible GeoJSON files directly from software like QGIS or ArcGIS.
 
-*= I already have Shapefiles. Can I use them? =*
+= I already have Shapefiles. Can I use them? =
 Yes. You can use standard GIS software to export your ESRI Shapefiles into GeoJSON format. You may need to tweak attribute column names to align with the plugin's expected properties before running the importer.
 
-*= I don't have any GIS data. Can you create it for me? =*
+= I don't have any GIS data. Can you create it for me? =
 Yes. Our team provides complete digitization services. We can map your buildings, campus boundaries, pathways, and points of interest from scratch, and deliver import-ready GeoJSON files.
 
-**= I Still Need Help =**
+= I Still Need Help =
 
 For technical troubleshooting, manual setup, GIS digitization, or feature requests, contact our core support team directly via email:
 * **Corentin Sanchez Trenado:** corentins@bawbab.com
 * **Marcellus Otieno:** oketchmarcellus@bawbab.com
 
-**== Developer Guide ==**
+== Developer Guide ==
 
 Follow these steps to set up, modify, and run this plugin environment locally.
 
-**= Prerequisites =**
+= Prerequisites =
 Ensure you have the following installed on your machine:
 * Node.js (LTS version recommended)
 * NPM (comes packaged with Node.js)
 * A local WordPress development environment (e.g., LocalWP, DevKinsta, or wp-env)
 * A valid Google Maps JavaScript API Key and Map ID configured for domain-level testing
 
-**= Dev Installation & Setup =**
+= Dev Installation & Setup =
 1. Clone or move this plugin folder into your local WordPress installation directory:
    `/wp-content/plugins/bawbab-interactive-maps`
 2. Open your terminal and navigate to the plugin root directory:
@@ -158,7 +158,7 @@ Ensure you have the following installed on your machine:
 3. Install the required development dependencies and packaging tools:
    `npm install`
 
-**= Development Workflow =**
+= Development Workflow =
 * **Start Local Development Server:** Run the watch script to automatically track and compile your code changes in real-time as you edit block sources.
   `npm start`
 * **Build for Production:** Minify build distributions, optimize stylesheets, and prepare your plugin production package for deployment.
@@ -169,7 +169,7 @@ Ensure you have the following installed on your machine:
   `npm run lint:js`
   `npm run lint:css`
 
-**= Testing Changes =**
+= Testing Changes =
 1. Activate the plugin via your local WordPress Admin Dashboard.
 2. Add your Google Maps credentials under **Map Settings → Settings**.
 3. Head to the **Importer** tab and run a test upload using a standard sample facility GeoJSON block file.
