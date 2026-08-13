@@ -118,22 +118,22 @@ This is usually caused by caching. If updates do not show instantly, try these s
 4. Clear any persistent hosting provider server-level caches.
 If issues persist, contact our support team.
 
-= Can I update metadata by importing a new GeoJSON? =
+**Can I update metadata by importing a new GeoJSON?**
 No. The importer updates spatial geometries (outlines, paths, boundaries) without affecting custom WordPress database entries. Changes to metadata inside a new GeoJSON will not overwrite existing site content. To completely replace metadata, you must use the "Clear Layer" option first, which permanently deletes all existing customizations for that layer.
 
-= What happens when new buildings are added to the GeoJSON? =
+**What happens when new buildings are added to the GeoJSON?**
 The plugin automatically detects and creates any new features found in the dataset. Meanwhile, existing features are updated with the new structural geometries while completely preserving their custom descriptions, links, and media.
 
-= How do I prepare GeoJSON data for import? =
+**How do I prepare GeoJSON data for import?**
 Files must follow standard GeoJSON specifications. Each feature requires a unique Feature ID (FID) along with layer attributes like Name, Category, Code, and Coordinates. Content management fields like galleries, videos, and descriptions are managed directly within WordPress and should be omitted from the GIS file. You can export compatible GeoJSON files directly from software like QGIS or ArcGIS.
 
-= I already have Shapefiles. Can I use them? =
+**I already have Shapefiles. Can I use them?**
 Yes. You can use standard GIS software to export your ESRI Shapefiles into GeoJSON format. You may need to tweak attribute column names to align with the plugin's expected properties before running the importer.
 
-= I don't have any GIS data. Can you create it for me? =
+**I don't have any GIS data. Can you create it for me?**
 Yes. Our team provides complete digitization services. We can map your buildings, campus boundaries, pathways, and points of interest from scratch, and deliver import-ready GeoJSON files.
 
-= I Still Need Help =
+**I Still Need Help**
 
 For technical troubleshooting, manual setup, GIS digitization, or feature requests, contact our core support team directly via email:
 * **Corentin Sanchez Trenado:** corentins@bawbab.com
