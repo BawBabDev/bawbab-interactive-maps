@@ -110,7 +110,7 @@ For deep technical setups, see the developer guide at the end of this documentat
 
 == FAQ ==
 
-= My changes are not visible on the website =
+**My changes are not visible on the website**
 This is usually caused by caching. If updates do not show instantly, try these steps:
 1. Force a browser reload using **Ctrl + F5** (Windows) or **Cmd + Shift + R** (Mac).
 2. Clear your local browser cache entirely.
