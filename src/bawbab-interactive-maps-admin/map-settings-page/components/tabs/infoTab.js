@@ -50,10 +50,10 @@ export const InfoTab = () => {
 			>
 				{ __( 'FAQs', 'bawbab-interactive-maps' ) }
 			</Text>
-			{ /* --- SECTION 1: CORPORATE MISSION DESK --- */ }
+			{ /* --- FAQ1 --- */ }
 			<PanelBody
 				title={ __(
-					'Where do I get Spatial Data?',
+					'Can I update metadata by importing a new GeoJSON?',
 					'bawbab-interactive-maps'
 				) }
 				initialOpen={ true }
@@ -65,17 +65,17 @@ export const InfoTab = () => {
 						style={ { color: '#667085', marginTop: '4px' } }
 					>
 						{ __(
-							"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry' standard dummy text ever since 1966.",
+							"No. The importer updates spatial geometries (outlines, paths, boundaries) without affecting custom WordPress database entries. Changes to metadata inside a new GeoJSON will not overwrite existing site content. To completely replace metadata, you must use the 'Clear Layer' option first, which permanently deletes all existing customizations for that layer.",
 							'bawbab-interactive-maps'
 						) }
 					</Text>
 				</div>
 			</PanelBody>
 
-			{ /* --- SECTION 2: OPERATIONAL METRICS RADAR --- */ }
+			{ /* --- FAQ2 --- */ }
 			<PanelBody
 				title={ __(
-					'How do I get help setting up my Map?',
+					'What happens when new buildings are added to the GeoJSON?',
 					'bawbab-interactive-maps'
 				) }
 				initialOpen={ false }
@@ -88,17 +88,17 @@ export const InfoTab = () => {
 						style={ { color: '#667085', marginTop: '4px' } }
 					>
 						{ __(
-							"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry' standard dummy text ever since 1966.",
+							"The plugin automatically detects and creates any new features found in the dataset. Meanwhile, existing features are updated with the new structural geometries while completely preserving their custom descriptions, links, and media.",
 							'bawbab-interactive-maps'
 						) }
 					</Text>
 				</div>
 			</PanelBody>
 
-			{ /* --- SECTION 3: SYSTEM SPECIFICATIONS LAYER --- */ }
+			{ /* --- FAQ3 --- */ }
 			<PanelBody
 				title={ __(
-					'How do I add custom features to my Map?',
+					'How do I prepare GeoJSON data for import?',
 					'bawbab-interactive-maps'
 				) }
 				initialOpen={ false }
@@ -111,7 +111,73 @@ export const InfoTab = () => {
 						style={ { color: '#667085', marginTop: '4px' } }
 					>
 						{ __(
-							"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry' standard dummy text ever since 1966.",
+							"Files must follow standard GeoJSON specifications. Each feature requires a unique Feature ID (FID) along with layer attributes like Name, Category, Code, and Coordinates. Content management fields like galleries, videos, and descriptions are managed directly within WordPress and should be omitted from the GIS file. You can export compatible GeoJSON files directly from software like QGIS or ArcGIS.",
+							'bawbab-interactive-maps'
+						) }
+					</Text>
+				</div>
+			</PanelBody>
+			{ /* --- FAQ4 --- */ }
+			<PanelBody
+				title={ __(
+					'I already have Shapefiles. Can I use them?',
+					'bawbab-interactive-maps'
+				) }
+				initialOpen={ false }
+				style={ { marginTop: '15px' } }
+			>
+				<div style={ { padding: '5px 0' } }>
+					<Text
+						variant="caption"
+						display="block"
+						style={ { color: '#667085', marginTop: '4px' } }
+					>
+						{ __(
+							"Yes. You can use standard GIS software to export your ESRI Shapefiles into GeoJSON format. You may need to tweak attribute column names to align with the plugin's expected properties before running the importer.",
+							'bawbab-interactive-maps'
+						) }
+					</Text>
+				</div>
+			</PanelBody>
+			{ /* --- FAQ5 --- */ }
+			<PanelBody
+				title={ __(
+					"I don't have any GIS data. Can you create it for me?",
+					'bawbab-interactive-maps'
+				) }
+				initialOpen={ false }
+				style={ { marginTop: '15px' } }
+			>
+				<div style={ { padding: '5px 0' } }>
+					<Text
+						variant="caption"
+						display="block"
+						style={ { color: '#667085', marginTop: '4px' } }
+					>
+						{ __(
+							"Yes. Our team provides complete digitization services. We can map your buildings, campus boundaries, pathways, and points of interest from scratch, and deliver import-ready GeoJSON files.",
+							'bawbab-interactive-maps'
+						) }
+					</Text>
+				</div>
+			</PanelBody>
+			{ /* --- FAQ6 --- */ }
+			<PanelBody
+				title={ __(
+					"I Still Need Help",
+					'bawbab-interactive-maps'
+				) }
+				initialOpen={ false }
+				style={ { marginTop: '15px' } }
+			>
+				<div style={ { padding: '5px 0' } }>
+					<Text
+						variant="caption"
+						display="block"
+						style={ { color: '#667085', marginTop: '4px' } }
+					>
+						{ __(
+							"For technical troubleshooting, manual setup, GIS digitization, or feature requests, contact our core support team directly via email: \n Corentin Sanchez Trenado: corentins@bawbab.com; \n Marcellus Oketch:oketchmarcellus@bawbab.com;",
 							'bawbab-interactive-maps'
 						) }
 					</Text>
@@ -199,7 +265,7 @@ export const InfoTab = () => {
 						borderBottom: '1px solid #f2f4f7',
 					} }
 				>
-					<Flex gap={ 2 }>
+					<Flex gap={ 1 }>
 						<Dashicon
 							icon="businessperson"
 							style={ { color: '#555' } }
