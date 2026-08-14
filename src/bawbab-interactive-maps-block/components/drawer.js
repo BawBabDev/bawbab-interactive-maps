@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useMemo } from '@wordpress/element';
 import { Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { UnitSpecs } from './drawerUnitSpecs';
@@ -23,23 +23,52 @@ const DrawingSidebar = ( {
 	const stablePageId = selectedLoc?.wp_page_id
 		? parseInt( selectedLoc.wp_page_id, 10 )
 		: 0;
-	const stableFeatureId = selectedLoc?.fid;
-	const initialGallery = selectedLoc?.gallery || [];
+	const isStaticMarker = stablePageId <= 0;
 
-	const { wpData, isLoading, currentImage, setCurrentImage, allImages } =
+	// Normalize static location gallery directly from selectedLoc memory
+	const localMarkerImages = useMemo( () => {
+		if ( ! selectedLoc?.gallery ) return [];
+		const raw = Array.isArray( selectedLoc.gallery )
+			? selectedLoc.gallery
+			: [ selectedLoc.gallery ];
+
+		return raw
+			.map( ( item ) => {
+				if ( typeof item === 'string' ) return item;
+				if ( item && typeof item === 'object' && item.url ) return item.url;
+				return null;
+			} )
+			.filter( Boolean );
+	}, [ selectedLoc?.gallery, selectedLoc?.lat, selectedLoc?.lng ] );
+
+	// Fetch remote WP Page data ONLY for linked spatial features (stablePageId > 0)
+	const { wpData, isLoading, currentImage: remoteImage, setCurrentImage: setRemoteImage, allImages: remoteImages } =
 		useWpLinkedContent(
-			stablePageId,
-			stableFeatureId,
-			initialGallery,
+			isStaticMarker ? 0 : stablePageId,
+			selectedLoc?.fid,
+			localMarkerImages,
 			selectedLoc
 		);
+
+	// Local state management for static marker carousel interactions
+	const [ localCurrentImage, setLocalCurrentImage ] = useState( null );
+
+	useEffect( () => {
+		if ( isStaticMarker ) {
+			setLocalCurrentImage( localMarkerImages[ 0 ] || null );
+		}
+	}, [ selectedLoc?.lat, selectedLoc?.lng, selectedLoc?.fid, localMarkerImages, isStaticMarker ] );
+
+	// Resolve active carousel media based on selection type
+	const activeAllImages = isStaticMarker ? localMarkerImages : remoteImages;
+	const activeCurrentImage = isStaticMarker ? localCurrentImage : remoteImage;
+	const setActiveCurrentImage = isStaticMarker ? setLocalCurrentImage : setRemoteImage;
 
 	const mapSettings = window.bwbimapsSettings || {};
 	const colorTheme = mapSettings.colorTheme;
 	const { width = 0, height = 0 } = mapDimensions || {};
 	const isSmallUI = width < 800 || height < 500;
 
-	// Generic Category Header formatting
 	const rawCategory =
 		selectedLoc?.category || selectedLoc?.layer_type || 'amenity';
 	const categoryText = rawCategory.replace( /_/g, ' ' );
@@ -70,7 +99,6 @@ const DrawingSidebar = ( {
 		selectedLoc?.name ||
 		__( 'Untitled Location', TEXT_DOMAIN );
 
-	// Generic subtitle resolution: display unit code if present, otherwise fall back to feature name
 	const secondaryTitle = selectedLoc?.code
 		? `${ __( 'Unit', TEXT_DOMAIN ) } ${ selectedLoc.code }`
 		: wpData && selectedLoc?.name && selectedLoc.name !== displayTitle
@@ -99,16 +127,16 @@ const DrawingSidebar = ( {
 						categoryText={ categoryText }
 						onClose={ onClose }
 					/>
-					{ isLoading ? (
+					{ ! isStaticMarker && isLoading ? (
 						<div className="sidebar-loader-container">
 							<Spinner />
 						</div>
 					) : (
 						<div className="sidebar-content-fade">
 							<MediaCarousel
-								currentImage={ currentImage }
-								allImages={ allImages }
-								setCurrentImage={ setCurrentImage }
+								currentImage={ activeCurrentImage }
+								allImages={ activeAllImages }
+								setCurrentImage={ setActiveCurrentImage }
 								onImageClick={ onImageClick }
 							/>
 
@@ -150,6 +178,7 @@ const DrawingSidebar = ( {
 										: {
 												geometry: selectedLoc?.geometry,
 												properties: selectedLoc,
+												manualOriginNode: selectedLoc?.manualOriginNode || null,
 										  }
 								}
 								manualOriginNode={
