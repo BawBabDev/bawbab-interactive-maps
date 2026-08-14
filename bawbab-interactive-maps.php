@@ -114,11 +114,11 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/core/bwb-imaps-hook-block-a
 
 // For debugging: Display the current screen ID or Admin hook in an admin notice
 //This helps ensure the plugin assets are loading on the correct admin page(s)
-add_action( 'admin_notices', 'wp_easy_conversion_toolkit_display_current_screen_id' );
-function wp_easy_conversion_toolkit_display_current_screen_id() {
-    if ( current_user_can( 'manage_options' ) ) {
-        $screen = get_current_screen();
-        echo '<div class="notice notice-info"><p>Current Screen ID: <strong>' . esc_html( $screen->id ) . '</strong></p></div>';
-    }
-}
+// add_action( 'admin_notices', 'wp_easy_conversion_toolkit_display_current_screen_id' );
+// function wp_easy_conversion_toolkit_display_current_screen_id() {
+//     if ( current_user_can( 'manage_options' ) ) {
+//         $screen = get_current_screen();
+//         echo '<div class="notice notice-info"><p>Current Screen ID: <strong>' . esc_html( $screen->id ) . '</strong></p></div>';
+//     }
+// }
 
