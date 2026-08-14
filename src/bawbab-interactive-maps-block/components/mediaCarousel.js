@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { triggerViewportFullscreen } from '../utils/triggerFullScreen';
+
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
 export const MediaCarousel = ( {
 	currentImage,
-	allImages,
+	allImages = [],
 	setCurrentImage,
 	onImageClick,
+	vimeoThumbUrl = null,
 } ) => {
 	const [ isTallImage, setIsTallImage ] = useState( false );
 	const thumbStripRef = useRef( null );
@@ -15,6 +17,7 @@ export const MediaCarousel = ( {
 	useEffect( () => {
 		setIsTallImage( false );
 	}, [ currentImage ] );
+
 	const handleImageLoad = ( e ) => {
 		const { naturalWidth, naturalHeight } = e.target;
 		if ( naturalWidth && naturalHeight ) {
@@ -25,7 +28,8 @@ export const MediaCarousel = ( {
 	const isLocalVideo = ( url ) =>
 		typeof url === 'string' && url.match( /\.(mp4|webm|ogg)$/i );
 	const isVimeoVideo = ( url ) =>
-		typeof url === 'string' && url.includes( '://vimeo.com' );
+		typeof url === 'string' &&
+		( url.includes( 'player.vimeo.com' ) || url.includes( 'vimeo.com' ) );
 	const isAnyVideo = ( url ) => isLocalVideo( url ) || isVimeoVideo( url );
 
 	useEffect( () => {
@@ -65,6 +69,17 @@ export const MediaCarousel = ( {
 			clearInterval( scrollIntervalRef.current );
 	};
 
+	const handleTriggerViewportFullscreen = ( elementTarget ) => {
+		if ( ! elementTarget ) return;
+		if ( elementTarget.requestFullscreen ) {
+			elementTarget.requestFullscreen();
+		} else if ( elementTarget.webkitRequestFullscreen ) {
+			elementTarget.webkitRequestFullscreen();
+		} else if ( elementTarget.msRequestFullscreen ) {
+			elementTarget.msRequestFullscreen();
+		}
+	};
+
 	return (
 		<>
 			{ /* DYNAMIC CAROUSEL VIEWPORT */ }
@@ -91,7 +106,7 @@ export const MediaCarousel = ( {
 									navigateImage( -1 );
 								} }
 							>
-								❮
+								&#10094;
 							</button>
 							<button
 								className="nav-arrow next"
@@ -100,39 +115,110 @@ export const MediaCarousel = ( {
 									navigateImage( 1 );
 								} }
 							>
-								❯
+								&#10095;
 							</button>
 						</>
 					) }
-					{ /* Preserved core image/video viewport elements inside your block */ }
-					{ isLocalVideo( currentImage ) && (
-						<video
-							src={ currentImage }
-							controls
+
+					{ isLocalVideo( currentImage ) ? (
+						<div
+							style={ { width: '100%', position: 'relative' } }
+							id="local-video-container"
+						>
+							<video
+								src={ `${ currentImage }#t=0.1` }
+								controls
+								className="main-display-img"
+								style={ { background: '#000' } }
+							/>
+							<button
+								onClick={ () =>
+									handleTriggerViewportFullscreen(
+										document.querySelector(
+											'#local-video-container video'
+										)
+									)
+								}
+								style={ {
+									position: 'absolute',
+									left: '12px',
+									top: '12px',
+									zIndex: 30,
+									background: 'rgba(0,0,0,0.6)',
+									border: 'none',
+									color: '#fff',
+									padding: '4px 8px',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '11px',
+									fontWeight: '600',
+								} }
+							>
+								{ __( 'Maximize', TEXT_DOMAIN ) }
+							</button>
+						</div>
+					) : isVimeoVideo( currentImage ) ? (
+						<div
 							style={ {
 								width: '100%',
-								height: '100%',
-								objectFit: 'cover',
+								position: 'relative',
+								paddingTop: '56.25%',
+								background: '#000',
 							} }
-						/>
-					) }
-					{ isVimeoVideo( currentImage ) && (
-						<iframe
-							src={ currentImage }
-							frameBorder="0"
-							allow="autoplay; fullscreen"
-							allowFullScreen
-							style={ { width: '100%', height: '100%' } }
-						/>
-					) }
-					{ ! isAnyVideo( currentImage ) && (
+							id="vimeo-iframe-container"
+						>
+							<iframe
+								src={ currentImage }
+								frameBorder="0"
+								allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+								allowFullScreen={ true }
+								style={ {
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									width: '100%',
+									height: '100%',
+								} }
+								title={ __(
+									'Residence Video Walkthrough',
+									TEXT_DOMAIN
+								) }
+							/>
+							<button
+								onClick={ () =>
+									handleTriggerViewportFullscreen(
+										document.getElementById(
+											'vimeo-iframe-container'
+										)
+									)
+								}
+								style={ {
+									position: 'absolute',
+									left: '12px',
+									top: '12px',
+									zIndex: 30,
+									background: 'rgba(0,0,0,0.6)',
+									border: 'none',
+									color: '#fff',
+									padding: '4px 8px',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '11px',
+									fontWeight: '600',
+								} }
+							>
+								{ __( 'Maximize', TEXT_DOMAIN ) }
+							</button>
+						</div>
+					) : (
 						<img
 							src={ currentImage }
-							alt="Main Preview"
-							onLoad={ handleImageLoad }
+							className="main-display-img"
+							alt="Display Layout"
 							onClick={ () =>
 								onImageClick && onImageClick( currentImage )
 							}
+							onLoad={ handleImageLoad }
 						/>
 					) }
 				</div>
@@ -140,39 +226,49 @@ export const MediaCarousel = ( {
 
 			{ /* THUMBNAIL STRIP */ }
 			{ allImages.length > 1 && (
-				<div
-					className="thumbnail-strip-wrapper"
-					style={ { position: 'relative' } }
-				>
-					<button
-						className="scroll-btn left"
-						onMouseDown={ () => startScroll( -5 ) }
-						onMouseUp={ stopScroll }
+				<div className="thumb-carousel-container">
+					<div
+						className="hover-zone left"
+						onMouseEnter={ () => startScroll( -6 ) }
 						onMouseLeave={ stopScroll }
+					/>
+					<div
+						className="hover-zone right"
+						onMouseEnter={ () => startScroll( 6 ) }
+						onMouseLeave={ stopScroll }
+					/>
+					<div
+						className="custom-carousel-strip"
+						ref={ thumbStripRef }
 					>
-						◀
-					</button>
-					<div className="thumbnail-strip" ref={ thumbStripRef }>
-						{ allImages.map( ( img, index ) => (
+						{ allImages.map( ( url, i ) => (
 							<div
-								key={ index }
-								className={ `thumb-item ${
-									img === currentImage ? 'is-active' : ''
-								}` }
-								onClick={ () => setCurrentImage( img ) }
+								key={ i }
+								onClick={ () => setCurrentImage( url ) }
+								className={ `thumb-wrapper ${
+									currentImage === url ? 'is-active' : ''
+								} ${ isAnyVideo( url ) ? 'is-video' : '' }` }
 							>
-								<img src={ img } alt={ `Thumb ${ index }` } />
+								{ isVimeoVideo( url ) && vimeoThumbUrl ? (
+									<img
+										src={ vimeoThumbUrl }
+										className="carousel-thumb-img"
+										alt="Video cover thumbnail"
+									/>
+								) : isAnyVideo( url ) ? (
+									<div className="carousel-thumb-video-fallback">
+										{ __( 'Video', TEXT_DOMAIN ) }
+									</div>
+								) : (
+									<img
+										src={ url }
+										className="carousel-thumb-img"
+										alt=""
+									/>
+								) }
 							</div>
 						) ) }
 					</div>
-					<button
-						className="scroll-btn right"
-						onMouseDown={ () => startScroll( 5 ) }
-						onMouseUp={ stopScroll }
-						onMouseLeave={ stopScroll }
-					>
-						▶
-					</button>
 				</div>
 			) }
 		</>

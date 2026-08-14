@@ -1,7 +1,7 @@
 <?php
 /**
  * Isolated Class Manager for TinyMCE Layout Customizations
- * File location: /includes/class-bwb-tinymce-veditor-btn.php
+ * File location: /includes/integrations/class-bwb-tinymce-veditor-btn.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,14 +26,14 @@ class BWB_TinyMCE_Veditor_Button {
     }
 
     public static function add_tinymce_plugin( $plugin_array ) {
-        // Jump past /includes/ layer up to find the root folder path and URL structure maps
-        $plugin_dir_path = dirname( plugin_dir_path( __FILE__ ) );
-        $plugin_dir_url  = dirname( plugin_dir_url( __FILE__ ) );
+        // Step up 2 levels from /includes/integrations/ to the plugin root directory
+        $root_dir_path = dirname( __DIR__, 2 ) . '/';
+        $root_dir_url  = plugin_dir_url( dirname( __DIR__, 2 ) . '/bawbab-interactive-maps.php' );
         
-        $js_path = $plugin_dir_path . '/assets/tinymce-buttons.js';
+        $js_path = $root_dir_path . 'assets/tinymce-buttons.js';
         
         if ( file_exists( $js_path ) ) {
-            $plugin_array['map_buttons'] = $plugin_dir_url . '/assets/tinymce-buttons.js';
+            $plugin_array['map_buttons'] = $root_dir_url . 'assets/tinymce-buttons.js';
         }
         return $plugin_array;
     }
@@ -48,16 +48,23 @@ class BWB_TinyMCE_Veditor_Button {
         <style>
             .mce-btn .mce-ico.mce-i-dashicons-location-alt,
             .mce-btn .mce-ico.mce-i-dashicons-visibility {
-                font-family: dashicons !important; font-style: normal !important; font-weight: 400 !important; font-size: 18px !important; line-height: 1 !important; vertical-align: middle !important; -webkit-font-smoothing: antialiased;
+                font-family: dashicons !important; 
+                font-style: normal !important; 
+                font-weight: 400 !important; 
+                font-size: 18px !important; 
+                line-height: 1 !important; 
+                vertical-align: middle !important; 
+                -webkit-font-smoothing: antialiased;
             }
             .mce-btn .mce-ico.mce-i-dashicons-location-alt:before { content: "\f231" !important; }
             .mce-btn .mce-ico.mce-i-dashicons-visibility:before { content: "\f177" !important; }
-            .mce-menubtn button span.mce-txt, .mce-menubtn button i.mce-ico { vertical-align: middle !important; display: inline-block !important; }
+            .mce-menubtn button span.mce-txt, 
+            .mce-menubtn button i.mce-ico { vertical-align: middle !important; display: inline-block !important; }
             .mce-menubtn i.mce-caret { display: inline-block !important; vertical-align: middle !important; margin-top: -2px !important; margin-left: 4px !important; border-top-color: #50575e !important; }
         </style>
         <?php
     }
 }
 
-//Activate or Initialize this tinyMCE hooks inside WordPress immediately this file is loaded
+// Activate TinyMCE hooks inside WordPress immediately
 BWB_TinyMCE_Veditor_Button::init();
