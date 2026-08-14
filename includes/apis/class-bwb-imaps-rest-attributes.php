@@ -53,7 +53,19 @@ class BWB_IMaps_REST_Attributes {
                     if ( is_array( $attrs ) ) {
                         foreach ( $attrs as $k => $v ) {
                             if ( ! isset( $discovered_keys[$k] ) ) {
-                                $type = is_bool( $v ) || 'true' === $v || 'false' === $v ? 'boolean' : ( is_numeric( $v ) ? 'number' : 'text' );
+                                $clean_k = sanitize_key( $k );
+
+                                // Check specifically for bathroom fields
+                                if ( false !== strpos( $clean_k, 'bath' ) ) {
+                                    $type = 'bathrooms';
+                                } elseif ( is_bool( $v ) || 'true' === $v || 'false' === $v ) {
+                                    $type = 'boolean';
+                                } elseif ( is_numeric( $v ) ) {
+                                    $type = 'number';
+                                } else {
+                                    $type = 'text';
+                                }
+
                                 $discovered_keys[$k] = $type;
                             }
                         }
@@ -75,6 +87,9 @@ class BWB_IMaps_REST_Attributes {
         $key   = sanitize_key( $request->get_param( 'key' ) );
         $label = sanitize_text_field( $request->get_param( 'label' ) );
         $type  = sanitize_text_field( $request->get_param( 'type' ) ?: 'text' );
+        
+        $has_icon_param = $request->has_param( 'icon' );
+        $icon           = $has_icon_param ? sanitize_text_field( $request->get_param( 'icon' ) ) : null;
 
         if ( empty( $key ) ) {
             return new WP_Error( 'missing_key', 'Attribute key is required.', array( 'status' => 400 ) );
@@ -88,7 +103,10 @@ class BWB_IMaps_REST_Attributes {
             if ( $item['key'] === $key ) {
                 $item['label'] = ! empty( $label ) ? $label : $item['label'];
                 $item['type']  = ! empty( $type ) ? $type : $item['type'];
-                $updated       = true;
+                if ( $has_icon_param ) {
+                    $item['icon'] = $icon;
+                }
+                $updated = true;
                 break;
             }
         }
@@ -98,6 +116,7 @@ class BWB_IMaps_REST_Attributes {
                 'key'   => $key,
                 'label' => ! empty( $label ) ? $label : ucwords( str_replace( '_', ' ', $key ) ),
                 'type'  => $type,
+                'icon'  => $has_icon_param ? $icon : ( 'bathrooms' === $type ? 'shower,sink' : '' ),
             );
         }
 
@@ -107,10 +126,6 @@ class BWB_IMaps_REST_Attributes {
         return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
     }
 
-    /**
-     * POST Route Callback: Purges a key from the schema registry AND from custom_attributes JSON on ALL MySQL rows.
-     * Uses JSON_CONTAINS_PATH to ensure unconditionally full removal across all rows regardless of saved value type.
-     */
     public static function handle_delete_attribute_key( $request ) {
         global $wpdb;
 
@@ -119,7 +134,6 @@ class BWB_IMaps_REST_Attributes {
             return new WP_Error( 'missing_key', 'Attribute key is required for deletion.', array( 'status' => 400 ) );
         }
 
-        // 1. Remove from global options schema array
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
@@ -130,7 +144,6 @@ class BWB_IMaps_REST_Attributes {
         $settings['attribute_schema'] = $filtered_schema;
         update_option( 'bwb_imaps_options_data', $settings );
 
-        // 2. Unconditionally remove key from custom_attributes JSON column across ALL MySQL database rows
         $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
         $json_path  = '$.' . $key;
 
@@ -174,7 +187,11 @@ class BWB_IMaps_REST_Attributes {
                 $type      = sanitize_text_field( $info );
             } else {
                 $clean_key = sanitize_key( $info );
-                $type      = ( false !== strpos( $clean_key, 'bath' ) ) ? 'bathrooms' : 'text';
+            }
+
+            // Force bathrooms type if key name suggests bathrooms
+            if ( false !== strpos( $clean_key, 'bath' ) ) {
+                $type = 'bathrooms';
             }
 
             if ( ! empty( $clean_key ) && ! in_array( $clean_key, $existing_keys, true ) ) {
@@ -183,6 +200,7 @@ class BWB_IMaps_REST_Attributes {
                     'key'   => $clean_key,
                     'label' => $label,
                     'type'  => ! empty( $type ) ? $type : 'text',
+                    'icon'  => 'bathrooms' === $type ? 'shower,sink' : '',
                 );
                 $existing_keys[] = $clean_key;
                 $has_changes     = true;
