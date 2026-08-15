@@ -1,7 +1,12 @@
 import { useState, useMemo } from '@wordpress/element';
-import { Modal, TextControl, Button, Flex } from '@wordpress/components';
+import { Modal, TextControl, SelectControl, Button, Flex, FlexItem } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { ALL_ICON_NAMES, renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
+import { 
+    ICON_CATEGORIES, 
+    getIconsByCategory, 
+    renderIconBySlug, 
+    LEGACY_ICON_NAMES 
+} from '../../../constants/iconRegistry';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -36,16 +41,27 @@ const renderModalIcon = (iconName) => {
 
 export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey = '' }) => {
     const [search, setSearch] = useState('');
+    const [activeCategory, setActiveCategory] = useState('all');
+
+    const categorySelectOptions = useMemo(() => {
+        return ICON_CATEGORIES.map(cat => ({
+            value: cat.id,
+            label: cat.label
+        }));
+    }, []);
 
     const filteredIconNames = useMemo(() => {
+        const categoryIcons = getIconsByCategory(activeCategory);
         const query = search.toLowerCase().trim();
+
         if (!query) {
-            return ALL_ICON_NAMES.slice(0, 100);
+            return categoryIcons.slice(0, 150); // Cap initial render at 150 for immediate performance
         }
-        return ALL_ICON_NAMES.filter(name => 
+
+        return categoryIcons.filter(name => 
             name.toLowerCase().includes(query)
-        ).slice(0, 150);
-    }, [search]);
+        ).slice(0, 200);
+    }, [search, activeCategory]);
 
     if (!isOpen) return null;
 
@@ -53,22 +69,41 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
         <Modal 
             title={__('Select Field Icon', TEXT_DOMAIN)} 
             onRequestClose={onClose}
-            style={{ maxWidth: '600px', width: '100%' }}
+            style={{ maxWidth: '640px', width: '100%' }}
         >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <TextControl
-                    placeholder={__('Search icons (e.g. area, shower, Bed, Wifi, Flame)...', TEXT_DOMAIN)}
-                    value={search}
-                    onChange={setSearch}
-                    __nextHasNoMarginBottom
-                />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* SEARCH CONTROL + CATEGORY SELECTOR DROPDOWN SIDE-BY-SIDE */}
+                <Flex gap={2} align="end">
+                    <FlexItem style={{ flex: 1 }}>
+                        <TextControl
+                            label={__('Search Icons', TEXT_DOMAIN)}
+                            placeholder={__('Search among all 1,500+ icons...', TEXT_DOMAIN)}
+                            value={search}
+                            onChange={setSearch}
+                            style={{ height: '36px' }}
+                            __nextHasNoMarginBottom
+                        />
+                    </FlexItem>
 
+                    <FlexItem style={{ width: '190px' }} className="bwb-select-control-wrapper">
+                        <SelectControl
+                            label={__('Filter Category', TEXT_DOMAIN)}
+                            value={activeCategory}
+                            options={categorySelectOptions}
+                            onChange={setActiveCategory}
+                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                            __nextHasNoMarginBottom
+                        />
+                    </FlexItem>
+                </Flex>
+
+                {/* GRID OF ICONS */}
                 <div 
                     style={{ 
                         display: 'grid', 
                         gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', 
                         gap: '10px', 
-                        maxHeight: '320px', 
+                        maxHeight: '340px', 
                         overflowY: 'auto',
                         padding: '10px',
                         border: '1px solid #e0e0e0',
@@ -134,7 +169,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
                     })}
                 </div>
 
-                <Flex justify="flex-end" style={{ marginTop: '10px' }}>
+                <Flex justify="flex-end" style={{ marginTop: '5px' }}>
                     <Button variant="secondary" onClick={onClose}>
                         {__('Cancel', TEXT_DOMAIN)}
                     </Button>
