@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { 
     Button, TextControl, SelectControl, Flex, FlexItem,
     Spinner, __experimentalText as Text 
@@ -8,6 +8,7 @@ import { IconPickerModal } from './iconPickerModal';
 import { AttributeConfigModal } from './attributeConfigModal';
 import { renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
+import { useAttributeSchema } from '../hooks/useAttributeSchema';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -16,6 +17,11 @@ const FIELD_TYPE_OPTIONS = [
     { label: __('Number', TEXT_DOMAIN), value: 'number' },
     { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
     { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
+];
+
+const LAYOUT_OPTIONS = [
+    { label: __('Grid (2 Per Row)', TEXT_DOMAIN), value: 'half' },
+    { label: __('Full Width (1 Line)', TEXT_DOMAIN), value: 'full' },
 ];
 
 const DUAL_MODE_OPTIONS = [
@@ -88,8 +94,14 @@ export const AttributeSchemaManager = ({
     onDeleteKey, 
     onRefreshFeatures 
 }) => {
+    const { reorderSchemaKeys } = useAttributeSchema();
+
+    // Local Schema state ensures immediate re-rendering upon arrow click
+    const [localSchema, setLocalSchema] = useState(schema);
+
     const [newLabel, setNewLabel] = useState('');
     const [newType, setNewType] = useState('text');
+    const [newLayout, setNewLayout] = useState('half');
     const [newIconPrimary, setNewIconPrimary] = useState('');
     const [newIconSecondary, setNewIconSecondary] = useState('');
     
@@ -108,6 +120,13 @@ export const AttributeSchemaManager = ({
     const [isIconModalOpen, setIsIconModalOpen] = useState(false);
     const [editingItemKey, setEditingItemKey] = useState(null);
     const [editingTargetSlot, setEditingTargetSlot] = useState('primary');
+
+    // Keep localSchema in sync with incoming schema prop changes
+    useEffect(() => {
+        if (Array.isArray(schema)) {
+            setLocalSchema(schema);
+        }
+    }, [schema]);
 
     const derivedKey = createKeySlug(newLabel);
 
@@ -131,12 +150,16 @@ export const AttributeSchemaManager = ({
             formattedIcon = `${newIconPrimary || ''},${newIconSecondary || ''}`;
         }
 
-        const config = isDual ? {
-            mode: newDualMode,
-            mainUnit: newDualMode === 'time' ? newMainUnit : (newDualMode === 'measurement' ? newMainUnit : ''),
-            majorLabel: newMajorLabel.trim(),
-            minorLabel: newMinorLabel.trim(),
-        } : null;
+        const config = {
+            layout: newLayout,
+            order: localSchema.length,
+            ...(isDual ? {
+                mode: newDualMode,
+                mainUnit: newDualMode === 'time' ? newMainUnit : (newDualMode === 'measurement' ? newMainUnit : ''),
+                majorLabel: newMajorLabel.trim(),
+                minorLabel: newMinorLabel.trim(),
+            } : {})
+        };
 
         const res = await onUpdateKey({
             key: derivedKey,
@@ -149,6 +172,7 @@ export const AttributeSchemaManager = ({
         if (res.success) {
             setNewLabel('');
             setNewType('text');
+            setNewLayout('half');
             setNewIconPrimary('');
             setNewIconSecondary('');
             setNewDualMode('split');
@@ -158,6 +182,36 @@ export const AttributeSchemaManager = ({
             if (onRefreshFeatures) onRefreshFeatures();
         }
         setIsSubmitting(false);
+    };
+
+    const handleMoveItem = async (index, direction) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= localSchema.length) return;
+
+        // Perform instant local array swap for zero-latency visual reordering
+        const updatedSchema = [...localSchema];
+        const [movedItem] = updatedSchema.splice(index, 1);
+        updatedSchema.splice(targetIndex, 0, movedItem);
+
+        // Assign explicit numeric order properties based on index
+        const orderedSchema = updatedSchema.map((item, idx) => ({
+            ...item,
+            config: {
+                ...(item.config || {}),
+                order: idx
+            }
+        }));
+
+        // Render UI immediately
+        setLocalSchema(orderedSchema);
+
+        // Persist new sequence back to database via REST endpoint
+        if (typeof reorderSchemaKeys === 'function') {
+            const res = await reorderSchemaKeys(orderedSchema);
+            if (res && res.success && onRefreshFeatures) {
+                onRefreshFeatures();
+            }
+        }
     };
 
     const handleDeleteKey = async (key) => {
@@ -183,7 +237,7 @@ export const AttributeSchemaManager = ({
 
     const handleSelectIcon = (selectedIconKey) => {
         if (editingItemKey) {
-            const item = schema.find(s => s.key === editingItemKey);
+            const item = localSchema.find(s => s.key === editingItemKey);
             if (item) {
                 let updatedIcon = selectedIconKey;
                 const normalizedType = normalizeFieldType(item.type);
@@ -227,7 +281,7 @@ export const AttributeSchemaManager = ({
                 {__('Global Custom Attributes Schema Manager', TEXT_DOMAIN)}
             </Text>
             <Text variant="caption" display="block" style={{ color: '#666', marginBottom: '20px' }}>
-                {__('Manage custom fields across all map features. Adding a field registers it globally; deleting a field purges it from all units in the database.', TEXT_DOMAIN)}
+                {__('Manage custom fields across all map features. Use the arrow buttons to reorder how custom fields appear inside the side drawer.', TEXT_DOMAIN)}
             </Text>
 
             {/* REGISTER NEW FIELD FORM */}
@@ -237,7 +291,7 @@ export const AttributeSchemaManager = ({
                 </Text>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: isNewSplit ? '1fr 160px 180px auto' : '1fr 160px 140px auto', gap: '12px', alignItems: 'end' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isNewSplit ? '1fr 140px 140px 180px auto' : '1fr 140px 140px 140px auto', gap: '12px', alignItems: 'end' }}>
                         <div>
                             <TextControl
                                 label={__('Field Display Label', TEXT_DOMAIN)}
@@ -255,6 +309,17 @@ export const AttributeSchemaManager = ({
                                 value={normalizeFieldType(newType)}
                                 options={FIELD_TYPE_OPTIONS}
                                 onChange={handleTypeChange}
+                                style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
+
+                        <div className="bwb-select-control-wrapper">
+                            <SelectControl
+                                label={__('Display Layout', TEXT_DOMAIN)}
+                                value={newLayout}
+                                options={LAYOUT_OPTIONS}
+                                onChange={setNewLayout}
                                 style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
                                 __nextHasNoMarginBottom
                             />
@@ -401,24 +466,27 @@ export const AttributeSchemaManager = ({
             {/* SCHEMA GRID TABLE */}
             {isLoading ? (
                 <Flex justify="center" style={{ padding: '40px' }}><Spinner /></Flex>
-            ) : schema.length === 0 ? (
+            ) : localSchema.length === 0 ? (
                 <p style={{ fontStyle: 'italic', color: '#888', textAlign: 'center', padding: '20px' }}>
                     {__('No custom attribute keys registered yet. Create one above or import a GeoJSON dataset.', TEXT_DOMAIN)}
                 </p>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px 100px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 110px 100px 100px 100px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
+                        <span>{__('Order', TEXT_DOMAIN)}</span>
                         <span>{__('Display Label', TEXT_DOMAIN)}</span>
                         <span>{__('Database Slug', TEXT_DOMAIN)}</span>
                         <span>{__('Type', TEXT_DOMAIN)}</span>
+                        <span>{__('Layout', TEXT_DOMAIN)}</span>
                         <span>{__('Icon(s)', TEXT_DOMAIN)}</span>
                         <span style={{ textAlign: 'right' }}>{__('Actions', TEXT_DOMAIN)}</span>
                     </div>
 
-                    {schema.map((item) => {
+                    {localSchema.map((item, index) => {
                         const normalizedType = normalizeFieldType(item.type);
                         const isDualCounter = normalizedType === 'dual_counter';
                         const dualMode = item.config?.mode || 'split';
+                        const layoutMode = item.config?.layout || 'half';
                         const isSplit = isDualCounter && dualMode === 'split';
 
                         const effectiveIconSlug = item.icon || '';
@@ -428,12 +496,38 @@ export const AttributeSchemaManager = ({
                         const secondarySlug = iconParts[1] || '';
 
                         return (
-                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px 100px', gap: '12px', padding: '8px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
+                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 110px 100px 100px 100px', gap: '12px', padding: '8px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
+                                {/* REORDER BUTTONS */}
+                                <Flex gap={1} align="center">
+                                    <Button
+                                        isSmall
+                                        variant="tertiary"
+                                        icon="arrow-up-alt2"
+                                        disabled={index === 0}
+                                        onClick={() => handleMoveItem(index, -1)}
+                                        label={__('Move Up', TEXT_DOMAIN)}
+                                        style={{ minWidth: '24px', padding: 0 }}
+                                    />
+                                    <Button
+                                        isSmall
+                                        variant="tertiary"
+                                        icon="arrow-down-alt2"
+                                        disabled={index === localSchema.length - 1}
+                                        onClick={() => handleMoveItem(index, 1)}
+                                        label={__('Move Down', TEXT_DOMAIN)}
+                                        style={{ minWidth: '24px', padding: 0 }}
+                                    />
+                                </Flex>
+
                                 <span style={{ fontSize: '13px', fontWeight: '500' }}>{item.label || item.key}</span>
                                 <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '3px', fontSize: '12px', width: 'fit-content' }}>{item.key}</code>
                                 
                                 <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', background: '#f0f6fb', padding: '2px 8px', borderRadius: '10px', width: 'fit-content', fontWeight: '600' }}>
                                     {isDualCounter ? `dual (${dualMode})` : normalizedType}
+                                </span>
+
+                                <span style={{ fontSize: '11px', color: '#555', textTransform: 'capitalize' }}>
+                                    {layoutMode === 'full' ? __('Full Width', TEXT_DOMAIN) : __('Grid (2/row)', TEXT_DOMAIN)}
                                 </span>
                                 
                                 <Flex align="center" gap={1}>
@@ -489,7 +583,7 @@ export const AttributeSchemaManager = ({
                 currentIconKey={
                     editingItemKey 
                         ? (() => {
-                            const item = schema.find(s => s.key === editingItemKey);
+                            const item = localSchema.find(s => s.key === editingItemKey);
                             const normalizedType = normalizeFieldType(item?.type);
                             const isSplit = normalizedType === 'dual_counter' && item?.config?.mode === 'split';
                             const raw = item?.icon || '';

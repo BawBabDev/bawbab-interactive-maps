@@ -16,6 +16,11 @@ const FIELD_TYPE_OPTIONS = [
     { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
 ];
 
+const LAYOUT_OPTIONS = [
+    { label: __('Grid (2 Per Row)', TEXT_DOMAIN), value: 'half' },
+    { label: __('Full Width (1 Line)', TEXT_DOMAIN), value: 'full' },
+];
+
 const DUAL_MODE_OPTIONS = [
     { label: __('Category Split (e.g. Shower / Bathroom)', TEXT_DOMAIN), value: 'split' },
     { label: __('Time Breakdown (Hours / Minutes)', TEXT_DOMAIN), value: 'time' },
@@ -83,8 +88,9 @@ export const AttributeConfigModal = ({
     const [type, setType] = useState(normalizeFieldType(item.type));
     const [icon, setIcon] = useState(item.icon || '');
     
-    // Dual Counter sub-panel configuration
+    // Configuration Settings
     const cfg = item.config || {};
+    const [layoutMode, setLayoutMode] = useState(cfg.layout || 'half');
     const [dualMode, setDualMode] = useState(cfg.mode || 'split');
     const [mainUnit, setMainUnit] = useState(cfg.mainUnit || '');
     const [majorLabel, setMajorLabel] = useState(cfg.majorLabel || '');
@@ -103,6 +109,7 @@ export const AttributeConfigModal = ({
         setType(normalizeFieldType(item.type));
         setIcon(item.icon || '');
         const currentCfg = item.config || {};
+        setLayoutMode(currentCfg.layout || 'half');
         setDualMode(currentCfg.mode || 'split');
         setMainUnit(currentCfg.mainUnit || '');
         setMajorLabel(currentCfg.majorLabel || '');
@@ -159,12 +166,15 @@ export const AttributeConfigModal = ({
     const handleSave = async () => {
         setIsSaving(true);
 
-        const updatedConfig = type === 'dual_counter' ? {
-            mode: dualMode,
-            mainUnit: dualMode === 'time' ? (mainUnit || 'hours_minutes') : (dualMode === 'measurement' ? (mainUnit || 'feet_inches') : ''),
-            majorLabel: majorLabel.trim(),
-            minorLabel: minorLabel.trim(),
-        } : null;
+        const updatedConfig = {
+            layout: layoutMode,
+            ...(type === 'dual_counter' ? {
+                mode: dualMode,
+                mainUnit: dualMode === 'time' ? (mainUnit || 'hours_minutes') : (dualMode === 'measurement' ? (mainUnit || 'feet_inches') : ''),
+                majorLabel: majorLabel.trim(),
+                minorLabel: minorLabel.trim(),
+            } : {})
+        };
 
         const res = await onSave({
             ...item,
@@ -222,7 +232,20 @@ export const AttributeConfigModal = ({
                         />
                     </div>
 
-                    {/* 3. DUAL COUNTER MODE & UNIT SETTINGS */}
+                    {/* 3. DISPLAY LAYOUT SELECTION */}
+                    <div className="bwb-select-control-wrapper">
+                        <SelectControl
+                            label={__('Display Layout in Side Drawer', TEXT_DOMAIN)}
+                            value={layoutMode}
+                            options={LAYOUT_OPTIONS}
+                            onChange={setLayoutMode}
+                            help={__('Choose whether this field occupies a full row or fits into a 2-column grid row.', TEXT_DOMAIN)}
+                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                            __nextHasNoMarginBottom
+                        />
+                    </div>
+
+                    {/* 4. DUAL COUNTER MODE & UNIT SETTINGS */}
                     {isDual && (
                         <div style={{ padding: '14px', background: '#f9f9f9', border: '1px solid #d0d7de', borderRadius: '4px' }}>
                             <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '10px' }}>
@@ -300,7 +323,7 @@ export const AttributeConfigModal = ({
                         </div>
                     )}
 
-                    {/* 4. ICON ASSIGNMENT / CLEARING */}
+                    {/* 5. ICON ASSIGNMENT / CLEARING */}
                     <div>
                         <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '6px' }}>
                             {isSplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Assigned Icon', TEXT_DOMAIN)}

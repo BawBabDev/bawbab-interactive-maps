@@ -51,12 +51,18 @@ export const UnitSpecs = ({ specs }) => {
         return null;
     }
 
-    // 2. Separate Square Feet (dedicated top row)
-    const sqFtVal = rawAttrs.sq_ft;
-    const hasSqFt = activeKeys.includes('sq_ft');
-    const otherKeys = activeKeys.filter(k => k !== 'sq_ft');
+    // 2. Sort ALL active keys strictly based on position in central schema
+    const schemaKeyOrder = schema.map(s => s.key);
+    const sortedKeys = activeKeys.sort((a, b) => {
+        const indexA = schemaKeyOrder.indexOf(a);
+        const indexB = schemaKeyOrder.indexOf(b);
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
 
-    // 3. Build rows
+    // 3. Build rows dynamically using schema configurations (layout, order, units)
     const rows = [];
     let standaloneBuffer = [];
 
@@ -67,21 +73,23 @@ export const UnitSpecs = ({ specs }) => {
         }
     };
 
-    otherKeys.forEach((key) => {
+    sortedKeys.forEach((key) => {
         const val = rawAttrs[key];
         const schemaItem = schema.find(s => s.key === key);
         const attributeName = schemaItem?.label || formatFieldLabel(key);
         const fieldType = schemaItem?.type || (typeof val === 'boolean' ? 'boolean' : (isFinite(val) ? 'number' : 'text'));
+        
+        const config = schemaItem?.config || {};
+        const isFullWidth = config.layout === 'full';
 
         if (fieldType === 'dual_counter') {
             const rawIcons = (schemaItem?.icon || '').split(',');
             const primaryIconSlug = rawIcons[0] || '';
             const secondaryIconSlug = rawIcons[1] || '';
 
-            const config = schemaItem?.config || {};
             const mode = config.mode || 'split';
 
-            // Resolve explicit subcategory / unit designations set by user in AttributeConfigModal
+            // Resolve explicit subcategory / unit designations set by user
             let majorSubcategory = config.majorLabel;
             let minorSubcategory = config.minorLabel;
 
@@ -116,19 +124,26 @@ export const UnitSpecs = ({ specs }) => {
                 minorLabel: minorSubcategory,
             });
 
-            // TIME & MEASUREMENT: Single icon, compact single-line text display using selected units
+            // TIME & MEASUREMENT: Single icon, single-line text display
             if (mode === 'time' || mode === 'measurement') {
-                standaloneBuffer.push({
+                const itemObj = {
                     id: key,
                     type: 'text',
                     icon: primaryIconSlug,
                     value: formatted.displayText || String(val),
-                    label: attributeName
-                });
+                    label: attributeName,
+                    isFullWidth
+                };
 
-                if (standaloneBuffer.length === 2) flushBuffer();
+                if (isFullWidth) {
+                    flushBuffer();
+                    rows.push({ type: 'full', items: [itemObj] });
+                } else {
+                    standaloneBuffer.push(itemObj);
+                    if (standaloneBuffer.length === 2) flushBuffer();
+                }
             } else {
-                // CATEGORY SPLIT: 2 icons, 2 subcategories, parent attribute label repeated below each
+                // CATEGORY SPLIT: Occupies a full row block
                 flushBuffer();
 
                 rows.push({
@@ -153,39 +168,49 @@ export const UnitSpecs = ({ specs }) => {
                     ]
                 });
             }
-        } else if (fieldType === 'boolean') {
-            const isTrue = Boolean(val) && val !== 'false' && val !== '0';
-            const defaultIcon = key === 'fireplace' ? 'fireplace' : (key === 'sunroom' ? 'sun' : 'check');
-
-            standaloneBuffer.push({
-                id: key,
-                type: 'boolean',
-                icon: schemaItem?.icon !== undefined ? schemaItem.icon : defaultIcon,
-                isTrue,
-                label: attributeName
-            });
-
-            if (standaloneBuffer.length === 2) flushBuffer();
-        } else if (fieldType === 'number') {
-            standaloneBuffer.push({
-                id: key,
-                type: 'number',
-                icon: schemaItem?.icon || '',
-                value: isFinite(val) ? `x${val}` : val,
-                label: attributeName
-            });
-
-            if (standaloneBuffer.length === 2) flushBuffer();
         } else {
-            standaloneBuffer.push({
-                id: key,
-                type: 'text',
-                icon: schemaItem?.icon || '',
-                value: String(val),
-                label: attributeName
-            });
+            // STANDARD FIELDS: Text, Number, Boolean
+            let itemObj = null;
 
-            if (standaloneBuffer.length === 2) flushBuffer();
+            if (fieldType === 'boolean') {
+                const isTrue = Boolean(val) && val !== 'false' && val !== '0';
+                const defaultIcon = schemaItem?.icon || (key === 'fireplace' ? 'fireplace' : (key === 'sunroom' ? 'sun' : 'check'));
+
+                itemObj = {
+                    id: key,
+                    type: 'boolean',
+                    icon: defaultIcon,
+                    isTrue,
+                    label: attributeName,
+                    isFullWidth
+                };
+            } else if (fieldType === 'number') {
+                itemObj = {
+                    id: key,
+                    type: 'number',
+                    icon: schemaItem?.icon || (key === 'sq_ft' ? 'area' : ''),
+                    value: key === 'sq_ft' ? val : (isFinite(val) ? `x${val}` : val),
+                    label: attributeName,
+                    isFullWidth
+                };
+            } else {
+                itemObj = {
+                    id: key,
+                    type: 'text',
+                    icon: schemaItem?.icon || '',
+                    value: String(val),
+                    label: attributeName,
+                    isFullWidth
+                };
+            }
+
+            if (isFullWidth) {
+                flushBuffer();
+                rows.push({ type: 'full', items: [itemObj] });
+            } else {
+                standaloneBuffer.push(itemObj);
+                if (standaloneBuffer.length === 2) flushBuffer();
+            }
         }
     });
 
@@ -193,30 +218,22 @@ export const UnitSpecs = ({ specs }) => {
 
     return (
         <div className="location-specs-container">
-            {/* ROW 1: SQUARE FEET */}
-            {hasSqFt && (
-                <div className="specs-row area-row">
-                    <div className="spec-item area-item">
-                        <div className="spec-icon-row">
-                            <span className="fa-icon" style={{ color: '#333' }}>
-                                <SafeIcon iconSlug="area" />
-                            </span>
-                            <span className="spec-number">{sqFtVal}</span>
-                        </div>
-                        <span className="spec-label">{__('Area (sq ft)', TEXT_DOMAIN)}</span>
-                    </div>
-                </div>
-            )}
-
-            {/* SUBSEQUENT ROWS */}
             {rows.map((row, rowIndex) => (
-                <div key={rowIndex} className="specs-row dual-row">
+                <div 
+                    key={rowIndex} 
+                    className={`specs-row ${row.type === 'full' ? 'full-width-row' : 'dual-row'}`}
+                    style={{ justifyContent: row.type === 'full' ? 'center' : 'space-around' }}
+                >
                     {row.items.map((item) => {
                         const hasIcon = Boolean(item.icon);
 
                         if (item.type === 'boolean') {
                             return (
-                                <div key={item.id} className={`spec-item ${!item.isTrue ? 'is-disabled' : ''}`}>
+                                <div 
+                                    key={item.id} 
+                                    className={`spec-item ${!item.isTrue ? 'is-disabled' : ''} ${item.isFullWidth ? 'is-full-width' : ''}`}
+                                    style={{ flex: item.isFullWidth ? '0 0 100%' : 1 }}
+                                >
                                     <div className="spec-icon-row">
                                         <div className="icon-wrapper">
                                             {hasIcon && (
@@ -233,7 +250,11 @@ export const UnitSpecs = ({ specs }) => {
                         }
 
                         return (
-                            <div key={item.id} className="spec-item">
+                            <div 
+                                key={item.id} 
+                                className={`spec-item ${item.isFullWidth ? 'is-full-width' : ''}`}
+                                style={{ flex: item.isFullWidth ? '0 0 100%' : 1 }}
+                            >
                                 {/* LINE 1: ICON + VALUE */}
                                 <div className="spec-icon-row">
                                     {hasIcon && (

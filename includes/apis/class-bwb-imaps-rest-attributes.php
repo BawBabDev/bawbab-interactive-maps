@@ -23,6 +23,12 @@ class BWB_IMaps_REST_Attributes {
             'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
         ) );
 
+        register_rest_route( $namespace, '/reorder-attribute-schema', array(
+            'methods'             => 'POST',
+            'callback'            => array( __CLASS__, 'handle_reorder_attribute_schema' ),
+            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+        ) );
+
         register_rest_route( $namespace, '/delete-attribute-key', array(
             'methods'             => 'POST',
             'callback'            => array( __CLASS__, 'handle_delete_attribute_key' ),
@@ -35,50 +41,50 @@ class BWB_IMaps_REST_Attributes {
         $settings = get_option( 'bwb_imaps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
-        if ( empty( $schema ) ) {
-            $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $results    = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT custom_attributes FROM %i WHERE custom_attributes IS NOT NULL AND custom_attributes != '' AND custom_attributes != '{}'",
-                    $table_name
-                ),
-                ARRAY_A
-            );
+        return new WP_REST_Response( array( 'success' => true, 'schema' => array_values( $schema ) ), 200 );
+    }
 
-            if ( ! empty( $results ) ) {
-                $discovered_keys = array();
-                foreach ( $results as $row ) {
-                    $attrs = json_decode( $row['custom_attributes'], true );
-                    if ( is_array( $attrs ) ) {
-                        foreach ( $attrs as $k => $v ) {
-                            if ( ! isset( $discovered_keys[$k] ) ) {
-                                $clean_k = sanitize_key( $k );
-
-                                if ( is_bool( $v ) || 'true' === $v || 'false' === $v ) {
-                                    $type = 'boolean';
-                                } elseif ( is_numeric( $v ) ) {
-                                    $float_val = (float) $v;
-                                    $type      = ( $float_val !== floor( $float_val ) ) ? 'dual_counter' : 'number';
-                                } else {
-                                    $type = 'text';
-                                }
-
-                                $discovered_keys[$k] = $type;
-                            }
-                        }
-                    }
-                }
-
-                if ( ! empty( $discovered_keys ) ) {
-                    self::sync_custom_keys_to_schema( $discovered_keys );
-                    $settings = get_option( 'bwb_imaps_options_data', array() );
-                    $schema   = isset( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
-                }
-            }
+    public static function handle_reorder_attribute_schema( $request ) {
+        $raw_schema = $request->get_param( 'schema' );
+        if ( ! is_array( $raw_schema ) ) {
+            return new WP_Error( 'invalid_schema', 'Schema payload must be an array.', array( 'status' => 400 ) );
         }
 
-        return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
+        $sanitized_schema = array();
+        foreach ( $raw_schema as $item ) {
+            if ( ! is_array( $item ) || empty( $item['key'] ) ) {
+                continue;
+            }
+
+            $raw_config = $item['config'] ?? null;
+            $config     = null;
+
+            if ( is_array( $raw_config ) ) {
+                $config = array(
+                    'layout'     => sanitize_text_field( $raw_config['layout'] ?? 'half' ),
+                    'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
+                    'mainUnit'   => sanitize_text_field( $raw_config['mainUnit'] ?? '' ),
+                    'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
+                    'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
+                );
+            }
+
+            $sanitized_schema[] = array(
+                'key'    => sanitize_key( $item['key'] ),
+                'label'  => sanitize_text_field( $item['label'] ?? '' ),
+                'type'   => sanitize_text_field( $item['type'] ?? 'text' ),
+                'icon'   => sanitize_text_field( $item['icon'] ?? '' ),
+                'config' => $config,
+            );
+        }
+
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings['attribute_schema'] = $sanitized_schema;
+        update_option( 'bwb_imaps_options_data', $settings );
+
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+
+        return new WP_REST_Response( array( 'success' => true, 'schema' => $sanitized_schema ), 200 );
     }
 
     public static function handle_update_attribute_schema( $request ) {
@@ -89,19 +95,17 @@ class BWB_IMaps_REST_Attributes {
         $has_icon_param   = $request->has_param( 'icon' );
         $icon             = $has_icon_param ? sanitize_text_field( $request->get_param( 'icon' ) ) : null;
 
-        // FIXED: Explicitly sanitize mainUnit alongside mode, majorLabel, and minorLabel
         $has_config_param = $request->has_param( 'config' );
         $raw_config       = $has_config_param ? $request->get_param( 'config' ) : null;
         $config           = null;
 
         if ( is_array( $raw_config ) ) {
             $config = array(
+                'layout'     => sanitize_text_field( $raw_config['layout'] ?? 'half' ),
                 'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
                 'mainUnit'   => sanitize_text_field( $raw_config['mainUnit'] ?? '' ),
                 'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
                 'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
-                'majorUnit'  => sanitize_text_field( $raw_config['majorUnit'] ?? '' ),
-                'minorUnit'  => sanitize_text_field( $raw_config['minorUnit'] ?? '' ),
             );
         }
 
@@ -138,10 +142,10 @@ class BWB_IMaps_REST_Attributes {
             );
         }
 
-        $settings['attribute_schema'] = $schema;
+        $settings['attribute_schema'] = array_values( $schema );
         update_option( 'bwb_imaps_options_data', $settings );
 
-        return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
+        return new WP_REST_Response( array( 'success' => true, 'schema' => $settings['attribute_schema'] ), 200 );
     }
 
     public static function handle_delete_attribute_key( $request ) {
@@ -203,6 +207,7 @@ class BWB_IMaps_REST_Attributes {
                 $type      = sanitize_text_field( $info['type'] ?? 'text' );
                 if ( isset( $info['config'] ) && is_array( $info['config'] ) ) {
                     $config = array(
+                        'layout'     => sanitize_text_field( $info['config']['layout'] ?? 'half' ),
                         'mode'       => sanitize_text_field( $info['config']['mode'] ?? 'split' ),
                         'mainUnit'   => sanitize_text_field( $info['config']['mainUnit'] ?? '' ),
                         'majorLabel' => sanitize_text_field( $info['config']['majorLabel'] ?? '' ),
@@ -231,7 +236,7 @@ class BWB_IMaps_REST_Attributes {
         }
 
         if ( $has_changes ) {
-            $settings['attribute_schema'] = $schema;
+            $settings['attribute_schema'] = array_values( $schema );
             update_option( 'bwb_imaps_options_data', $settings );
         }
     }
