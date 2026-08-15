@@ -102,21 +102,33 @@ const autoMatchColumn = ( stdField, detectedKeys ) => {
 };
 
 /**
- * Infer data type from sample value
+ * Infer data type from sample value or pre-detected type
  */
-const inferDataType = ( val ) => {
+const inferDataType = ( val, preDetectedType = null ) => {
+    if ( preDetectedType ) return preDetectedType;
     if ( val === null || val === undefined ) return 'text';
+
     if (
         typeof val === 'boolean' ||
         val === 'true' ||
-        val === 'false'
+        val === 'false' ||
+        val === 1 ||
+        val === 0 ||
+        val === '1' ||
+        val === '0'
     ) {
         return 'boolean';
     }
-    if ( ! isNaN( Number( val ) ) ) {
-        const num = Number( val );
-        return ( num !== Math.floor( num ) ) ? 'dual_counter' : 'number';
+
+    const num = Number( val );
+    if ( ! isNaN( num ) ) {
+        // Values ending in .5 (e.g. 1.5, 2.5) suggest dual counter fields
+        if ( num % 1 === 0.5 ) {
+            return 'dual_counter';
+        }
+        return 'number';
     }
+
     return 'text';
 };
 
@@ -134,6 +146,7 @@ export const GeoJSONImportWizardModal = ( {
     const [ inspectionError, setInspectionError ] = useState( null );
     const [ detectedKeys, setDetectedKeys ] = useState( [] );
     const [ sampleProps, setSampleProps ] = useState( {} );
+    const [ inferredTypes, setInferredTypes ] = useState( {} );
     const [ totalFeatures, setTotalFeatures ] = useState( 0 );
 
     const standardFields = [
@@ -242,9 +255,11 @@ export const GeoJSONImportWizardModal = ( {
                 if ( isMounted && res.success ) {
                     const keys = res.detected_properties || [];
                     const samples = res.sample_properties || {};
+                    const detectedInferred = res.inferred_types || {};
 
                     setDetectedKeys( keys );
                     setSampleProps( samples );
+                    setInferredTypes( detectedInferred );
                     setTotalFeatures( res.total_features || 0 );
 
                     const initialStandardMapping = {};
@@ -274,7 +289,7 @@ export const GeoJSONImportWizardModal = ( {
                     keys.forEach( ( k ) => {
                         const isSystem = allMappedSystemKeys.includes( k );
                         initialCustom[ k ] = ! isSystem;
-                        initialTypes[ k ]  = inferDataType( samples[ k ] );
+                        initialTypes[ k ]  = inferDataType( samples[ k ], detectedInferred[ k ] );
                     } );
 
                     setStandardMapping( initialStandardMapping );
@@ -355,7 +370,7 @@ export const GeoJSONImportWizardModal = ( {
             if ( customSelections[ k ] && ! reservedSystemColumns.includes( k ) ) {
                 selectedCustomList.push( {
                     key: k,
-                    type: customTypes[ k ] || inferDataType( sampleProps[ k ] ),
+                    type: customTypes[ k ] || inferDataType( sampleProps[ k ], inferredTypes[ k ] ),
                 } );
             }
         } );
@@ -580,7 +595,7 @@ export const GeoJSONImportWizardModal = ( {
                             >
                                 { dynamicKeys.map( ( key ) => {
                                     const sampleVal = sampleProps[ key ];
-                                    const activeType = customTypes[ key ] || inferDataType( sampleVal );
+                                    const activeType = customTypes[ key ] || inferDataType( sampleVal, inferredTypes[ key ] );
 
                                     return (
                                         <Flex

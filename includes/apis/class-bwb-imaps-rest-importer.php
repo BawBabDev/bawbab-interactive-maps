@@ -39,6 +39,7 @@ class BWB_IMaps_REST_Importer {
 
         $detected_properties  = array();
         $sample_feature_props = array();
+        $all_property_values  = array();
 
         foreach ( $data['features'] as $feature ) {
             if ( ! empty( $feature['properties'] ) && is_array( $feature['properties'] ) ) {
@@ -47,8 +48,18 @@ class BWB_IMaps_REST_Importer {
                         $detected_properties[]      = $key;
                         $sample_feature_props[$key] = $val;
                     }
+                    if ( null !== $val && '' !== $val ) {
+                        $all_property_values[$key][] = $val;
+                    }
                 }
             }
+        }
+
+        // Infer type per key across all non-null values
+        $inferred_types = array();
+        foreach ( $detected_properties as $key ) {
+            $vals = $all_property_values[$key] ?? array();
+            $inferred_types[$key] = self::infer_property_data_type( $vals, $sample_feature_props[$key] ?? null );
         }
 
         return new WP_REST_Response( array(
@@ -56,7 +67,48 @@ class BWB_IMaps_REST_Importer {
             'total_features'      => count( $data['features'] ),
             'detected_properties' => $detected_properties,
             'sample_properties'   => $sample_feature_props,
+            'inferred_types'      => $inferred_types,
         ), 200 );
+    }
+
+    private static function infer_property_data_type( array $values, $sample_val ) {
+        if ( empty( $values ) ) {
+            return 'text';
+        }
+
+        $is_bool    = true;
+        $is_numeric = true;
+        $has_half_increment = false;
+
+        foreach ( $values as $v ) {
+            // Check boolean
+            if ( ! is_bool($v) && ! in_array( strtolower( (string) $v ), array( 'true', 'false', '0', '1' ), true ) ) {
+                $is_bool = false;
+            }
+
+            // Check numeric
+            if ( ! is_numeric( $v ) ) {
+                $is_numeric = false;
+            } else {
+                $num = (float) $v;
+                if ( fmod( $num, 1.0 ) === 0.5 || fmod( $num, 1.0 ) === -0.5 ) {
+                    $has_half_increment = true;
+                }
+            }
+        }
+
+        if ( $is_bool ) {
+            return 'boolean';
+        }
+
+        if ( $is_numeric ) {
+            if ( $has_half_increment ) {
+                return 'dual_counter';
+            }
+            return 'number';
+        }
+
+        return 'text';
     }
 
     public static function handle_spatial_geojson_import( $request ) {
