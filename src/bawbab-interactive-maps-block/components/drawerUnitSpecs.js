@@ -10,6 +10,16 @@ const formatFieldLabel = (str) => {
     return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
+/**
+ * Safely resolves an icon slug into a renderable node or null to avoid React #130 crashes
+ */
+const SafeIcon = ({ iconSlug }) => {
+    if (!iconSlug) return null;
+    const resolved = renderIconBySlug(iconSlug);
+    if (!resolved) return null;
+    return <>{resolved}</>;
+};
+
 export const UnitSpecs = ({ specs }) => {
     if (!specs) return null;
 
@@ -60,7 +70,7 @@ export const UnitSpecs = ({ specs }) => {
     otherKeys.forEach((key) => {
         const val = rawAttrs[key];
         const schemaItem = schema.find(s => s.key === key);
-        const label = schemaItem?.label || formatFieldLabel(key);
+        const attributeName = schemaItem?.label || formatFieldLabel(key);
         const fieldType = schemaItem?.type || (typeof val === 'boolean' ? 'boolean' : (isFinite(val) ? 'number' : 'text'));
 
         if (fieldType === 'dual_counter') {
@@ -71,15 +81,46 @@ export const UnitSpecs = ({ specs }) => {
             const secondaryIconSlug = rawIcons[1] || 'sink';
 
             const config = schemaItem?.config || {};
+            const mode = config.mode || 'split';
+
+            // Resolve explicit subcategory labels set in Schema Manager
+            let majorSubcategory = config.majorLabel;
+            let minorSubcategory = config.minorLabel;
+
+            // Smart defaults when subcategories are not explicitly named
+            if (!majorSubcategory) {
+                if (key === 'baths') {
+                    majorSubcategory = __('Shower', TEXT_DOMAIN);
+                } else if (mode === 'time') {
+                    majorSubcategory = __('Hours', TEXT_DOMAIN);
+                } else if (mode === 'measurement') {
+                    majorSubcategory = __('Feet', TEXT_DOMAIN);
+                } else {
+                    majorSubcategory = __('Major', TEXT_DOMAIN);
+                }
+            }
+
+            if (!minorSubcategory) {
+                if (key === 'baths') {
+                    minorSubcategory = __('Bathroom', TEXT_DOMAIN);
+                } else if (mode === 'time') {
+                    minorSubcategory = __('Minutes', TEXT_DOMAIN);
+                } else if (mode === 'measurement') {
+                    minorSubcategory = __('Inches', TEXT_DOMAIN);
+                } else {
+                    minorSubcategory = __('Minor', TEXT_DOMAIN);
+                }
+            }
+
             const formatted = formatDualCounter(val, {
-                mode: config.mode || 'split',
-                majorLabel: config.majorLabel || __('Full', TEXT_DOMAIN),
-                minorLabel: config.minorLabel || __('Half', TEXT_DOMAIN),
+                mode,
+                majorLabel: majorSubcategory,
+                minorLabel: minorSubcategory,
                 majorUnit: config.majorUnit || 'hr',
                 minorUnit: config.minorUnit || 'min'
             });
 
-            // Push both major and minor icons together on the exact same row line
+            // Push both major and minor subcategories on the exact same row line
             rows.push({
                 type: 'dual',
                 items: [
@@ -87,15 +128,17 @@ export const UnitSpecs = ({ specs }) => {
                         id: `${key}_major`,
                         type: 'number',
                         icon: primaryIconSlug,
-                        value: formatted.majorValue,
-                        label: formatted.majorLabel || label
+                        value: formatted.majorValue !== undefined && formatted.majorValue !== null ? formatted.majorValue : '--',
+                        label: majorSubcategory,
+                        parentAttribute: attributeName
                     },
                     {
                         id: `${key}_minor`,
                         type: 'number',
                         icon: secondaryIconSlug,
-                        value: formatted.minorValue,
-                        label: formatted.minorLabel || label
+                        value: formatted.minorValue !== undefined && formatted.minorValue !== null ? formatted.minorValue : '--',
+                        label: minorSubcategory,
+                        parentAttribute: attributeName
                     }
                 ]
             });
@@ -108,7 +151,7 @@ export const UnitSpecs = ({ specs }) => {
                 type: 'boolean',
                 icon: schemaItem?.icon || defaultIcon,
                 isTrue,
-                label
+                label: attributeName
             });
 
             if (standaloneBuffer.length === 2) flushBuffer();
@@ -118,7 +161,7 @@ export const UnitSpecs = ({ specs }) => {
                 type: 'number',
                 icon: schemaItem?.icon || 'hash',
                 value: isFinite(val) ? `x${val}` : val,
-                label
+                label: attributeName
             });
 
             if (standaloneBuffer.length === 2) flushBuffer();
@@ -128,7 +171,7 @@ export const UnitSpecs = ({ specs }) => {
                 type: 'text',
                 icon: schemaItem?.icon || 'file-text',
                 value: String(val),
-                label
+                label: attributeName
             });
 
             if (standaloneBuffer.length === 2) flushBuffer();
@@ -145,7 +188,7 @@ export const UnitSpecs = ({ specs }) => {
                     <div className="spec-item area-item">
                         <div className="spec-icon-row">
                             <span className="fa-icon" style={{ color: '#333' }}>
-                                {renderIconBySlug('area')}
+                                <SafeIcon iconSlug="area" />
                             </span>
                             <span className="spec-number">{sqFtVal}</span>
                         </div>
@@ -154,40 +197,39 @@ export const UnitSpecs = ({ specs }) => {
                 </div>
             )}
 
-            {/* SUBSEQUENT ROWS: PAIRED 2 PER ROW */}
+            {/* SUBSEQUENT ROWS: DUAL COUNTER / PAIRED ITEMS */}
             {rows.map((row, rowIndex) => (
                 <div key={rowIndex} className="specs-row dual-row">
-                    {row.items.map((item) => {
-                        const iconSvg = renderIconBySlug(item.icon);
-
-                        if (item.type === 'boolean') {
-                            return (
-                                <div key={item.id} className={`spec-item ${!item.isTrue ? 'is-disabled' : ''}`}>
-                                    <div className="spec-icon-row">
-                                        <div className="icon-wrapper">
-                                            <span className="fa-icon" style={{ color: item.isTrue ? '#333' : '#a7aaad' }}>
-                                                {iconSvg}
-                                            </span>
-                                            {!item.isTrue && <span className="no-sign"></span>}
-                                        </div>
-                                    </div>
-                                    <span className="spec-label">{item.label}</span>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div key={item.id} className="spec-item">
-                                <div className="spec-icon-row">
-                                    <span className="fa-icon" style={{ color: '#333' }}>
-                                        {iconSvg}
+                    {row.items.map((item) => (
+                        <div 
+                            key={item.id} 
+                            className={`spec-item ${item.type === 'boolean' && !item.isTrue ? 'is-disabled' : ''}`}
+                        >
+                            <div className="spec-icon-row">
+                                <div className="icon-wrapper" style={{ position: 'relative', display: 'inline-flex' }}>
+                                    <span className="fa-icon" style={{ color: item.type === 'boolean' && !item.isTrue ? '#a7aaad' : '#333' }}>
+                                        <SafeIcon iconSlug={item.icon} />
                                     </span>
-                                    <span className="spec-number">{item.value}</span>
+                                    {item.type === 'boolean' && !item.isTrue && <span className="no-sign"></span>}
                                 </div>
-                                <span className="spec-label">{item.label}</span>
+                                {item.type !== 'boolean' && (
+                                    <span className="spec-number">{item.value}</span>
+                                )}
                             </div>
-                        );
-                    })}
+
+                            {/* Subcategory Label (e.g. Shower, Bathroom, Full Bath, Half Bath) */}
+                            <span className="spec-label" style={{ fontWeight: '600' }}>
+                                {item.label}
+                            </span>
+
+                            {/* Parent Custom Attribute Name */}
+                            {item.parentAttribute && (
+                                <span className="spec-sublabel" style={{ fontSize: '10px', color: '#888', display: 'block', marginTop: '2px' }}>
+                                    {item.parentAttribute}
+                                </span>
+                            )}
+                        </div>
+                    ))}
                 </div>
             ))}
         </div>

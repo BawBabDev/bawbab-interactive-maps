@@ -1,33 +1,21 @@
 import { useState } from '@wordpress/element';
 import { 
-    Button, TextControl, SelectControl, Flex, FlexItem,
-    Spinner, Dashicon, Modal, __experimentalText as Text 
+    Button, TextControl, SelectControl, Flex, 
+    Spinner, __experimentalText as Text 
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import { IconPickerModal } from './iconPickerModal';
+import { AttributeConfigModal } from './attributeConfigModal';
 import { renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
-const DEFAULT_LEGACY_ICONS = {
-    sq_ft: 'area',
-    baths: 'shower,sink',
-    fireplace: 'fireplace',
-    sunroom: 'sun'
-};
 
 const FIELD_TYPE_OPTIONS = [
     { label: __('Text', TEXT_DOMAIN), value: 'text' },
     { label: __('Number', TEXT_DOMAIN), value: 'number' },
     { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
     { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
-];
-
-const DUAL_MODE_OPTIONS = [
-    { label: __('Category Split (Full / Half Items)', TEXT_DOMAIN), value: 'split' },
-    { label: __('Time Breakdown (Hours / Minutes)', TEXT_DOMAIN), value: 'time' },
-    { label: __('Measurement (Feet / Inches)', TEXT_DOMAIN), value: 'measurement' },
 ];
 
 const createKeySlug = (label) => {
@@ -39,6 +27,7 @@ const createKeySlug = (label) => {
 };
 
 const renderStyledIcon = (iconSlug, size = 18) => {
+    if (!iconSlug) return null;
     const icon = renderIconBySlug(iconSlug, { size });
     if (!icon) return null;
 
@@ -86,16 +75,13 @@ export const AttributeSchemaManager = ({
     const [newIconSecondary, setNewIconSecondary] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Dual Counter Config State
-    const [dualMode, setDualMode] = useState('split');
-    const [majorLabel, setMajorLabel] = useState('');
-    const [minorLabel, setMinorLabel] = useState('');
+    // Configuration Modal state
+    const [editingAttribute, setEditingAttribute] = useState(null);
 
+    // Icon Picker Modal state
     const [isIconModalOpen, setIsIconModalOpen] = useState(false);
     const [editingItemKey, setEditingItemKey] = useState(null);
     const [editingTargetSlot, setEditingTargetSlot] = useState('primary');
-
-    const [pendingTypeChange, setPendingTypeChange] = useState(null);
 
     const derivedKey = createKeySlug(newLabel);
 
@@ -105,23 +91,14 @@ export const AttributeSchemaManager = ({
 
         let formattedIcon = newIconPrimary;
         if (newType === 'dual_counter') {
-            const p = newIconPrimary || 'shower';
-            const s = newIconSecondary || 'sink';
-            formattedIcon = `${p},${s}`;
+            formattedIcon = `${newIconPrimary || ''},${newIconSecondary || ''}`;
         }
-
-        const config = newType === 'dual_counter' ? {
-            mode: dualMode,
-            majorLabel: majorLabel || (dualMode === 'split' ? __('Full', TEXT_DOMAIN) : 'hr'),
-            minorLabel: minorLabel || (dualMode === 'split' ? __('Half', TEXT_DOMAIN) : 'min'),
-        } : null;
 
         const res = await onUpdateKey({
             key: derivedKey,
             label: newLabel.trim(),
             type: newType,
-            icon: formattedIcon,
-            config
+            icon: formattedIcon
         });
 
         if (res.success) {
@@ -129,9 +106,6 @@ export const AttributeSchemaManager = ({
             setNewType('text');
             setNewIconPrimary('');
             setNewIconSecondary('');
-            setMajorLabel('');
-            setMinorLabel('');
-            setDualMode('split');
             if (onRefreshFeatures) onRefreshFeatures();
         }
         setIsSubmitting(false);
@@ -144,32 +118,18 @@ export const AttributeSchemaManager = ({
         }
     };
 
-    const triggerTypeChangeConfirmation = (item, targetType) => {
-        if (normalizeFieldType(item.type) === targetType) return;
-        setPendingTypeChange({ item, targetType });
-    };
-
-    const confirmTypeChange = async () => {
-        if (!pendingTypeChange) return;
-
-        const { item, targetType } = pendingTypeChange;
-        let updatedIcon = item.icon;
-        
-        if (targetType === 'dual_counter' && (!item.icon || !item.icon.includes(','))) {
-            updatedIcon = item.icon ? `${item.icon},sink` : 'shower,sink';
-        }
-
-        const res = await onUpdateKey({
-            ...item,
-            type: targetType,
-            icon: updatedIcon
-        });
-
-        if (res.success && onRefreshFeatures) {
+    const handleSaveModalConfig = async (updatedItem) => {
+        const res = await onUpdateKey(updatedItem);
+        if (res && res.success !== false && onRefreshFeatures) {
             onRefreshFeatures();
         }
+        return res;
+    };
 
-        setPendingTypeChange(null);
+    const handleOpenIconPicker = (itemKey, slot = 'primary') => {
+        setEditingItemKey(itemKey);
+        setEditingTargetSlot(slot);
+        setIsIconModalOpen(true);
     };
 
     const handleSelectIcon = (selectedIconKey) => {
@@ -180,21 +140,22 @@ export const AttributeSchemaManager = ({
                 const normalizedType = normalizeFieldType(item.type);
 
                 if (normalizedType === 'dual_counter') {
-                    const rawIcons = (item.icon || DEFAULT_LEGACY_ICONS[item.key] || 'shower,sink').split(',');
-                    const primary = rawIcons[0] || 'shower';
-                    const secondary = rawIcons[1] || 'sink';
+                    const rawIcons = (item.icon || '').split(',');
+                    const primary = rawIcons[0] || '';
+                    const secondary = rawIcons[1] || '';
 
                     if (editingTargetSlot === 'secondary') {
-                        updatedIcon = `${primary},${selectedIconKey || 'sink'}`;
+                        updatedIcon = `${primary},${selectedIconKey || ''}`;
                     } else {
-                        updatedIcon = `${selectedIconKey || 'shower'},${secondary}`;
+                        updatedIcon = `${selectedIconKey || ''},${secondary}`;
                     }
                 }
 
-                onUpdateKey({
-                    ...item,
-                    icon: updatedIcon
-                }).then(() => {
+                const updatedItem = { ...item, icon: updatedIcon };
+                onUpdateKey(updatedItem).then(() => {
+                    if (editingAttribute && editingAttribute.key === item.key) {
+                        setEditingAttribute(updatedItem);
+                    }
                     if (onRefreshFeatures) onRefreshFeatures();
                 });
             }
@@ -207,16 +168,6 @@ export const AttributeSchemaManager = ({
         }
     };
 
-    const handleUnassignIcon = async (item) => {
-        const res = await onUpdateKey({
-            ...item,
-            icon: ''
-        });
-        if (res.success && onRefreshFeatures) {
-            onRefreshFeatures();
-        }
-    };
-
     return (
         <div style={{ padding: '20px 0' }}>
             <Text variant="title.medium" display="block" style={{ marginBottom: '6px' }}>
@@ -226,7 +177,7 @@ export const AttributeSchemaManager = ({
                 {__('Manage custom fields across all map features. Adding a field registers it globally; deleting a field purges it from all units in the database.', TEXT_DOMAIN)}
             </Text>
 
-            {/* ADD NEW FIELD FORM */}
+            {/* REGISTER NEW FIELD FORM */}
             <div style={{ padding: '16px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '25px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Register New Custom Field', TEXT_DOMAIN)}
@@ -251,18 +202,8 @@ export const AttributeSchemaManager = ({
                             options={FIELD_TYPE_OPTIONS}
                             onChange={(val) => {
                                 setNewType(val);
-                                if (val === 'dual_counter') {
-                                    if (!newIconPrimary) setNewIconPrimary('shower');
-                                    if (!newIconSecondary) setNewIconSecondary('sink');
-                                }
                             }}
-                            style={{ 
-                                height: '36px', 
-                                minHeight: '36px', 
-                                lineHeight: '36px',
-                                padding: '0 8px',
-                                marginTop: 0
-                            }}
+                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
                             __nextHasNoMarginBottom
                         />
                     </div>
@@ -276,42 +217,28 @@ export const AttributeSchemaManager = ({
                             <Flex gap={1} align="center">
                                 <Button
                                     variant="secondary"
-                                    onClick={() => {
-                                        setEditingItemKey(null);
-                                        setEditingTargetSlot('primary');
-                                        setIsIconModalOpen(true);
-                                    }}
+                                    onClick={() => handleOpenIconPicker(null, 'primary')}
                                     style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
                                     label={__('Select Major Unit Icon', TEXT_DOMAIN)}
                                     showTooltip
                                 >
-                                    {renderStyledIcon(newIconPrimary || 'shower', 18)}
+                                    {renderStyledIcon(newIconPrimary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose Icon', TEXT_DOMAIN)}</span>}
                                 </Button>
-
                                 <span style={{ fontSize: '12px', color: '#888' }}>/</span>
-
                                 <Button
                                     variant="secondary"
-                                    onClick={() => {
-                                        setEditingItemKey(null);
-                                        setEditingTargetSlot('secondary');
-                                        setIsIconModalOpen(true);
-                                    }}
+                                    onClick={() => handleOpenIconPicker(null, 'secondary')}
                                     style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
                                     label={__('Select Minor Unit Icon', TEXT_DOMAIN)}
                                     showTooltip
                                 >
-                                    {renderStyledIcon(newIconSecondary || 'sink', 18)}
+                                    {renderStyledIcon(newIconSecondary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose Icon', TEXT_DOMAIN)}</span>}
                                 </Button>
                             </Flex>
                         ) : (
                             <Button
                                 variant="secondary"
-                                onClick={() => {
-                                    setEditingItemKey(null);
-                                    setEditingTargetSlot('primary');
-                                    setIsIconModalOpen(true);
-                                }}
+                                onClick={() => handleOpenIconPicker(null, 'primary')}
                                 style={{ height: '36px', minHeight: '36px', width: '100%', justifyContent: 'center', gap: '6px' }}
                             >
                                 {newIconPrimary && renderIconBySlug(newIconPrimary) ? (
@@ -339,44 +266,6 @@ export const AttributeSchemaManager = ({
                     </div>
                 </div>
 
-                {/* DUAL COUNTER MODE CONFIGURATION SUB-PANEL */}
-                {normalizeFieldType(newType) === 'dual_counter' && (
-                    <div style={{ marginTop: '15px', padding: '12px', background: '#fff', border: '1px solid #d0d7de', borderRadius: '4px' }}>
-                        <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '8px' }}>
-                            {__('Dual Counter Interpretation Settings', TEXT_DOMAIN)}
-                        </Text>
-                        <Flex gap={3} align="center">
-                            <FlexItem style={{ flex: '0 0 220px' }}>
-                                <SelectControl
-                                    label={__('Display Mode', TEXT_DOMAIN)}
-                                    value={dualMode}
-                                    options={DUAL_MODE_OPTIONS}
-                                    onChange={setDualMode}
-                                    __nextHasNoMarginBottom
-                                />
-                            </FlexItem>
-                            <FlexItem style={{ flex: 1 }}>
-                                <TextControl
-                                    label={__('Major Unit Label', TEXT_DOMAIN)}
-                                    placeholder={dualMode === 'split' ? __('Full Bath / Item', TEXT_DOMAIN) : 'hr'}
-                                    value={majorLabel}
-                                    onChange={setMajorLabel}
-                                    __nextHasNoMarginBottom
-                                />
-                            </FlexItem>
-                            <FlexItem style={{ flex: 1 }}>
-                                <TextControl
-                                    label={__('Minor Unit Label', TEXT_DOMAIN)}
-                                    placeholder={dualMode === 'split' ? __('Half Bath / Item', TEXT_DOMAIN) : 'min'}
-                                    value={minorLabel}
-                                    onChange={setMinorLabel}
-                                    __nextHasNoMarginBottom
-                                />
-                            </FlexItem>
-                        </Flex>
-                    </div>
-                )}
-
                 {derivedKey && (
                     <div style={{ marginTop: '8px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
                         {sprintf(__('Database Key Slug: %s', TEXT_DOMAIN), derivedKey)}
@@ -384,7 +273,7 @@ export const AttributeSchemaManager = ({
                 )}
             </div>
 
-            {/* SCHEMA GRID */}
+            {/* SCHEMA GRID TABLE */}
             {isLoading ? (
                 <Flex justify="center" style={{ padding: '40px' }}><Spinner /></Flex>
             ) : schema.length === 0 ? (
@@ -393,7 +282,7 @@ export const AttributeSchemaManager = ({
                 </p>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px 140px 80px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px 100px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
                         <span>{__('Display Label', TEXT_DOMAIN)}</span>
                         <span>{__('Database Slug', TEXT_DOMAIN)}</span>
                         <span>{__('Type', TEXT_DOMAIN)}</span>
@@ -404,104 +293,44 @@ export const AttributeSchemaManager = ({
                     {schema.map((item) => {
                         const normalizedType = normalizeFieldType(item.type);
                         const isDualCounter = normalizedType === 'dual_counter';
-                        const effectiveIconSlug = item.icon || DEFAULT_LEGACY_ICONS[item.key] || '';
+                        const effectiveIconSlug = item.icon || '';
                         const iconParts = effectiveIconSlug.split(',');
                         
-                        const primarySlug = iconParts[0] || 'shower';
-                        const secondarySlug = iconParts[1] || 'sink';
+                        const primarySlug = iconParts[0] || '';
+                        const secondarySlug = iconParts[1] || '';
 
                         return (
-                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px 140px 80px', gap: '12px', padding: '8px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
+                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px 100px', gap: '12px', padding: '8px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
                                 <span style={{ fontSize: '13px', fontWeight: '500' }}>{item.label || item.key}</span>
                                 <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '3px', fontSize: '12px', width: 'fit-content' }}>{item.key}</code>
                                 
-                                <div className="bwb-select-control-wrapper">
-                                    <SelectControl
-                                        value={normalizedType}
-                                        options={FIELD_TYPE_OPTIONS}
-                                        onChange={(val) => triggerTypeChangeConfirmation(item, val)}
-                                        style={{ 
-                                            height: '28px', 
-                                            minHeight: '28px', 
-                                            lineHeight: '28px', 
-                                            fontSize: '11px',
-                                            padding: '0 6px',
-                                            marginTop: 0
-                                        }}
-                                        __nextHasNoMarginBottom
-                                    />
-                                </div>
+                                <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', background: '#f0f6fb', padding: '2px 8px', borderRadius: '10px', width: 'fit-content', fontWeight: '600' }}>
+                                    {normalizedType}
+                                </span>
                                 
                                 <Flex align="center" gap={1}>
                                     {isDualCounter ? (
                                         <>
-                                            <Button
-                                                variant="tertiary"
-                                                isSmall
-                                                onClick={() => {
-                                                    setEditingItemKey(item.key);
-                                                    setEditingTargetSlot('primary');
-                                                    setIsIconModalOpen(true);
-                                                }}
-                                                style={{ padding: '0 4px', height: '28px', minWidth: '28px' }}
-                                                label={__('Major Unit Icon', TEXT_DOMAIN)}
-                                                showTooltip
-                                            >
-                                                {renderStyledIcon(primarySlug, 16)}
-                                            </Button>
-
+                                            {renderStyledIcon(primarySlug, 16) || <span style={{ fontSize: '11px', color: '#bbb' }}>--</span>}
                                             <span style={{ fontSize: '10px', color: '#aaa' }}>/</span>
-
-                                            <Button
-                                                variant="tertiary"
-                                                isSmall
-                                                onClick={() => {
-                                                    setEditingItemKey(item.key);
-                                                    setEditingTargetSlot('secondary');
-                                                    setIsIconModalOpen(true);
-                                                }}
-                                                style={{ padding: '0 4px', height: '28px', minWidth: '28px' }}
-                                                label={__('Minor Unit Icon', TEXT_DOMAIN)}
-                                                showTooltip
-                                            >
-                                                {renderStyledIcon(secondarySlug, 16)}
-                                            </Button>
+                                            {renderStyledIcon(secondarySlug, 16) || <span style={{ fontSize: '11px', color: '#bbb' }}>--</span>}
                                         </>
                                     ) : (
-                                        <Button
-                                            variant="tertiary"
-                                            isSmall
-                                            onClick={() => {
-                                                setEditingItemKey(item.key);
-                                                setEditingTargetSlot('primary');
-                                                setIsIconModalOpen(true);
-                                            }}
-                                            style={{ padding: '0 6px', height: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                            label={__('Assign or Change Icon', TEXT_DOMAIN)}
-                                            showTooltip
-                                        >
-                                            {renderIconBySlug(primarySlug) ? (
-                                                renderStyledIcon(primarySlug, 16)
-                                            ) : (
-                                                <span style={{ fontSize: '11px', color: '#757575' }}>{__('Set Icon', TEXT_DOMAIN)}</span>
-                                            )}
-                                        </Button>
-                                    )}
-
-                                    {item.icon && (
-                                        <Button
-                                            isDestructive
-                                            icon="no-alt"
-                                            isSmall
-                                            onClick={() => handleUnassignIcon(item)}
-                                            label={__('Unassign Icon', TEXT_DOMAIN)}
-                                            showTooltip
-                                            style={{ height: '24px', minWidth: '24px', padding: 0 }}
-                                        />
+                                        renderStyledIcon(primarySlug, 16) || <span style={{ fontSize: '11px', color: '#999' }}>--</span>
                                     )}
                                 </Flex>
 
-                                <div style={{ textAlign: 'right' }}>
+                                <Flex justify="end" gap={1}>
+                                    {/* CONFIGURE ATTRIBUTE MODAL TRIGGER */}
+                                    <Button
+                                        variant="secondary"
+                                        icon="admin-generic"
+                                        isSmall
+                                        onClick={() => setEditingAttribute(item)}
+                                        label={__('Configure Attribute', TEXT_DOMAIN)}
+                                        showTooltip
+                                    />
+
                                     <Button
                                         isDestructive
                                         icon="trash"
@@ -510,53 +339,22 @@ export const AttributeSchemaManager = ({
                                         label={__('Delete Field Globally', TEXT_DOMAIN)}
                                         showTooltip
                                     />
-                                </div>
+                                </Flex>
                             </div>
                         );
                     })}
                 </div>
             )}
 
-            {/* SAFETY MODAL */}
-            {pendingTypeChange && (
-                <Modal
-                    title={__('Warning: Change Field Attribute Type?', TEXT_DOMAIN)}
-                    onRequestClose={() => setPendingTypeChange(null)}
-                >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <Text display="block" style={{ fontSize: '13px', lineHeight: '1.5' }}>
-                            {sprintf(
-                                __('You are changing the data type for attribute "%s" to "%s".', TEXT_DOMAIN),
-                                pendingTypeChange.item.label || pendingTypeChange.item.key,
-                                pendingTypeChange.targetType
-                            )}
-                        </Text>
-                        
-                        <div style={{ padding: '12px', background: '#fff8e5', borderLeft: '4px solid #dba617', borderRadius: '3px' }}>
-                            <Text display="block" style={{ fontSize: '12px', color: '#645300' }}>
-                                <strong>{__('Please Note:', TEXT_DOMAIN)}</strong> {__('This action changes the schema interpretation lens for UI rendering, but DOES NOT convert raw values stored in MySQL.', TEXT_DOMAIN)}
-                            </Text>
-                        </div>
+            {/* MODULAR ATTRIBUTE CONFIGURATION MODAL */}
+            <AttributeConfigModal
+                isOpen={Boolean(editingAttribute)}
+                item={editingAttribute}
+                onClose={() => setEditingAttribute(null)}
+                onSave={handleSaveModalConfig}
+            />
 
-                        <Flex justify="flex-end" style={{ marginTop: '10px', gap: '10px' }}>
-                            <Button
-                                variant="tertiary"
-                                onClick={() => setPendingTypeChange(null)}
-                            >
-                                {__('Cancel', TEXT_DOMAIN)}
-                            </Button>
-                            <Button
-                                variant="primary"
-                                onClick={confirmTypeChange}
-                            >
-                                {__('Confirm Type Change', TEXT_DOMAIN)}
-                            </Button>
-                        </Flex>
-                    </div>
-                </Modal>
-            )}
-
-            {/* ICON PICKER MODAL */}
+            {/* REUSABLE ICON PICKER MODAL */}
             <IconPickerModal
                 isOpen={isIconModalOpen}
                 onClose={() => setIsIconModalOpen(false)}
@@ -566,14 +364,14 @@ export const AttributeSchemaManager = ({
                         ? (() => {
                             const item = schema.find(s => s.key === editingItemKey);
                             const normalizedType = normalizeFieldType(item?.type);
-                            const raw = item?.icon || DEFAULT_LEGACY_ICONS[editingItemKey] || '';
+                            const raw = item?.icon || '';
                             if (normalizedType === 'dual_counter') {
                                 const parts = raw.split(',');
-                                return editingTargetSlot === 'secondary' ? (parts[1] || 'sink') : (parts[0] || 'shower');
+                                return editingTargetSlot === 'secondary' ? (parts[1] || '') : (parts[0] || '');
                             }
                             return raw;
                         })()
-                        : (editingTargetSlot === 'secondary' ? (newIconSecondary || 'sink') : (newIconPrimary || 'shower'))
+                        : (editingTargetSlot === 'secondary' ? newIconSecondary : newIconPrimary)
                 }
             />
         </div>

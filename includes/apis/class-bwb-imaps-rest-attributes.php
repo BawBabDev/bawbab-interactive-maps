@@ -58,7 +58,6 @@ class BWB_IMaps_REST_Attributes {
                                 if ( is_bool( $v ) || 'true' === $v || 'false' === $v ) {
                                     $type = 'boolean';
                                 } elseif ( is_numeric( $v ) ) {
-                                    // Check if float contains fractional step (e.g. 1.5)
                                     $float_val = (float) $v;
                                     $type      = ( $float_val !== floor( $float_val ) ) ? 'dual_counter' : 'number';
                                 } else {
@@ -87,8 +86,23 @@ class BWB_IMaps_REST_Attributes {
         $label = sanitize_text_field( $request->get_param( 'label' ) );
         $type  = sanitize_text_field( $request->get_param( 'type' ) ?: 'text' );
         
-        $has_icon_param = $request->has_param( 'icon' );
-        $icon           = $has_icon_param ? sanitize_text_field( $request->get_param( 'icon' ) ) : null;
+        $has_icon_param   = $request->has_param( 'icon' );
+        $icon             = $has_icon_param ? sanitize_text_field( $request->get_param( 'icon' ) ) : null;
+
+        // FIXED: Extract and sanitize config parameter for dual_counter (mode, majorLabel, minorLabel)
+        $has_config_param = $request->has_param( 'config' );
+        $raw_config       = $has_config_param ? $request->get_param( 'config' ) : null;
+        $config           = null;
+
+        if ( is_array( $raw_config ) ) {
+            $config = array(
+                'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
+                'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
+                'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
+                'majorUnit'  => sanitize_text_field( $raw_config['majorUnit'] ?? '' ),
+                'minorUnit'  => sanitize_text_field( $raw_config['minorUnit'] ?? '' ),
+            );
+        }
 
         if ( empty( $key ) ) {
             return new WP_Error( 'missing_key', 'Attribute key is required.', array( 'status' => 400 ) );
@@ -105,6 +119,9 @@ class BWB_IMaps_REST_Attributes {
                 if ( $has_icon_param ) {
                     $item['icon'] = $icon;
                 }
+                if ( $has_config_param ) {
+                    $item['config'] = $config;
+                }
                 $updated = true;
                 break;
             }
@@ -112,10 +129,11 @@ class BWB_IMaps_REST_Attributes {
 
         if ( ! $updated ) {
             $schema[] = array(
-                'key'   => $key,
-                'label' => ! empty( $label ) ? $label : ucwords( str_replace( '_', ' ', $key ) ),
-                'type'  => $type,
-                'icon'  => $has_icon_param ? $icon : '',
+                'key'    => $key,
+                'label'  => ! empty( $label ) ? $label : ucwords( str_replace( '_', ' ', $key ) ),
+                'type'   => $type,
+                'icon'   => $has_icon_param ? $icon : '',
+                'config' => $config,
             );
         }
 
@@ -177,10 +195,18 @@ class BWB_IMaps_REST_Attributes {
         foreach ( $keys as $k => $info ) {
             $clean_key = '';
             $type      = 'text';
+            $config    = null;
 
             if ( is_array( $info ) ) {
                 $clean_key = sanitize_key( $info['key'] ?? $k );
                 $type      = sanitize_text_field( $info['type'] ?? 'text' );
+                if ( isset( $info['config'] ) && is_array( $info['config'] ) ) {
+                    $config = array(
+                        'mode'       => sanitize_text_field( $info['config']['mode'] ?? 'split' ),
+                        'majorLabel' => sanitize_text_field( $info['config']['majorLabel'] ?? '' ),
+                        'minorLabel' => sanitize_text_field( $info['config']['minorLabel'] ?? '' ),
+                    );
+                }
             } elseif ( is_string( $k ) && ! is_numeric( $k ) ) {
                 $clean_key = sanitize_key( $k );
                 $type      = sanitize_text_field( $info );
@@ -191,10 +217,11 @@ class BWB_IMaps_REST_Attributes {
             if ( ! empty( $clean_key ) && ! in_array( $clean_key, $existing_keys, true ) ) {
                 $label = ucwords( str_replace( '_', ' ', $clean_key ) );
                 $schema[] = array(
-                    'key'   => $clean_key,
-                    'label' => $label,
-                    'type'  => ! empty( $type ) ? $type : 'text',
-                    'icon'  => '',
+                    'key'    => $clean_key,
+                    'label'  => $label,
+                    'type'   => ! empty( $type ) ? $type : 'text',
+                    'icon'   => '',
+                    'config' => $config,
                 );
                 $existing_keys[] = $clean_key;
                 $has_changes     = true;
