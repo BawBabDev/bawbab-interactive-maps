@@ -23,6 +23,9 @@ import { BatchUpdateModal } from './batchUpdateModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
+// Fields strictly protected from bulk editing
+const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
+
 const formatFieldLabel = ( str ) => {
     if ( ! str ) return '';
     return str
@@ -259,9 +262,14 @@ const DataEditor = ( {
     // Category Manager
     const { groups, categoryMap } = useCategoryManager();
 
-    // Check if the current active feature specifically has un-synced dirty keys
+    // Check if the current active feature specifically has un-synced non-protected dirty keys
     const activeDirtyKeys = draft._dirtyKeys || [];
-    const hasActiveFeatureDirtyKeys = activeDirtyKeys.length > 0;
+    const hasActiveFeatureDirtyKeys = useMemo(() => {
+        return activeDirtyKeys.some((k) => {
+            const cleanKey = k.startsWith('custom_attr::') ? k.replace('custom_attr::', '') : k;
+            return !PROTECTED_FIELDS.includes(cleanKey);
+        });
+    }, [activeDirtyKeys]);
 
     const getValue = ( key, dbValue ) => {
         if ( draft && draft.hasOwnProperty( key ) ) return draft[ key ];
@@ -358,15 +366,15 @@ const DataEditor = ( {
         globalSchema,
     ] );
 
-    const updateCustomAttr = ( key, value ) => {
-        updateDraft( {
-            custom_attributes: {
-                ...( draft.custom_attributes ||
-                    localProps.custom_attributes ||
-                    {} ),
-                [ key ]: value,
+    const updateCustomAttr = ( key, value, options = {} ) => {
+        updateDraft( 
+            {
+                custom_attributes: {
+                    [ key ]: value,
+                },
             },
-        } );
+            options
+        );
     };
 
     const clearCustomAttrValue = ( key ) => {
@@ -399,7 +407,9 @@ const DataEditor = ( {
             if ( newAttributeConfig.type === 'boolean' ) {
                 initialValue = false;
             }
-            updateCustomAttr( keySlug, initialValue );
+            
+            // Pass isSystemInit: true so adding a new global field doesn't make the active feature dirty
+            updateCustomAttr( keySlug, initialValue, { isSystemInit: true } );
 
             setShowAddPropModal( false );
             return { success: true };

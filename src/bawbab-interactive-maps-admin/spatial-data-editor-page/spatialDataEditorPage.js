@@ -313,22 +313,25 @@ const SpatialDataEditorPage = () => {
         return () => clearTimeout( scrollTimer );
     }, [ activeFeature, displayStructure ] );
 
-    const updateDraft = ( layerType, fid, data ) => {
+    const updateDraft = ( layerType, fid, data, options = {} ) => {
         const compositeKey = `${ layerType }::${ fid }`;
         setDrafts( ( prev ) => {
             const currentDraft = prev[ compositeKey ] || {};
             const currentDirty = new Set( currentDraft._dirtyKeys || [] );
 
-            // Register every modified key into _dirtyKeys
-            Object.keys( data ).forEach( ( key ) => {
-                if ( key === 'custom_attributes' ) {
-                    Object.keys( data.custom_attributes || {} ).forEach( ( attrKey ) => {
-                        currentDirty.add( `custom_attr::${ attrKey }` );
-                    } );
-                } else {
-                    currentDirty.add( key );
-                }
-            } );
+            // Only register dirty keys if not a system initialization
+            if ( ! options.isSystemInit ) {
+                Object.keys( data ).forEach( ( key ) => {
+                    if ( key === 'custom_attributes' ) {
+                        // Register ONLY the incoming modified attribute key(s), NOT the whole dictionary
+                        Object.keys( data.custom_attributes || {} ).forEach( ( attrKey ) => {
+                            currentDirty.add( `custom_attr::${ attrKey }` );
+                        } );
+                    } else if ( key !== '_dirtyKeys' ) {
+                        currentDirty.add( key );
+                    }
+                } );
+            }
 
             const updatedCustomAttrs = {
                 ...( currentDraft.custom_attributes || {} ),
@@ -1164,12 +1167,13 @@ const SpatialDataEditorPage = () => {
                                         globalSchema={ schema }
                                         allFeatures={ features }
                                         updateSchemaKey={ updateSchemaKey }
-                                        updateDraft={ ( data ) =>
+                                        updateDraft={ ( data, options ) =>
                                             updateDraft(
                                                 activeFeature.properties
                                                     .layer_type,
                                                 activeFeature.properties.fid,
-                                                data
+                                                data,
+                                                options
                                             )
                                         }
                                         onUpdate={ saveAllDrafts }
