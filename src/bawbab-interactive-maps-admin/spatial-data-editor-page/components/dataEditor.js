@@ -51,27 +51,26 @@ const PropertyInputControl = ( {
 	const lowerKey = propKey.toLowerCase();
 	const displayLabel = label || formatFieldLabel( propKey );
 
-	const isValueBool =
-		typeof value === 'boolean' || value === 'true' || value === 'false';
-	const isValueNumber =
-		typeof value === 'number' ||
-		( ! isNaN( Number( value ) ) &&
-			value !== '' &&
-			lowerKey !== 'code' &&
-			lowerKey !== 'fid' );
+	// 1. Check schemaType explicitly first before falling back to dynamic value inference
+	let resolvedType = 'text';
 
-	const resolvedType =
-		schemaType && schemaType !== 'text'
-			? schemaType
-			: lowerKey === 'baths' ||
-			  lowerKey === 'bathrooms' ||
-			  lowerKey === 'bath'
-			? 'bathrooms'
-			: isValueBool
-			? 'boolean'
-			: isValueNumber
-			? 'number'
-			: 'text';
+	if ( schemaType ) {
+		resolvedType = schemaType;
+	} else if (
+		typeof value === 'boolean' ||
+		value === 'true' ||
+		value === 'false'
+	) {
+		resolvedType = 'boolean';
+	} else if (
+		typeof value === 'number' &&
+		lowerKey !== 'code' &&
+		lowerKey !== 'fid'
+	) {
+		resolvedType = 'number';
+	} else {
+		resolvedType = 'text';
+	}
 
 	if ( resolvedType === 'boolean' ) {
 		const isNullOrUnset =
@@ -175,13 +174,13 @@ const PropertyInputControl = ( {
 		</div>
 	);
 
-	if ( resolvedType === 'bathrooms' ) {
+	if ( resolvedType === 'dual_counter' ) {
 		return renderAlignedControl(
 			<TextControl
 				type="number"
 				step="0.5"
 				min="0"
-				max="20"
+				max="100"
 				value={
 					value !== null && value !== undefined && value !== ''
 						? String( value )
@@ -215,8 +214,10 @@ const PropertyInputControl = ( {
 		);
 	}
 
+	// STANDARD TEXT INPUT FIELD
 	return renderAlignedControl(
 		<TextControl
+			type="text"
 			value={
 				value !== null && value !== undefined ? String( value ) : ''
 			}
@@ -269,7 +270,6 @@ const DataEditor = ( {
 		return '';
 	};
 
-	// Category Selection State (using layer_type::category_slug)
 	const currentCategory = getValue( 'category', localProps.category );
 	const layerType = localProps.layer_type || 'buildings';
 	const compositeCategoryKey = `${ layerType }::${ currentCategory }`;
@@ -308,7 +308,6 @@ const DataEditor = ( {
 		setLocalProps( building.properties );
 	}, [ building.properties ] );
 
-	// --- DIRECT FLAG OVERRIDE STATUS ---
 	const hasCustomFillColor =
 		getValue( 'use_custom_color', localProps.use_custom_color ) === true ||
 		getValue( 'use_custom_color', localProps.use_custom_color ) === 1;
@@ -386,7 +385,7 @@ const DataEditor = ( {
 			}
 
 			let formattedValue = newPropValue;
-			if ( newPropType === 'number' || newPropType === 'bathrooms' ) {
+			if ( newPropType === 'number' || newPropType === 'dual_counter' ) {
 				formattedValue =
 					newPropValue !== '' ? Number( newPropValue ) : null;
 			} else if ( newPropType === 'boolean' ) {
@@ -407,7 +406,6 @@ const DataEditor = ( {
 		}
 	};
 
-	// Form Base Structure Values
 	const featureName = getValue( 'name', localProps.name );
 	const featureCode = getValue( 'code', localProps.code );
 	const customTitle = getValue( 'title', localProps.title );
@@ -483,7 +481,6 @@ const DataEditor = ( {
 				</Text>
 			</div>
 
-			{ /* 1. BASE STRUCTURE: NAME AND CODE FIELDS */ }
 			<div
 				style={ {
 					padding: '15px',
@@ -549,7 +546,6 @@ const DataEditor = ( {
 				/>
 			</div>
 
-			{ /* 2. CATEGORY PICKER */ }
 			<div style={ { marginBottom: '20px' } }>
 				<SelectControl
 					label={ __( 'Feature Category', TEXT_DOMAIN ) }
@@ -564,7 +560,6 @@ const DataEditor = ( {
 				/>
 			</div>
 
-			{ /* 3. LINKED WORDPRESS PAGE */ }
 			<div
 				style={ {
 					padding: '15px',
@@ -582,7 +577,6 @@ const DataEditor = ( {
 				/>
 			</div>
 
-			{ /* 4. UNIT FILL COLOR OVERRIDE CONTROL */ }
 			<div
 				style={ {
 					padding: '15px',
@@ -697,7 +691,7 @@ const DataEditor = ( {
 				) }
 			</div>
 
-			{ /* 5. CUSTOM FEATURE PROPERTIES */ }
+			{ /* CUSTOM FEATURE PROPERTIES */ }
 			<div
 				style={ {
 					marginBottom: '20px',
@@ -783,7 +777,7 @@ const DataEditor = ( {
 				) }
 			</div>
 
-			{ /* 6. MEDIA OVERRIDES SECTION */ }
+			{ /* MEDIA OVERRIDES SECTION */ }
 			<div
 				style={ {
 					marginBottom: '20px',
@@ -898,7 +892,7 @@ const DataEditor = ( {
 				</div>
 			</div>
 
-			{ /* 7. CUSTOM DESCRIPTION */ }
+			{ /* CUSTOM DESCRIPTION */ }
 			<div style={ { marginBottom: '20px' } }>
 				<TextareaControl
 					label={ __( 'Custom Description', TEXT_DOMAIN ) }
@@ -931,7 +925,7 @@ const DataEditor = ( {
 				) }
 			</div>
 
-			{ /* 8. MAP BEHAVIOR TOGGLES */ }
+			{ /* MAP BEHAVIOR TOGGLES */ }
 			<div
 				style={ {
 					marginBottom: '20px',
@@ -978,7 +972,7 @@ const DataEditor = ( {
 				</div>
 			</div>
 
-			{ /* 9. CUSTOM GALLERY */ }
+			{ /* CUSTOM GALLERY */ }
 			<div style={ { margin: '20px 0' } }>
 				<Text
 					variant="label"
@@ -1072,7 +1066,7 @@ const DataEditor = ( {
 				</Button>
 			</div>
 
-			{ /* 10. ACTION BUTTONS */ }
+			{ /* ACTION BUTTONS */ }
 			<Flex
 				justify="flex-start"
 				style={ { marginTop: '30px', gap: '15px' } }
@@ -1119,7 +1113,7 @@ const DataEditor = ( {
 					>
 						<TextControl
 							label={ __( 'Property Field Name', TEXT_DOMAIN ) }
-							placeholder="e.g. Bathrooms, Square Feet, or Fireplace"
+							placeholder="e.g. Duration, Square Feet, or Fireplace"
 							value={ newPropLabel }
 							onChange={ setNewPropLabel }
 							help={
@@ -1155,10 +1149,10 @@ const DataEditor = ( {
 								},
 								{
 									label: __(
-										'Bathroom Counter (0.5 steps)',
+										'Dual Counter (0.5 steps)',
 										TEXT_DOMAIN
 									),
-									value: 'bathrooms',
+									value: 'dual_counter',
 								},
 							] }
 							onChange={ setNewPropType }

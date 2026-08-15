@@ -79,6 +79,9 @@ class BWB_IMaps_REST_Importer {
         $custom_keys_param = $request->get_param( 'imported_custom_keys' );
         $imported_custom_keys = is_string( $custom_keys_param ) ? ( json_decode( stripslashes( $custom_keys_param ), true ) ?: array() ) : ( is_array( $custom_keys_param ) ? $custom_keys_param : array() );
 
+        // Register custom keys along with their user-assigned or inferred data types in global schema
+        BWB_IMaps_REST_Attributes::sync_custom_keys_to_schema( $imported_custom_keys );
+
         $raw_key_names = array();
         foreach ( $imported_custom_keys as $k => $v ) {
             if ( is_array( $v ) && isset( $v['key'] ) ) {
@@ -89,8 +92,6 @@ class BWB_IMaps_REST_Importer {
                 $raw_key_names[] = $v;
             }
         }
-
-        BWB_IMaps_REST_Attributes::sync_custom_keys_to_schema( $imported_custom_keys );
 
         $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
 
@@ -164,7 +165,7 @@ class BWB_IMaps_REST_Importer {
                             isset($props['length_m']) ? (float)$props['length_m'] : 0.00,
                             json_encode( $feature['geometry'] )
                         )
-                    )) { $processed_count++; }
+                    ) ) { $processed_count++; }
                 }
                 break;
 

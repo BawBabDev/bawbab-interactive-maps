@@ -1,6 +1,7 @@
 import { __ } from '@wordpress/i18n';
 import { renderIconBySlug } from '../../constants/iconRegistry';
 import { useAttributeSchema } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/hooks/useAttributeSchema';
+import { formatDualCounter } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/utils/dualCounterHelper';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -12,8 +13,9 @@ const formatFieldLabel = (str) => {
 export const UnitSpecs = ({ specs }) => {
     if (!specs) return null;
 
-    const { schema } = useAttributeSchema();
+    const { schema = [] } = useAttributeSchema();
 
+    // 1. Resolve custom_attributes
     let customAttrs = specs.custom_attributes || {};
     if (typeof customAttrs === 'string') {
         try {
@@ -23,145 +25,171 @@ export const UnitSpecs = ({ specs }) => {
         }
     }
 
-    const sq_ft = customAttrs.sq_ft !== undefined ? customAttrs.sq_ft : specs.sq_ft;
-    const baths = customAttrs.baths !== undefined ? customAttrs.baths : specs.baths;
-    const fireplace = customAttrs.fireplace !== undefined ? customAttrs.fireplace : specs.fireplace;
-    const sunroom = customAttrs.sunroom !== undefined ? customAttrs.sunroom : specs.sunroom;
+    const rawAttrs = {
+        sq_ft: customAttrs.sq_ft !== undefined ? customAttrs.sq_ft : specs.sq_ft,
+        fireplace: customAttrs.fireplace !== undefined ? customAttrs.fireplace : specs.fireplace,
+        sunroom: customAttrs.sunroom !== undefined ? customAttrs.sunroom : specs.sunroom,
+        ...customAttrs
+    };
 
-    const hasSqFt = sq_ft !== undefined && sq_ft !== null && sq_ft !== '';
-    const hasBaths = baths !== undefined && baths !== null && baths !== '';
-    const hasFireplace = fireplace !== undefined && fireplace !== null;
-    const hasSunroom = sunroom !== undefined && sunroom !== null;
+    const activeKeys = Object.keys(rawAttrs).filter(key => {
+        const val = rawAttrs[key];
+        return val !== undefined && val !== null && val !== '';
+    });
 
-    const hasClassicSpecs = hasSqFt || hasBaths || hasFireplace || hasSunroom;
-
-    const classicKeys = ['sq_ft', 'baths', 'fireplace', 'sunroom'];
-    const extraAttrKeys = Object.keys(customAttrs).filter(k => !classicKeys.includes(k));
-
-    if (!hasClassicSpecs && extraAttrKeys.length === 0) {
+    if (activeKeys.length === 0) {
         return null;
     }
 
-    // Resolve dynamic icons for baths from schema
-    const bathsSchemaItem = (schema || []).find(s => s.key === 'baths');
-    const bathsIconConfig = (bathsSchemaItem?.icon || 'shower,sink').split(',');
-    const showerIconSlug = bathsIconConfig[0] || 'shower';
-    const sinkIconSlug = bathsIconConfig[1] || 'sink';
+    // 2. Separate Square Feet (dedicated top row)
+    const sqFtVal = rawAttrs.sq_ft;
+    const hasSqFt = activeKeys.includes('sq_ft');
+    const otherKeys = activeKeys.filter(k => k !== 'sq_ft');
 
-    const valBaths = parseFloat(baths) || 0;
-    const showerCount = Math.floor(valBaths);
-    const sinkCount = Math.ceil(valBaths);
+    // 3. Build rows
+    const rows = [];
+    let standaloneBuffer = [];
+
+    const flushBuffer = () => {
+        if (standaloneBuffer.length > 0) {
+            rows.push({ type: 'dual', items: [...standaloneBuffer] });
+            standaloneBuffer = [];
+        }
+    };
+
+    otherKeys.forEach((key) => {
+        const val = rawAttrs[key];
+        const schemaItem = schema.find(s => s.key === key);
+        const label = schemaItem?.label || formatFieldLabel(key);
+        const fieldType = schemaItem?.type || (typeof val === 'boolean' ? 'boolean' : (isFinite(val) ? 'number' : 'text'));
+
+        if (fieldType === 'dual_counter') {
+            flushBuffer();
+
+            const rawIcons = (schemaItem?.icon || 'shower,sink').split(',');
+            const primaryIconSlug = rawIcons[0] || 'shower';
+            const secondaryIconSlug = rawIcons[1] || 'sink';
+
+            const config = schemaItem?.config || {};
+            const formatted = formatDualCounter(val, {
+                mode: config.mode || 'split',
+                majorLabel: config.majorLabel || __('Full', TEXT_DOMAIN),
+                minorLabel: config.minorLabel || __('Half', TEXT_DOMAIN),
+                majorUnit: config.majorUnit || 'hr',
+                minorUnit: config.minorUnit || 'min'
+            });
+
+            // Push both major and minor icons together on the exact same row line
+            rows.push({
+                type: 'dual',
+                items: [
+                    {
+                        id: `${key}_major`,
+                        type: 'number',
+                        icon: primaryIconSlug,
+                        value: formatted.majorValue,
+                        label: formatted.majorLabel || label
+                    },
+                    {
+                        id: `${key}_minor`,
+                        type: 'number',
+                        icon: secondaryIconSlug,
+                        value: formatted.minorValue,
+                        label: formatted.minorLabel || label
+                    }
+                ]
+            });
+        } else if (fieldType === 'boolean') {
+            const isTrue = Boolean(val) && val !== 'false' && val !== '0';
+            const defaultIcon = key === 'fireplace' ? 'fireplace' : (key === 'sunroom' ? 'sun' : 'check');
+
+            standaloneBuffer.push({
+                id: key,
+                type: 'boolean',
+                icon: schemaItem?.icon || defaultIcon,
+                isTrue,
+                label
+            });
+
+            if (standaloneBuffer.length === 2) flushBuffer();
+        } else if (fieldType === 'number') {
+            standaloneBuffer.push({
+                id: key,
+                type: 'number',
+                icon: schemaItem?.icon || 'hash',
+                value: isFinite(val) ? `x${val}` : val,
+                label
+            });
+
+            if (standaloneBuffer.length === 2) flushBuffer();
+        } else {
+            standaloneBuffer.push({
+                id: key,
+                type: 'text',
+                icon: schemaItem?.icon || 'file-text',
+                value: String(val),
+                label
+            });
+
+            if (standaloneBuffer.length === 2) flushBuffer();
+        }
+    });
+
+    flushBuffer();
 
     return (
         <div className="location-specs-container">
-            {/* CLASSIC ICON GRID */}
-            {hasClassicSpecs && (
-                <>
-                    {hasSqFt && (
-                        <div className="specs-row area-row">
-                            <div className="spec-item area-item">
-                                <div className="spec-icon-row">
-                                    <span className="fa-icon">{renderIconBySlug('area')}</span>
-                                    <span className="spec-number">{sq_ft}</span>
-                                </div>
-                                <span className="spec-label">{__('Area (sq ft)', TEXT_DOMAIN)}</span>
-                            </div>
+            {/* ROW 1: SQUARE FEET */}
+            {hasSqFt && (
+                <div className="specs-row area-row">
+                    <div className="spec-item area-item">
+                        <div className="spec-icon-row">
+                            <span className="fa-icon" style={{ color: '#333' }}>
+                                {renderIconBySlug('area')}
+                            </span>
+                            <span className="spec-number">{sqFtVal}</span>
                         </div>
-                    )}
-
-                    {hasBaths && (
-                        <div className="specs-row dual-row">
-                            <div className="spec-item">
-                                <div className="spec-icon-row">
-                                    <span className="fa-icon">{renderIconBySlug(showerIconSlug)}</span>
-                                    <span className="spec-number">{valBaths > 0 ? `x${showerCount}` : '--'}</span>
-                                </div>
-                                <span className="spec-label">{__('Shower', TEXT_DOMAIN)}</span>
-                            </div>
-
-                            <div className="spec-item">
-                                <div className="spec-icon-row">
-                                    <span className="fa-icon">{renderIconBySlug(sinkIconSlug)}</span>
-                                    <span className="spec-number">{valBaths > 0 ? `x${sinkCount}` : '--'}</span>
-                                </div>
-                                <span className="spec-label">{__('Bathroom', TEXT_DOMAIN)}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {(hasFireplace || hasSunroom) && (
-                        <div className="specs-row dual-row">
-                            {hasFireplace && (
-                                <div className={`spec-item ${!fireplace ? 'is-disabled' : ''}`}>
-                                    <div className="spec-icon-row">
-                                        <div className="icon-wrapper">
-                                            <span className="fa-icon">{renderIconBySlug('fireplace')}</span>
-                                            {!fireplace && <span className="no-sign"></span>}
-                                        </div>
-                                    </div>
-                                    <span className="spec-label">{__('Fireplace', TEXT_DOMAIN)}</span>
-                                </div>
-                            )}
-
-                            {hasSunroom && (
-                                <div className={`spec-item ${!sunroom ? 'is-disabled' : ''}`}>
-                                    <div className="spec-icon-row">
-                                        <div className="icon-wrapper">
-                                            <span className="fa-icon">{renderIconBySlug('sun')}</span>
-                                            {!sunroom && <span className="no-sign"></span>}
-                                        </div>
-                                    </div>
-                                    <span className="spec-label">{__('Sunroom', TEXT_DOMAIN)}</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </>
+                        <span className="spec-label">{__('Area (sq ft)', TEXT_DOMAIN)}</span>
+                    </div>
+                </div>
             )}
 
-            {/* DYNAMIC CUSTOM ATTRIBUTE BADGES */}
-            {extraAttrKeys.length > 0 && (
-                <div className="generic-specs-badges" style={{ marginTop: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {extraAttrKeys.map((key) => {
-                        const val = customAttrs[key];
-                        if (val === null || val === undefined || val === '') return null;
+            {/* SUBSEQUENT ROWS: PAIRED 2 PER ROW */}
+            {rows.map((row, rowIndex) => (
+                <div key={rowIndex} className="specs-row dual-row">
+                    {row.items.map((item) => {
+                        const iconSvg = renderIconBySlug(item.icon);
 
-                        const schemaItem = (schema || []).find(s => s.key === key);
-                        const fieldLabel = schemaItem?.label || formatFieldLabel(key);
-                        const iconSlug = schemaItem?.icon;
-                        const iconSvg = renderIconBySlug(iconSlug);
-
-                        const displayVal = typeof val === 'boolean' 
-                            ? (val ? __('Yes', TEXT_DOMAIN) : __('No', TEXT_DOMAIN)) 
-                            : String(val);
+                        if (item.type === 'boolean') {
+                            return (
+                                <div key={item.id} className={`spec-item ${!item.isTrue ? 'is-disabled' : ''}`}>
+                                    <div className="spec-icon-row">
+                                        <div className="icon-wrapper">
+                                            <span className="fa-icon" style={{ color: item.isTrue ? '#333' : '#a7aaad' }}>
+                                                {iconSvg}
+                                            </span>
+                                            {!item.isTrue && <span className="no-sign"></span>}
+                                        </div>
+                                    </div>
+                                    <span className="spec-label">{item.label}</span>
+                                </div>
+                            );
+                        }
 
                         return (
-                            <div 
-                                key={key} 
-                                style={{ 
-                                    padding: '6px 12px', 
-                                    background: '#f0f4f8', 
-                                    borderRadius: '12px', 
-                                    border: '1px solid #d0d7de', 
-                                    fontSize: '12px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px'
-                                }}
-                            >
-                                {iconSvg && (
-                                    <span style={{ display: 'flex', alignItems: 'center', color: '#333' }}>
+                            <div key={item.id} className="spec-item">
+                                <div className="spec-icon-row">
+                                    <span className="fa-icon" style={{ color: '#333' }}>
                                         {iconSvg}
                                     </span>
-                                )}
-                                <span>
-                                    <strong>{fieldLabel}:</strong> {displayVal}
-                                </span>
+                                    <span className="spec-number">{item.value}</span>
+                                </div>
+                                <span className="spec-label">{item.label}</span>
                             </div>
                         );
                     })}
                 </div>
-            )}
+            ))}
         </div>
     );
 };

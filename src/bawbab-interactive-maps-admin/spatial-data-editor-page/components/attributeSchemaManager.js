@@ -1,21 +1,34 @@
 import { useState } from '@wordpress/element';
 import { 
-    Button, TextControl, SelectControl, Flex, 
-    Spinner, Dashicon, __experimentalText as Text 
+    Button, TextControl, SelectControl, Flex, FlexItem,
+    Spinner, Dashicon, Modal, __experimentalText as Text 
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import { IconPickerModal } from './iconPickerModal';
 import { renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
+import { normalizeFieldType } from '../utils/dualCounterHelper';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
-// Legacy default icon fallbacks for standard keys
 const DEFAULT_LEGACY_ICONS = {
     sq_ft: 'area',
     baths: 'shower,sink',
     fireplace: 'fireplace',
     sunroom: 'sun'
 };
+
+const FIELD_TYPE_OPTIONS = [
+    { label: __('Text', TEXT_DOMAIN), value: 'text' },
+    { label: __('Number', TEXT_DOMAIN), value: 'number' },
+    { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
+    { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
+];
+
+const DUAL_MODE_OPTIONS = [
+    { label: __('Category Split (Full / Half Items)', TEXT_DOMAIN), value: 'split' },
+    { label: __('Time Breakdown (Hours / Minutes)', TEXT_DOMAIN), value: 'time' },
+    { label: __('Measurement (Feet / Inches)', TEXT_DOMAIN), value: 'measurement' },
+];
 
 const createKeySlug = (label) => {
     return (label || '')
@@ -25,9 +38,6 @@ const createKeySlug = (label) => {
         .replace(/\s+/g, '_');
 };
 
-/**
- * Smart wrapper helper to render filled legacy SVGs or Lucide stroke line icons cleanly
- */
 const renderStyledIcon = (iconSlug, size = 18) => {
     const icon = renderIconBySlug(iconSlug, { size });
     if (!icon) return null;
@@ -76,10 +86,16 @@ export const AttributeSchemaManager = ({
     const [newIconSecondary, setNewIconSecondary] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Modal state for picking icons (supports primary & secondary for bathrooms)
+    // Dual Counter Config State
+    const [dualMode, setDualMode] = useState('split');
+    const [majorLabel, setMajorLabel] = useState('');
+    const [minorLabel, setMinorLabel] = useState('');
+
     const [isIconModalOpen, setIsIconModalOpen] = useState(false);
-    const [editingItemKey, setEditingItemKey] = useState(null); // null = new field form
-    const [editingTargetSlot, setEditingTargetSlot] = useState('primary'); // 'primary' | 'secondary'
+    const [editingItemKey, setEditingItemKey] = useState(null);
+    const [editingTargetSlot, setEditingTargetSlot] = useState('primary');
+
+    const [pendingTypeChange, setPendingTypeChange] = useState(null);
 
     const derivedKey = createKeySlug(newLabel);
 
@@ -87,19 +103,25 @@ export const AttributeSchemaManager = ({
         if (!newLabel.trim() || !derivedKey) return;
         setIsSubmitting(true);
 
-        // Format single vs dual comma-separated icon value
         let formattedIcon = newIconPrimary;
-        if (newType === 'bathrooms') {
+        if (newType === 'dual_counter') {
             const p = newIconPrimary || 'shower';
             const s = newIconSecondary || 'sink';
             formattedIcon = `${p},${s}`;
         }
 
+        const config = newType === 'dual_counter' ? {
+            mode: dualMode,
+            majorLabel: majorLabel || (dualMode === 'split' ? __('Full', TEXT_DOMAIN) : 'hr'),
+            minorLabel: minorLabel || (dualMode === 'split' ? __('Half', TEXT_DOMAIN) : 'min'),
+        } : null;
+
         const res = await onUpdateKey({
             key: derivedKey,
             label: newLabel.trim(),
             type: newType,
-            icon: formattedIcon
+            icon: formattedIcon,
+            config
         });
 
         if (res.success) {
@@ -107,6 +129,9 @@ export const AttributeSchemaManager = ({
             setNewType('text');
             setNewIconPrimary('');
             setNewIconSecondary('');
+            setMajorLabel('');
+            setMinorLabel('');
+            setDualMode('split');
             if (onRefreshFeatures) onRefreshFeatures();
         }
         setIsSubmitting(false);
@@ -119,14 +144,42 @@ export const AttributeSchemaManager = ({
         }
     };
 
+    const triggerTypeChangeConfirmation = (item, targetType) => {
+        if (normalizeFieldType(item.type) === targetType) return;
+        setPendingTypeChange({ item, targetType });
+    };
+
+    const confirmTypeChange = async () => {
+        if (!pendingTypeChange) return;
+
+        const { item, targetType } = pendingTypeChange;
+        let updatedIcon = item.icon;
+        
+        if (targetType === 'dual_counter' && (!item.icon || !item.icon.includes(','))) {
+            updatedIcon = item.icon ? `${item.icon},sink` : 'shower,sink';
+        }
+
+        const res = await onUpdateKey({
+            ...item,
+            type: targetType,
+            icon: updatedIcon
+        });
+
+        if (res.success && onRefreshFeatures) {
+            onRefreshFeatures();
+        }
+
+        setPendingTypeChange(null);
+    };
+
     const handleSelectIcon = (selectedIconKey) => {
         if (editingItemKey) {
-            // Updating existing field in schema table
             const item = schema.find(s => s.key === editingItemKey);
             if (item) {
                 let updatedIcon = selectedIconKey;
+                const normalizedType = normalizeFieldType(item.type);
 
-                if (item.type === 'bathrooms') {
+                if (normalizedType === 'dual_counter') {
                     const rawIcons = (item.icon || DEFAULT_LEGACY_ICONS[item.key] || 'shower,sink').split(',');
                     const primary = rawIcons[0] || 'shower';
                     const secondary = rawIcons[1] || 'sink';
@@ -146,8 +199,7 @@ export const AttributeSchemaManager = ({
                 });
             }
         } else {
-            // Setting icon in 'Register New Field' form
-            if (newType === 'bathrooms' && editingTargetSlot === 'secondary') {
+            if (newType === 'dual_counter' && editingTargetSlot === 'secondary') {
                 setNewIconSecondary(selectedIconKey);
             } else {
                 setNewIconPrimary(selectedIconKey);
@@ -174,18 +226,17 @@ export const AttributeSchemaManager = ({
                 {__('Manage custom fields across all map features. Adding a field registers it globally; deleting a field purges it from all units in the database.', TEXT_DOMAIN)}
             </Text>
 
-            {/* ADD NEW FIELD FORM WITH DYNAMIC SINGLE / DUAL ICON SELECTION */}
+            {/* ADD NEW FIELD FORM */}
             <div style={{ padding: '16px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '25px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
                     {__('Register New Custom Field', TEXT_DOMAIN)}
                 </Text>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 180px auto', gap: '12px', alignItems: 'end' }}>
-                    {/* 1. FIELD LABEL INPUT */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px 180px auto', gap: '12px', alignItems: 'end' }}>
                     <div>
                         <TextControl
                             label={__('Field Display Label', TEXT_DOMAIN)}
-                            placeholder="e.g. Square Feet or Has Sunroom"
+                            placeholder="e.g. Duration, Square Feet, or Fireplace"
                             value={newLabel}
                             onChange={setNewLabel}
                             style={{ height: '36px', minHeight: '36px' }}
@@ -193,21 +244,14 @@ export const AttributeSchemaManager = ({
                         />
                     </div>
 
-                    {/* 2. FIELD TYPE DROPDOWN */}
                     <div className="bwb-select-control-wrapper">
                         <SelectControl
                             label={__('Field Type', TEXT_DOMAIN)}
-                            value={newType}
-                            options={[
-                                { label: __('Text', TEXT_DOMAIN), value: 'text' },
-                                { label: __('Number', TEXT_DOMAIN), value: 'number' },
-                                { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
-                                { label: __('Bathrooms', TEXT_DOMAIN), value: 'bathrooms' },
-                            ]}
+                            value={normalizeFieldType(newType)}
+                            options={FIELD_TYPE_OPTIONS}
                             onChange={(val) => {
                                 setNewType(val);
-                                // Set initial default icons when switching to bathrooms
-                                if (val === 'bathrooms') {
+                                if (val === 'dual_counter') {
                                     if (!newIconPrimary) setNewIconPrimary('shower');
                                     if (!newIconSecondary) setNewIconSecondary('sink');
                                 }
@@ -223,14 +267,12 @@ export const AttributeSchemaManager = ({
                         />
                     </div>
 
-                    {/* 3. ICON SELECTION TRIGGER(S) */}
                     <div>
                         <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
-                            {newType === 'bathrooms' ? __('Icons (Full / Half)', TEXT_DOMAIN) : __('Icon', TEXT_DOMAIN)}
+                            {normalizeFieldType(newType) === 'dual_counter' ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Icon', TEXT_DOMAIN)}
                         </label>
 
-                        {newType === 'bathrooms' ? (
-                            /* DUAL BUTTON CONTROLS FOR BATHROOMS TYPE */
+                        {normalizeFieldType(newType) === 'dual_counter' ? (
                             <Flex gap={1} align="center">
                                 <Button
                                     variant="secondary"
@@ -240,7 +282,7 @@ export const AttributeSchemaManager = ({
                                         setIsIconModalOpen(true);
                                     }}
                                     style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                    label={__('Select Full Bath / Shower Icon', TEXT_DOMAIN)}
+                                    label={__('Select Major Unit Icon', TEXT_DOMAIN)}
                                     showTooltip
                                 >
                                     {renderStyledIcon(newIconPrimary || 'shower', 18)}
@@ -256,14 +298,13 @@ export const AttributeSchemaManager = ({
                                         setIsIconModalOpen(true);
                                     }}
                                     style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                    label={__('Select Half Bath / Sink Icon', TEXT_DOMAIN)}
+                                    label={__('Select Minor Unit Icon', TEXT_DOMAIN)}
                                     showTooltip
                                 >
                                     {renderStyledIcon(newIconSecondary || 'sink', 18)}
                                 </Button>
                             </Flex>
                         ) : (
-                            /* SINGLE BUTTON CONTROL FOR STANDARD TYPES */
                             <Button
                                 variant="secondary"
                                 onClick={() => {
@@ -285,7 +326,6 @@ export const AttributeSchemaManager = ({
                         )}
                     </div>
 
-                    {/* 4. SUBMIT BUTTON */}
                     <div>
                         <Button
                             variant="primary"
@@ -298,6 +338,44 @@ export const AttributeSchemaManager = ({
                         </Button>
                     </div>
                 </div>
+
+                {/* DUAL COUNTER MODE CONFIGURATION SUB-PANEL */}
+                {normalizeFieldType(newType) === 'dual_counter' && (
+                    <div style={{ marginTop: '15px', padding: '12px', background: '#fff', border: '1px solid #d0d7de', borderRadius: '4px' }}>
+                        <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '8px' }}>
+                            {__('Dual Counter Interpretation Settings', TEXT_DOMAIN)}
+                        </Text>
+                        <Flex gap={3} align="center">
+                            <FlexItem style={{ flex: '0 0 220px' }}>
+                                <SelectControl
+                                    label={__('Display Mode', TEXT_DOMAIN)}
+                                    value={dualMode}
+                                    options={DUAL_MODE_OPTIONS}
+                                    onChange={setDualMode}
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+                            <FlexItem style={{ flex: 1 }}>
+                                <TextControl
+                                    label={__('Major Unit Label', TEXT_DOMAIN)}
+                                    placeholder={dualMode === 'split' ? __('Full Bath / Item', TEXT_DOMAIN) : 'hr'}
+                                    value={majorLabel}
+                                    onChange={setMajorLabel}
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+                            <FlexItem style={{ flex: 1 }}>
+                                <TextControl
+                                    label={__('Minor Unit Label', TEXT_DOMAIN)}
+                                    placeholder={dualMode === 'split' ? __('Half Bath / Item', TEXT_DOMAIN) : 'min'}
+                                    value={minorLabel}
+                                    onChange={setMinorLabel}
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+                        </Flex>
+                    </div>
+                )}
 
                 {derivedKey && (
                     <div style={{ marginTop: '8px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
@@ -315,7 +393,7 @@ export const AttributeSchemaManager = ({
                 </p>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 140px 80px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px 140px 80px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
                         <span>{__('Display Label', TEXT_DOMAIN)}</span>
                         <span>{__('Database Slug', TEXT_DOMAIN)}</span>
                         <span>{__('Type', TEXT_DOMAIN)}</span>
@@ -324,7 +402,8 @@ export const AttributeSchemaManager = ({
                     </div>
 
                     {schema.map((item) => {
-                        const isBathroom = item.type === 'bathrooms';
+                        const normalizedType = normalizeFieldType(item.type);
+                        const isDualCounter = normalizedType === 'dual_counter';
                         const effectiveIconSlug = item.icon || DEFAULT_LEGACY_ICONS[item.key] || '';
                         const iconParts = effectiveIconSlug.split(',');
                         
@@ -332,18 +411,30 @@ export const AttributeSchemaManager = ({
                         const secondarySlug = iconParts[1] || 'sink';
 
                         return (
-                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 140px 80px', gap: '12px', padding: '10px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
+                            <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 160px 140px 80px', gap: '12px', padding: '8px 12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', alignItems: 'center' }}>
                                 <span style={{ fontSize: '13px', fontWeight: '500' }}>{item.label || item.key}</span>
                                 <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '3px', fontSize: '12px', width: 'fit-content' }}>{item.key}</code>
-                                <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', background: '#f0f6fb', padding: '2px 8px', borderRadius: '10px', width: 'fit-content' }}>
-                                    {item.type || 'text'}
-                                </span>
                                 
-                                {/* ICON SELECTION COLUMN: Dual controls for 'bathrooms' vs Single for text/number */}
+                                <div className="bwb-select-control-wrapper">
+                                    <SelectControl
+                                        value={normalizedType}
+                                        options={FIELD_TYPE_OPTIONS}
+                                        onChange={(val) => triggerTypeChangeConfirmation(item, val)}
+                                        style={{ 
+                                            height: '28px', 
+                                            minHeight: '28px', 
+                                            lineHeight: '28px', 
+                                            fontSize: '11px',
+                                            padding: '0 6px',
+                                            marginTop: 0
+                                        }}
+                                        __nextHasNoMarginBottom
+                                    />
+                                </div>
+                                
                                 <Flex align="center" gap={1}>
-                                    {isBathroom ? (
+                                    {isDualCounter ? (
                                         <>
-                                            {/* PRIMARY ICON (Shower / Full Bath) */}
                                             <Button
                                                 variant="tertiary"
                                                 isSmall
@@ -353,7 +444,7 @@ export const AttributeSchemaManager = ({
                                                     setIsIconModalOpen(true);
                                                 }}
                                                 style={{ padding: '0 4px', height: '28px', minWidth: '28px' }}
-                                                label={__('Full Bath Icon', TEXT_DOMAIN)}
+                                                label={__('Major Unit Icon', TEXT_DOMAIN)}
                                                 showTooltip
                                             >
                                                 {renderStyledIcon(primarySlug, 16)}
@@ -361,7 +452,6 @@ export const AttributeSchemaManager = ({
 
                                             <span style={{ fontSize: '10px', color: '#aaa' }}>/</span>
 
-                                            {/* SECONDARY ICON (Sink / Half Bath) */}
                                             <Button
                                                 variant="tertiary"
                                                 isSmall
@@ -371,7 +461,7 @@ export const AttributeSchemaManager = ({
                                                     setIsIconModalOpen(true);
                                                 }}
                                                 style={{ padding: '0 4px', height: '28px', minWidth: '28px' }}
-                                                label={__('Half Bath / Sink Icon', TEXT_DOMAIN)}
+                                                label={__('Minor Unit Icon', TEXT_DOMAIN)}
                                                 showTooltip
                                             >
                                                 {renderStyledIcon(secondarySlug, 16)}
@@ -398,7 +488,6 @@ export const AttributeSchemaManager = ({
                                         </Button>
                                     )}
 
-                                    {/* UNASSIGN ICON BUTTON */}
                                     {item.icon && (
                                         <Button
                                             isDestructive
@@ -428,7 +517,46 @@ export const AttributeSchemaManager = ({
                 </div>
             )}
 
-            {/* REUSABLE ICON PICKER MODAL */}
+            {/* SAFETY MODAL */}
+            {pendingTypeChange && (
+                <Modal
+                    title={__('Warning: Change Field Attribute Type?', TEXT_DOMAIN)}
+                    onRequestClose={() => setPendingTypeChange(null)}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <Text display="block" style={{ fontSize: '13px', lineHeight: '1.5' }}>
+                            {sprintf(
+                                __('You are changing the data type for attribute "%s" to "%s".', TEXT_DOMAIN),
+                                pendingTypeChange.item.label || pendingTypeChange.item.key,
+                                pendingTypeChange.targetType
+                            )}
+                        </Text>
+                        
+                        <div style={{ padding: '12px', background: '#fff8e5', borderLeft: '4px solid #dba617', borderRadius: '3px' }}>
+                            <Text display="block" style={{ fontSize: '12px', color: '#645300' }}>
+                                <strong>{__('Please Note:', TEXT_DOMAIN)}</strong> {__('This action changes the schema interpretation lens for UI rendering, but DOES NOT convert raw values stored in MySQL.', TEXT_DOMAIN)}
+                            </Text>
+                        </div>
+
+                        <Flex justify="flex-end" style={{ marginTop: '10px', gap: '10px' }}>
+                            <Button
+                                variant="tertiary"
+                                onClick={() => setPendingTypeChange(null)}
+                            >
+                                {__('Cancel', TEXT_DOMAIN)}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={confirmTypeChange}
+                            >
+                                {__('Confirm Type Change', TEXT_DOMAIN)}
+                            </Button>
+                        </Flex>
+                    </div>
+                </Modal>
+            )}
+
+            {/* ICON PICKER MODAL */}
             <IconPickerModal
                 isOpen={isIconModalOpen}
                 onClose={() => setIsIconModalOpen(false)}
@@ -437,8 +565,9 @@ export const AttributeSchemaManager = ({
                     editingItemKey 
                         ? (() => {
                             const item = schema.find(s => s.key === editingItemKey);
+                            const normalizedType = normalizeFieldType(item?.type);
                             const raw = item?.icon || DEFAULT_LEGACY_ICONS[editingItemKey] || '';
-                            if (item?.type === 'bathrooms') {
+                            if (normalizedType === 'dual_counter') {
                                 const parts = raw.split(',');
                                 return editingTargetSlot === 'secondary' ? (parts[1] || 'sink') : (parts[0] || 'shower');
                             }

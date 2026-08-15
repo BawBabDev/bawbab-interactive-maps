@@ -55,13 +55,12 @@ class BWB_IMaps_REST_Attributes {
                             if ( ! isset( $discovered_keys[$k] ) ) {
                                 $clean_k = sanitize_key( $k );
 
-                                // Check specifically for bathroom fields
-                                if ( false !== strpos( $clean_k, 'bath' ) ) {
-                                    $type = 'bathrooms';
-                                } elseif ( is_bool( $v ) || 'true' === $v || 'false' === $v ) {
+                                if ( is_bool( $v ) || 'true' === $v || 'false' === $v ) {
                                     $type = 'boolean';
                                 } elseif ( is_numeric( $v ) ) {
-                                    $type = 'number';
+                                    // Check if float contains fractional step (e.g. 1.5)
+                                    $float_val = (float) $v;
+                                    $type      = ( $float_val !== floor( $float_val ) ) ? 'dual_counter' : 'number';
                                 } else {
                                     $type = 'text';
                                 }
@@ -116,7 +115,7 @@ class BWB_IMaps_REST_Attributes {
                 'key'   => $key,
                 'label' => ! empty( $label ) ? $label : ucwords( str_replace( '_', ' ', $key ) ),
                 'type'  => $type,
-                'icon'  => $has_icon_param ? $icon : ( 'bathrooms' === $type ? 'shower,sink' : '' ),
+                'icon'  => $has_icon_param ? $icon : '',
             );
         }
 
@@ -189,18 +188,13 @@ class BWB_IMaps_REST_Attributes {
                 $clean_key = sanitize_key( $info );
             }
 
-            // Force bathrooms type if key name suggests bathrooms
-            if ( false !== strpos( $clean_key, 'bath' ) ) {
-                $type = 'bathrooms';
-            }
-
             if ( ! empty( $clean_key ) && ! in_array( $clean_key, $existing_keys, true ) ) {
                 $label = ucwords( str_replace( '_', ' ', $clean_key ) );
                 $schema[] = array(
                     'key'   => $clean_key,
                     'label' => $label,
                     'type'  => ! empty( $type ) ? $type : 'text',
-                    'icon'  => 'bathrooms' === $type ? 'shower,sink' : '',
+                    'icon'  => '',
                 );
                 $existing_keys[] = $clean_key;
                 $has_changes     = true;

@@ -38,6 +38,7 @@ class BWB_Smart_DB_Migrator {
         if ( version_compare( $stored_version, self::$schema_version, '<' ) ) {
             self::run_modular_activations();
             self::migrate_legacy_columns_to_json();
+            self::migrate_legacy_types_to_dual_counter();
             
             update_option( 'bwb_maps_version_db_version', self::$schema_version );
         }
@@ -128,14 +129,14 @@ class BWB_Smart_DB_Migrator {
 
         $default_types = array(
             'sq_ft'     => 'number',
-            'baths'     => 'bathrooms',
+            'baths'     => 'dual_counter',
             'fireplace' => 'boolean',
             'sunroom'   => 'boolean',
         );
 
         $default_icons = array(
             'sq_ft'     => 'area',
-            'baths'     => 'shower',
+            'baths'     => 'shower,sink',
             'fireplace' => 'fireplace',
             'sunroom'   => 'sun',
         );
@@ -161,5 +162,44 @@ class BWB_Smart_DB_Migrator {
 
         // 4. Purge cached GeoJSON collections to reflect changes immediately
         wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+    }
+
+    /**
+     * Converts any schema items registered under legacy 'bathrooms' type
+     * to the generic 'dual_counter' type and updates icon pairs if needed.
+     */
+    private static function migrate_legacy_types_to_dual_counter() {
+        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) 
+            ? $settings['attribute_schema'] 
+            : array();
+
+        if ( empty( $schema ) ) {
+            return;
+        }
+
+        $has_changes = false;
+
+        foreach ( $schema as &$item ) {
+            // Convert 'bathrooms' type to 'dual_counter'
+            if ( isset( $item['type'] ) && 'bathrooms' === $item['type'] ) {
+                $item['type'] = 'dual_counter';
+                $has_changes  = true;
+            }
+
+            // Ensure dual counter items have dual icon pairs (e.g. 'shower,sink')
+            if ( isset( $item['type'] ) && 'dual_counter' === $item['type'] ) {
+                if ( empty( $item['icon'] ) || false === strpos( $item['icon'], ',' ) ) {
+                    $item['icon'] = ! empty( $item['icon'] ) ? $item['icon'] . ',sink' : 'shower,sink';
+                    $has_changes  = true;
+                }
+            }
+        }
+
+        if ( $has_changes ) {
+            $settings['attribute_schema'] = $schema;
+            update_option( 'bwb_imaps_options_data', $settings );
+            wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        }
     }
 }
