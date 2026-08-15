@@ -56,13 +56,22 @@ class BWB_IMaps_REST_Attributes {
                 continue;
             }
 
+            $type       = sanitize_text_field( $item['type'] ?? 'text' );
             $raw_config = $item['config'] ?? null;
             $config     = null;
 
             if ( is_array( $raw_config ) ) {
+                $mode   = sanitize_text_field( $raw_config['mode'] ?? 'split' );
+                $layout = sanitize_text_field( $raw_config['layout'] ?? 'half' );
+
+                // Category split dual counters are forced to full width layout
+                if ( 'dual_counter' === $type && 'split' === $mode ) {
+                    $layout = 'full';
+                }
+
                 $config = array(
-                    'layout'     => sanitize_text_field( $raw_config['layout'] ?? 'half' ),
-                    'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
+                    'layout'     => $layout,
+                    'mode'       => $mode,
                     'mainUnit'   => sanitize_text_field( $raw_config['mainUnit'] ?? '' ),
                     'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
                     'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
@@ -72,7 +81,7 @@ class BWB_IMaps_REST_Attributes {
             $sanitized_schema[] = array(
                 'key'    => sanitize_key( $item['key'] ),
                 'label'  => sanitize_text_field( $item['label'] ?? '' ),
-                'type'   => sanitize_text_field( $item['type'] ?? 'text' ),
+                'type'   => $type,
                 'icon'   => sanitize_text_field( $item['icon'] ?? '' ),
                 'config' => $config,
             );
@@ -100,9 +109,17 @@ class BWB_IMaps_REST_Attributes {
         $config           = null;
 
         if ( is_array( $raw_config ) ) {
+            $mode   = sanitize_text_field( $raw_config['mode'] ?? 'split' );
+            $layout = sanitize_text_field( $raw_config['layout'] ?? 'half' );
+
+            // Category split dual counters are forced to full width layout
+            if ( 'dual_counter' === $type && 'split' === $mode ) {
+                $layout = 'full';
+            }
+
             $config = array(
-                'layout'     => sanitize_text_field( $raw_config['layout'] ?? 'half' ),
-                'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
+                'layout'     => $layout,
+                'mode'       => $mode,
                 'mainUnit'   => sanitize_text_field( $raw_config['mainUnit'] ?? '' ),
                 'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
                 'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
@@ -206,9 +223,16 @@ class BWB_IMaps_REST_Attributes {
                 $clean_key = sanitize_key( $info['key'] ?? $k );
                 $type      = sanitize_text_field( $info['type'] ?? 'text' );
                 if ( isset( $info['config'] ) && is_array( $info['config'] ) ) {
+                    $mode   = sanitize_text_field( $info['config']['mode'] ?? 'split' );
+                    $layout = sanitize_text_field( $info['config']['layout'] ?? 'half' );
+
+                    if ( 'dual_counter' === $type && 'split' === $mode ) {
+                        $layout = 'full';
+                    }
+
                     $config = array(
-                        'layout'     => sanitize_text_field( $info['config']['layout'] ?? 'half' ),
-                        'mode'       => sanitize_text_field( $info['config']['mode'] ?? 'split' ),
+                        'layout'     => $layout,
+                        'mode'       => $mode,
                         'mainUnit'   => sanitize_text_field( $info['config']['mainUnit'] ?? '' ),
                         'majorLabel' => sanitize_text_field( $info['config']['majorLabel'] ?? '' ),
                         'minorLabel' => sanitize_text_field( $info['config']['minorLabel'] ?? '' ),

@@ -40,6 +40,14 @@ const MEASUREMENT_UNIT_OPTIONS = [
     { label: __('Meters & Centimeters (1 m 50 cm)', TEXT_DOMAIN), value: 'meters_cm' },
 ];
 
+const createKeySlug = (label) => {
+    return (label || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s_]/g, '')
+        .replace(/\s+/g, '_');
+};
+
 const renderStyledIcon = (iconSlug, size = 18) => {
     if (!iconSlug) return null;
     const icon = renderIconBySlug(iconSlug, { size });
@@ -79,19 +87,26 @@ const renderStyledIcon = (iconSlug, size = 18) => {
 export const AttributeConfigModal = ({ 
     isOpen, 
     item, 
+    mode = 'edit', // 'edit' | 'create'
     onClose, 
     onSave 
 }) => {
     if (!isOpen || !item) return null;
 
-    const [label, setLabel] = useState(item.label || item.key);
+    const isCreateMode = mode === 'create' || item.key === 'new_attribute';
+
+    const [label, setLabel] = useState(item.label || '');
     const [type, setType] = useState(normalizeFieldType(item.type));
     const [icon, setIcon] = useState(item.icon || '');
     
     // Configuration Settings
     const cfg = item.config || {};
-    const [layoutMode, setLayoutMode] = useState(cfg.layout || 'half');
     const [dualMode, setDualMode] = useState(cfg.mode || 'split');
+    const [layoutMode, setLayoutMode] = useState(
+        normalizeFieldType(item.type) === 'dual_counter' && (cfg.mode || 'split') === 'split'
+            ? 'full'
+            : (cfg.layout || 'half')
+    );
     const [mainUnit, setMainUnit] = useState(cfg.mainUnit || '');
     const [majorLabel, setMajorLabel] = useState(cfg.majorLabel || '');
     const [minorLabel, setMinorLabel] = useState(cfg.minorLabel || '');
@@ -105,37 +120,61 @@ export const AttributeConfigModal = ({
     const [pickerSlot, setPickerSlot] = useState('primary');
 
     useEffect(() => {
-        setLabel(item.label || item.key);
-        setType(normalizeFieldType(item.type));
+        setLabel(item.label || '');
+        const normType = normalizeFieldType(item.type);
+        setType(normType);
         setIcon(item.icon || '');
         const currentCfg = item.config || {};
-        setLayoutMode(currentCfg.layout || 'half');
-        setDualMode(currentCfg.mode || 'split');
+        const currentMode = currentCfg.mode || 'split';
+        setDualMode(currentMode);
+        
+        // Force full width layout for split mode
+        if (normType === 'dual_counter' && currentMode === 'split') {
+            setLayoutMode('full');
+        } else {
+            setLayoutMode(currentCfg.layout || 'half');
+        }
+
         setMainUnit(currentCfg.mainUnit || '');
         setMajorLabel(currentCfg.majorLabel || '');
         setMinorLabel(currentCfg.minorLabel || '');
     }, [item]);
 
+    const derivedKey = isCreateMode ? createKeySlug(label) : item.key;
+
     const handleDualModeChange = (newMode) => {
         setDualMode(newMode);
-        if (newMode === 'time') {
+        if (newMode === 'split') {
+            setLayoutMode('full'); // Category Split is strictly full width
+            setMainUnit('');
+        } else if (newMode === 'time') {
             setMainUnit('hours_minutes');
         } else if (newMode === 'measurement') {
             setMainUnit('feet_inches');
-        } else {
-            setMainUnit('');
         }
     };
 
     const handleTypeSelect = (newType) => {
         if (newType === type) return;
-        setPendingType(newType);
-        setShowTypeWarning(true);
+        if (isCreateMode) {
+            setType(newType);
+            if (newType === 'dual_counter') {
+                setDualMode('split');
+                setLayoutMode('full');
+                setMainUnit('hours_minutes');
+            }
+        } else {
+            setPendingType(newType);
+            setShowTypeWarning(true);
+        }
     };
 
     const confirmTypeChange = () => {
         if (!pendingType) return;
         setType(pendingType);
+        if (pendingType === 'dual_counter' && dualMode === 'split') {
+            setLayoutMode('full');
+        }
         setShowTypeWarning(false);
         setPendingType(null);
     };
@@ -146,8 +185,8 @@ export const AttributeConfigModal = ({
     };
 
     const handleSelectIconFromPicker = (selectedSlug) => {
-        const isSplit = type === 'dual_counter' && dualMode === 'split';
-        if (isSplit) {
+        const isSplitMode = type === 'dual_counter' && dualMode === 'split';
+        if (isSplitMode) {
             const iconParts = (icon || '').split(',');
             const primary = iconParts[0] || '';
             const secondary = iconParts[1] || '';
@@ -163,11 +202,17 @@ export const AttributeConfigModal = ({
         setIsIconPickerOpen(false);
     };
 
+    const isCategorySplit = type === 'dual_counter' && dualMode === 'split';
+
     const handleSave = async () => {
+        if (isCreateMode && !label.trim()) return;
+
         setIsSaving(true);
 
+        const effectiveLayout = isCategorySplit ? 'full' : layoutMode;
+
         const updatedConfig = {
-            layout: layoutMode,
+            layout: effectiveLayout,
             ...(type === 'dual_counter' ? {
                 mode: dualMode,
                 mainUnit: dualMode === 'time' ? (mainUnit || 'hours_minutes') : (dualMode === 'measurement' ? (mainUnit || 'feet_inches') : ''),
@@ -178,7 +223,8 @@ export const AttributeConfigModal = ({
 
         const res = await onSave({
             ...item,
-            label: label.trim() || item.key,
+            key: derivedKey,
+            label: label.trim() || derivedKey,
             type,
             icon,
             config: updatedConfig
@@ -196,16 +242,19 @@ export const AttributeConfigModal = ({
     };
 
     const isDual = type === 'dual_counter';
-    const isSplit = isDual && dualMode === 'split';
 
     const iconParts = (icon || '').split(',');
     const primaryIcon = iconParts[0] || '';
     const secondaryIcon = iconParts[1] || '';
 
+    const modalTitle = isCreateMode 
+        ? __('Register New Custom Field', TEXT_DOMAIN)
+        : sprintf(__('Configure Attribute: %s', TEXT_DOMAIN), item.label || item.key);
+
     return (
         <>
             <Modal
-                title={sprintf(__('Configure Attribute: %s', TEXT_DOMAIN), item.label || item.key)}
+                title={modalTitle}
                 onRequestClose={handleModalRequestClose}
                 style={{ maxWidth: '600px', width: '100%' }}
             >
@@ -215,7 +264,12 @@ export const AttributeConfigModal = ({
                         label={__('Display Label', TEXT_DOMAIN)}
                         value={label}
                         onChange={setLabel}
-                        help={sprintf(__('Database Slug: %s (non-editable)', TEXT_DOMAIN), item.key)}
+                        placeholder="e.g. Duration, Square Feet, or Fireplace"
+                        help={
+                            isCreateMode
+                                ? sprintf(__('Database Key Slug: %s', TEXT_DOMAIN), derivedKey || '--')
+                                : sprintf(__('Database Slug: %s (non-editable)', TEXT_DOMAIN), item.key)
+                        }
                         style={{ height: '36px', minHeight: '36px' }}
                         __nextHasNoMarginBottom
                     />
@@ -232,20 +286,7 @@ export const AttributeConfigModal = ({
                         />
                     </div>
 
-                    {/* 3. DISPLAY LAYOUT SELECTION */}
-                    <div className="bwb-select-control-wrapper">
-                        <SelectControl
-                            label={__('Display Layout in Side Drawer', TEXT_DOMAIN)}
-                            value={layoutMode}
-                            options={LAYOUT_OPTIONS}
-                            onChange={setLayoutMode}
-                            help={__('Choose whether this field occupies a full row or fits into a 2-column grid row.', TEXT_DOMAIN)}
-                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
-                            __nextHasNoMarginBottom
-                        />
-                    </div>
-
-                    {/* 4. DUAL COUNTER MODE & UNIT SETTINGS */}
+                    {/* 3. DUAL COUNTER MODE & UNIT SETTINGS */}
                     {isDual && (
                         <div style={{ padding: '14px', background: '#f9f9f9', border: '1px solid #d0d7de', borderRadius: '4px' }}>
                             <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '10px' }}>
@@ -323,14 +364,29 @@ export const AttributeConfigModal = ({
                         </div>
                     )}
 
+                    {/* 4. DISPLAY LAYOUT SELECTION (DISPLAYED BELOW DUAL COUNTER SETTINGS; HIDDEN FOR CATEGORY SPLIT) */}
+                    {!isCategorySplit && (
+                        <div className="bwb-select-control-wrapper">
+                            <SelectControl
+                                label={__('Display Layout in Side Drawer', TEXT_DOMAIN)}
+                                value={layoutMode}
+                                options={LAYOUT_OPTIONS}
+                                onChange={setLayoutMode}
+                                help={__('Choose whether this field occupies a full row or fits into a 2-column grid row.', TEXT_DOMAIN)}
+                                style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
+                    )}
+
                     {/* 5. ICON ASSIGNMENT / CLEARING */}
                     <div>
                         <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '6px' }}>
-                            {isSplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Assigned Icon', TEXT_DOMAIN)}
+                            {isCategorySplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Assigned Icon', TEXT_DOMAIN)}
                         </label>
 
                         <Flex gap={2} align="center">
-                            {isSplit ? (
+                            {isCategorySplit ? (
                                 /* Category Split: 2 Icons */
                                 <Flex gap={1} align="center" style={{ flex: 1 }}>
                                     <Button
@@ -416,8 +472,13 @@ export const AttributeConfigModal = ({
                         <Button variant="tertiary" onClick={onClose} disabled={isSaving}>
                             {__('Cancel', TEXT_DOMAIN)}
                         </Button>
-                        <Button variant="primary" onClick={handleSave} isBusy={isSaving} disabled={isSaving}>
-                            {__('Save Attribute Configuration', TEXT_DOMAIN)}
+                        <Button 
+                            variant="primary" 
+                            onClick={handleSave} 
+                            isBusy={isSaving} 
+                            disabled={isSaving || (isCreateMode && !label.trim())}
+                        >
+                            {isCreateMode ? __('Register Attribute', TEXT_DOMAIN) : __('Save Attribute Configuration', TEXT_DOMAIN)}
                         </Button>
                     </Flex>
                 </div>

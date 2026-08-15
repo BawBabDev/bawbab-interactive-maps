@@ -138,22 +138,25 @@ export const AttributeSchemaManager = ({
         }
     };
 
+    const isNewDual = newType === 'dual_counter';
+    const isNewSplit = isNewDual && newDualMode === 'split';
+
     const handleAddKey = async () => {
         if (!newLabel.trim() || !derivedKey) return;
         setIsSubmitting(true);
 
-        const isDual = newType === 'dual_counter';
-        const isSplit = isDual && newDualMode === 'split';
-
         let formattedIcon = newIconPrimary;
-        if (isSplit) {
+        if (isNewSplit) {
             formattedIcon = `${newIconPrimary || ''},${newIconSecondary || ''}`;
         }
 
+        // Category split mode is strictly saved as full width
+        const effectiveLayout = isNewSplit ? 'full' : newLayout;
+
         const config = {
-            layout: newLayout,
+            layout: effectiveLayout,
             order: localSchema.length,
-            ...(isDual ? {
+            ...(isNewDual ? {
                 mode: newDualMode,
                 mainUnit: newDualMode === 'time' ? newMainUnit : (newDualMode === 'measurement' ? newMainUnit : ''),
                 majorLabel: newMajorLabel.trim(),
@@ -272,8 +275,10 @@ export const AttributeSchemaManager = ({
         }
     };
 
-    const isNewDual = newType === 'dual_counter';
-    const isNewSplit = isNewDual && newDualMode === 'split';
+    // Calculate grid template columns depending on whether display layout drop-down is visible
+    const formGridColumns = isNewSplit
+        ? '1fr 140px 180px auto'
+        : '1fr 140px 140px 140px auto';
 
     return (
         <div style={{ padding: '20px 0' }}>
@@ -291,7 +296,7 @@ export const AttributeSchemaManager = ({
                 </Text>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: isNewSplit ? '1fr 140px 140px 180px auto' : '1fr 140px 140px 140px auto', gap: '12px', alignItems: 'end' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: formGridColumns, gap: '12px', alignItems: 'end' }}>
                         <div>
                             <TextControl
                                 label={__('Field Display Label', TEXT_DOMAIN)}
@@ -314,16 +319,19 @@ export const AttributeSchemaManager = ({
                             />
                         </div>
 
-                        <div className="bwb-select-control-wrapper">
-                            <SelectControl
-                                label={__('Display Layout', TEXT_DOMAIN)}
-                                value={newLayout}
-                                options={LAYOUT_OPTIONS}
-                                onChange={setNewLayout}
-                                style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
-                                __nextHasNoMarginBottom
-                            />
-                        </div>
+                        {/* DISPLAY LAYOUT SELECTOR (HIDDEN IN CATEGORY SPLIT MODE) */}
+                        {!isNewSplit && (
+                            <div className="bwb-select-control-wrapper">
+                                <SelectControl
+                                    label={__('Display Layout', TEXT_DOMAIN)}
+                                    value={newLayout}
+                                    options={LAYOUT_OPTIONS}
+                                    onChange={setNewLayout}
+                                    style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                    __nextHasNoMarginBottom
+                                />
+                            </div>
+                        )}
 
                         <div>
                             <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
@@ -486,7 +494,7 @@ export const AttributeSchemaManager = ({
                         const normalizedType = normalizeFieldType(item.type);
                         const isDualCounter = normalizedType === 'dual_counter';
                         const dualMode = item.config?.mode || 'split';
-                        const layoutMode = item.config?.layout || 'half';
+                        const layoutMode = isDualCounter && dualMode === 'split' ? 'full' : (item.config?.layout || 'half');
                         const isSplit = isDualCounter && dualMode === 'split';
 
                         const effectiveIconSlug = item.icon || '';
