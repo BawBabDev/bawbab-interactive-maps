@@ -19,6 +19,7 @@ import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
 import { useCategoryManager } from '../../category-editor-page/hooks/useCategoryManager';
 import { AttributeConfigModal } from './attributeConfigModal';
+import { BatchUpdateModal } from './batchUpdateModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -231,10 +232,12 @@ const DataEditor = ( {
     building,
     draft = {},
     globalSchema = [],
+    allFeatures = [],
     updateSchemaKey,
     updateDraft,
     onUpdate,
     onCancel,
+    onExecuteBatchUpdate,
     hasChanges,
     isSaving,
 } ) => {
@@ -250,8 +253,11 @@ const DataEditor = ( {
     // Dynamic property state
     const [ showAddPropModal, setShowAddPropModal ] = useState( false );
 
+    // Batch update modal state
+    const [ showBatchModal, setShowBatchModal ] = useState( false );
+
     // Category Manager
-    const { categoryMap } = useCategoryManager();
+    const { groups, categoryMap } = useCategoryManager();
 
     const getValue = ( key, dbValue ) => {
         if ( draft && draft.hasOwnProperty( key ) ) return draft[ key ];
@@ -363,7 +369,13 @@ const DataEditor = ( {
         updateCustomAttr( key, null );
     };
 
-    // Callback when creating an attribute through the configuration modal
+    const handleConfirmBatchModal = ( batchPayload ) => {
+        if ( onExecuteBatchUpdate ) {
+            onExecuteBatchUpdate( batchPayload );
+        }
+        setShowBatchModal( false );
+    };
+
     const handleCreateNewGlobalAttribute = async ( newAttributeConfig ) => {
         const keySlug = createKeySlug( newAttributeConfig.label );
         if ( ! keySlug ) return { success: false };
@@ -379,7 +391,6 @@ const DataEditor = ( {
                 } );
             }
 
-            // Assign default value for the active feature draft
             let initialValue = null;
             if ( newAttributeConfig.type === 'boolean' ) {
                 initialValue = false;
@@ -446,7 +457,6 @@ const DataEditor = ( {
 
     const currentGallery = getGallery();
 
-    // Sort custom attribute keys strictly according to global schema sequence order
     const customAttrKeys = useMemo( () => {
         const activeKeys = Object.keys( mergedCustomAttributes );
         const schemaKeyOrder = globalSchema.map( ( s ) => s.key );
@@ -466,7 +476,6 @@ const DataEditor = ( {
         onUpdate();
     };
 
-    // Dummy empty item object to initialize AttributeConfigModal in creation mode
     const newItemTemplate = useMemo(
         () => ( {
             key: 'new_attribute',
@@ -501,6 +510,7 @@ const DataEditor = ( {
                 </Text>
             </div>
 
+            {/* 1. CORE IDENTIFICATION */}
             <div
                 style={ {
                     padding: '15px',
@@ -566,6 +576,7 @@ const DataEditor = ( {
                 />
             </div>
 
+            {/* 2. FEATURE CATEGORY */}
             <div style={ { marginBottom: '20px' } }>
                 <SelectControl
                     label={ __( 'Feature Category', TEXT_DOMAIN ) }
@@ -580,6 +591,7 @@ const DataEditor = ( {
                 />
             </div>
 
+            {/* 3. LINKED WORDPRESS PAGE */}
             <div
                 style={ {
                     padding: '15px',
@@ -597,6 +609,7 @@ const DataEditor = ( {
                 />
             </div>
 
+            {/* 4. CUSTOM FILL COLOR */}
             <div
                 style={ {
                     padding: '15px',
@@ -711,7 +724,7 @@ const DataEditor = ( {
                 ) }
             </div>
 
-            { /* CUSTOM FEATURE PROPERTIES */ }
+            {/* 5. CUSTOM FEATURE PROPERTIES */}
             <div
                 style={ {
                     marginBottom: '20px',
@@ -797,7 +810,7 @@ const DataEditor = ( {
                 ) }
             </div>
 
-            { /* MEDIA OVERRIDES SECTION */ }
+            {/* 6. MEDIA OVERRIDES SECTION */}
             <div
                 style={ {
                     marginBottom: '20px',
@@ -912,7 +925,7 @@ const DataEditor = ( {
                 </div>
             </div>
 
-            { /* CUSTOM DESCRIPTION */ }
+            {/* 7. CUSTOM DESCRIPTION */}
             <div style={ { marginBottom: '20px' } }>
                 <TextareaControl
                     label={ __( 'Custom Description', TEXT_DOMAIN ) }
@@ -945,7 +958,7 @@ const DataEditor = ( {
                 ) }
             </div>
 
-            { /* MAP BEHAVIOR TOGGLES */ }
+            {/* 8. MAP BEHAVIOR TOGGLES */}
             <div
                 style={ {
                     marginBottom: '20px',
@@ -992,7 +1005,7 @@ const DataEditor = ( {
                 </div>
             </div>
 
-            { /* CUSTOM GALLERY */ }
+            {/* 9. CUSTOM GALLERY */}
             <div style={ { margin: '20px 0' } }>
                 <Text
                     variant="label"
@@ -1086,10 +1099,43 @@ const DataEditor = ( {
                 </Button>
             </div>
 
-            { /* ACTION BUTTONS */ }
+            {/* 10. ACTION BUTTON BAR AT BOTTOM */}
+            <div style={{ margin: '30px 0 10px', padding: '16px', background: '#f0f6fb', border: '1px solid #2271b1', borderRadius: '4px' }}>
+                <Flex align="center" justify="space-between" gap={3}>
+                    <div style={{ flex: '1 1 55%', minWidth: 0 }}>
+                        <Text variant="label" display="block" style={{ fontWeight: '600', color: '#1d2327' }}>
+                            { __('Batch Sync Draft Modifications', TEXT_DOMAIN) }
+                        </Text>
+                        <Text variant="caption" style={{ color: '#666', fontSize: '11px', display: 'block', lineHeight: '1.4' }}>
+                            { __('Propagate active draft changes across multiple units in the same group or category.', TEXT_DOMAIN) }
+                        </Text>
+                    </div>
+
+                    <div style={{ flex: '0 0 auto' }}>
+                        <Button
+                            variant="secondary"
+                            icon="admin-page"
+                            onClick={ () => setShowBatchModal( true ) }
+                            disabled={ ! hasChanges }
+                            style={{
+                                whiteSpace: 'nowrap',
+                                height: 'auto',
+                                minHeight: '36px',
+                                padding: '6px 14px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            { __('Apply Changes to Other Features', TEXT_DOMAIN) }
+                        </Button>
+                    </div>
+                </Flex>
+            </div>
+
             <Flex
                 justify="flex-start"
-                style={ { marginTop: '30px', gap: '15px' } }
+                style={ { marginTop: '15px', gap: '15px' } }
             >
                 <Button
                     variant="secondary"
@@ -1118,16 +1164,29 @@ const DataEditor = ( {
                 </Button>
             </Flex>
 
-			{/* MODAL: ADD CUSTOM PROPERTY VIA ATTRIBUTE CONFIG MODAL */}
-			<AttributeConfigModal
-				isOpen={ showAddPropModal }
-				item={ newItemTemplate }
-				mode="create"
-				onClose={ () => setShowAddPropModal( false ) }
-				onSave={ handleCreateNewGlobalAttribute }
-			/>
+            {/* MODAL: ADD CUSTOM PROPERTY */}
+            <AttributeConfigModal
+                isOpen={ showAddPropModal }
+                item={ newItemTemplate }
+                mode="create"
+                onClose={ () => setShowAddPropModal( false ) }
+                onSave={ handleCreateNewGlobalAttribute }
+            />
 
-            { /* CONFIRMATION MODALS */ }
+            {/* MODAL: BATCH UPDATE SELECTION */}
+            <BatchUpdateModal
+                isOpen={ showBatchModal }
+                activeFeature={ building }
+                draftData={ draft }
+                globalSchema={ globalSchema }
+                groups={ groups }
+                categoryMap={ categoryMap }
+                allFeatures={ allFeatures }
+                onClose={ () => setShowBatchModal( false ) }
+                onConfirmBatch={ handleConfirmBatchModal }
+            />
+
+            {/* CONFIRMATION MODALS */}
             { showSaveModal && (
                 <Modal
                     title={ __( 'Save All Changes?', TEXT_DOMAIN ) }
