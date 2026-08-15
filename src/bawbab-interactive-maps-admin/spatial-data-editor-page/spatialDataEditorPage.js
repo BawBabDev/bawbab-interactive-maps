@@ -317,6 +317,19 @@ const SpatialDataEditorPage = () => {
         const compositeKey = `${ layerType }::${ fid }`;
         setDrafts( ( prev ) => {
             const currentDraft = prev[ compositeKey ] || {};
+            const currentDirty = new Set( currentDraft._dirtyKeys || [] );
+
+            // Register every modified key into _dirtyKeys
+            Object.keys( data ).forEach( ( key ) => {
+                if ( key === 'custom_attributes' ) {
+                    Object.keys( data.custom_attributes || {} ).forEach( ( attrKey ) => {
+                        currentDirty.add( `custom_attr::${ attrKey }` );
+                    } );
+                } else {
+                    currentDirty.add( key );
+                }
+            } );
+
             const updatedCustomAttrs = {
                 ...( currentDraft.custom_attributes || {} ),
                 ...( data.custom_attributes || {} ),
@@ -327,6 +340,7 @@ const SpatialDataEditorPage = () => {
                 [ compositeKey ]: {
                     ...currentDraft,
                     ...data,
+                    _dirtyKeys: Array.from( currentDirty ),
                     ...( Object.keys( updatedCustomAttrs ).length > 0
                         ? { custom_attributes: updatedCustomAttrs }
                         : {} ),
@@ -335,43 +349,59 @@ const SpatialDataEditorPage = () => {
         } );
     };
 
-    // EXECUTE BATCH UPDATES IN DRAFTS STATE
-	const handleExecuteBatchUpdate = ({ fieldsToSync, filterPredicate }) => {
-		const targetFeatures = features.filter(filterPredicate);
+    // EXECUTE BATCH UPDATES IN DRAFTS STATE & RESET SYNCED DIRTY KEYS FOR ALL TARGET FEATURES
+    const handleExecuteBatchUpdate = ({ fieldsToSync, filterPredicate }) => {
+        const targetFeatures = features.filter(filterPredicate);
 
-		if (targetFeatures.length === 0 || !fieldsToSync || fieldsToSync.length === 0) return;
+        if (targetFeatures.length === 0 || !fieldsToSync || fieldsToSync.length === 0) return;
 
-		setDrafts((prev) => {
-			const updatedDrafts = { ...prev };
+        // Build a Set of dirty key identifiers being synced
+        const syncedDirtyKeyIdentifiers = new Set();
+        fieldsToSync.forEach(({ key, isCustomAttr }) => {
+            if (isCustomAttr) {
+                syncedDirtyKeyIdentifiers.add(`custom_attr::${key}`);
+            } else {
+                syncedDirtyKeyIdentifiers.add(key);
+            }
+        });
 
-			targetFeatures.forEach((f) => {
-				const compositeKey = `${f.properties.layer_type}::${f.properties.fid}`;
-				const currentDraft = updatedDrafts[compositeKey] || {};
-				let currentCustomAttrs = {
-					...(f.properties.custom_attributes || {}),
-					...(currentDraft.custom_attributes || {}),
-				};
+        setDrafts((prev) => {
+            const updatedDrafts = { ...prev };
 
-				const directCoreUpdates = {};
+            targetFeatures.forEach((f) => {
+                const compositeKey = `${f.properties.layer_type}::${f.properties.fid}`;
+                const currentDraft = updatedDrafts[compositeKey] || {};
+                let currentCustomAttrs = {
+                    ...(f.properties.custom_attributes || {}),
+                    ...(currentDraft.custom_attributes || {}),
+                };
 
-				fieldsToSync.forEach(({ key, isCustomAttr, value }) => {
-					if (isCustomAttr) {
-						currentCustomAttrs[key] = value;
-					} else {
-						directCoreUpdates[key] = value;
-					}
-				});
+                const directCoreUpdates = {};
 
-				updatedDrafts[compositeKey] = {
-					...currentDraft,
-					...directCoreUpdates,
-					...(Object.keys(currentCustomAttrs).length > 0 ? { custom_attributes: currentCustomAttrs } : {}),
-				};
-			});
+                fieldsToSync.forEach(({ key, isCustomAttr, value }) => {
+                    if (isCustomAttr) {
+                        currentCustomAttrs[key] = value;
+                    } else {
+                        directCoreUpdates[key] = value;
+                    }
+                });
 
-			return updatedDrafts;
-		});
-	};
+                // Clear synced keys from EVERY target feature's _dirtyKeys list
+                const updatedDirtyKeys = (currentDraft._dirtyKeys || []).filter(
+                    dirtyKey => !syncedDirtyKeyIdentifiers.has(dirtyKey)
+                );
+
+                updatedDrafts[compositeKey] = {
+                    ...currentDraft,
+                    ...directCoreUpdates,
+                    _dirtyKeys: updatedDirtyKeys,
+                    ...(Object.keys(currentCustomAttrs).length > 0 ? { custom_attributes: currentCustomAttrs } : {}),
+                };
+            });
+
+            return updatedDrafts;
+        });
+    };
 
     const handleCancel = () => {
         setDrafts( {} );
@@ -411,10 +441,12 @@ const SpatialDataEditorPage = () => {
                     ...( draftData.custom_attributes || {} ),
                 };
 
+                const { _dirtyKeys, ...cleanDraftData } = draftData;
+
                 const payload = {
                     fid: fid,
                     layer_type: layerType,
-                    ...draftData,
+                    ...cleanDraftData,
                     is_interactive: helperBool( 'is_interactive', 1 ),
                     show_label: helperBool( 'show_label', 1 ),
                     append_description: helperBool( 'append_description', 0 ),

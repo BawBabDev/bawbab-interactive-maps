@@ -33,51 +33,55 @@ export const BatchUpdateModal = ({
     const matchedGroupId = categoryInfo.groupId || '';
     const matchedGroup = groups.find(g => g.id === matchedGroupId);
 
-    // Extract all modified draft fields that are allowed for bulk syncing
+    // Extract ONLY fields explicitly changed by user interaction on the active feature
     const modifiedFieldList = useMemo(() => {
         const fields = [];
+        const dirtyKeys = draftData._dirtyKeys || [];
 
-        // Core fields changed in draft
-        Object.keys(draftData).forEach(key => {
-            if (key === 'custom_attributes' || PROTECTED_FIELDS.includes(key)) return;
-
-            let label = key;
-            if (key === 'title') label = __('Display Title', TEXT_DOMAIN);
-            else if (key === 'wp_page_id') label = __('Linked WP Page', TEXT_DOMAIN);
-            else if (key === 'use_custom_color') label = __('Use Custom Fill Color', TEXT_DOMAIN);
-            else if (key === 'fill_color') label = __('Custom Fill Color', TEXT_DOMAIN);
-            else if (key === 'description') label = __('Custom Description', TEXT_DOMAIN);
-            else if (key === 'append_description') label = __('Append to WP Page Content', TEXT_DOMAIN);
-            else if (key === 'is_interactive') label = __('Feature is Interactive', TEXT_DOMAIN);
-            else if (key === 'show_label') label = __('Display Label on Map', TEXT_DOMAIN);
-            else if (key === 'hide_page_video') label = __('Hide Page Video', TEXT_DOMAIN);
-            else if (key === 'custom_video_url') label = __('Custom Video URL', TEXT_DOMAIN);
-            else if (key === 'hide_page_floorplan') label = __('Hide Page Floorplan', TEXT_DOMAIN);
-            else if (key === 'custom_floorplan_url') label = __('Custom Floorplan URL', TEXT_DOMAIN);
-            else if (key === 'gallery') label = __('Custom Gallery', TEXT_DOMAIN);
-
-            fields.push({
-                key,
-                label,
-                isCustomAttr: false,
-                value: draftData[key]
-            });
-        });
-
-        // Custom Attributes changed in draft
-        if (draftData.custom_attributes) {
-            Object.keys(draftData.custom_attributes).forEach(attrKey => {
+        dirtyKeys.forEach((dirtyKey) => {
+            // Handle Custom Attributes
+            if (dirtyKey.startsWith('custom_attr::')) {
+                const attrKey = dirtyKey.replace('custom_attr::', '');
                 if (PROTECTED_FIELDS.includes(attrKey)) return;
 
-                const schemaItem = globalSchema.find(s => s.key === attrKey);
+                const schemaItem = globalSchema.find((s) => s.key === attrKey);
+                const val = draftData.custom_attributes ? draftData.custom_attributes[attrKey] : undefined;
+
                 fields.push({
                     key: attrKey,
                     label: schemaItem?.label || attrKey,
                     isCustomAttr: true,
-                    value: draftData.custom_attributes[attrKey]
+                    value: val,
                 });
-            });
-        }
+            } 
+            // Handle Core Fields
+            else {
+                const key = dirtyKey;
+                if (PROTECTED_FIELDS.includes(key) || key === '_dirtyKeys') return;
+
+                let label = key;
+                if (key === 'title') label = __('Display Title', TEXT_DOMAIN);
+                else if (key === 'wp_page_id') label = __('Linked WP Page', TEXT_DOMAIN);
+                else if (key === 'use_custom_color') label = __('Use Custom Fill Color', TEXT_DOMAIN);
+                else if (key === 'fill_color') label = __('Custom Fill Color', TEXT_DOMAIN);
+                else if (key === 'description') label = __('Custom Description', TEXT_DOMAIN);
+                else if (key === 'append_description') label = __('Append to WP Page Content', TEXT_DOMAIN);
+                else if (key === 'is_interactive') label = __('Feature is Interactive', TEXT_DOMAIN);
+                else if (key === 'show_label') label = __('Display Label on Map', TEXT_DOMAIN);
+                else if (key === 'hide_page_video') label = __('Hide Page Video', TEXT_DOMAIN);
+                else if (key === 'custom_video_url') label = __('Custom Video URL', TEXT_DOMAIN);
+                else if (key === 'hide_page_floorplan') label = __('Hide Page Floorplan', TEXT_DOMAIN);
+                else if (key === 'custom_floorplan_url') label = __('Custom Floorplan URL', TEXT_DOMAIN);
+                else if (key === 'gallery') label = __('Custom Gallery', TEXT_DOMAIN);
+
+                fields.push({
+                    key,
+                    label,
+                    isCustomAttr: false,
+                    value: draftData[key],
+                });
+            }
+        });
 
         return fields;
     }, [draftData, globalSchema]);
@@ -226,7 +230,7 @@ export const BatchUpdateModal = ({
                                 gap: '10px', 
                                 maxHeight: '180px', 
                                 overflowY: 'auto',
-                                padding: '4px 6px' // Added padding so focus outline/ring isn't clipped
+                                padding: '4px 6px'
                             }}
                         >
                             {modifiedFieldList.map(field => (

@@ -250,7 +250,7 @@ const DataEditor = ( {
     const [ showSaveModal, setShowSaveModal ] = useState( false );
     const [ showCancelModal, setShowCancelModal ] = useState( false );
 
-    // Dynamic property state
+    // Dynamic property modal state
     const [ showAddPropModal, setShowAddPropModal ] = useState( false );
 
     // Batch update modal state
@@ -258,6 +258,10 @@ const DataEditor = ( {
 
     // Category Manager
     const { groups, categoryMap } = useCategoryManager();
+
+    // Check if the current active feature specifically has un-synced dirty keys
+    const activeDirtyKeys = draft._dirtyKeys || [];
+    const hasActiveFeatureDirtyKeys = activeDirtyKeys.length > 0;
 
     const getValue = ( key, dbValue ) => {
         if ( draft && draft.hasOwnProperty( key ) ) return draft[ key ];
@@ -1116,7 +1120,7 @@ const DataEditor = ( {
                             variant="secondary"
                             icon="admin-page"
                             onClick={ () => setShowBatchModal( true ) }
-                            disabled={ ! hasChanges }
+                            disabled={ ! hasActiveFeatureDirtyKeys }
                             style={{
                                 whiteSpace: 'nowrap',
                                 height: 'auto',
