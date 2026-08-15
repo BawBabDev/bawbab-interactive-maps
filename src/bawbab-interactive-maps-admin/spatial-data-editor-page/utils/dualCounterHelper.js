@@ -19,12 +19,12 @@ const MEASUREMENT_UNIT_PRESETS = {
 /**
  * Formats a dual_counter numeric value into structured major/minor visual representations.
  *
- * @param {number|string} rawValue - Numeric value (e.g. 1.5)
+ * @param {number|string} rawValue - Numeric value (e.g. 2.5)
  * @param {Object} config - Configuration options
  * @param {string} [config.mode='split'] - 'split' | 'time' | 'measurement'
  * @param {string} [config.mainUnit] - Selected unit key from drop-down
- * @param {string} [config.majorLabel] - Label/Unit string override
- * @param {string} [config.minorLabel] - Sub-label/Unit string override
+ * @param {string} [config.majorLabel] - Label/Unit string override (e.g. 'Full' or 'Shower')
+ * @param {string} [config.minorLabel] - Sub-label/Unit string override (e.g. 'Half' or 'Sink')
  * @returns {Object} Structured values for major and minor parts
  */
 export const formatDualCounter = ( rawValue, config = {} ) => {
@@ -34,6 +34,8 @@ export const formatDualCounter = ( rawValue, config = {} ) => {
             displayText: '--',
             majorValue: '--',
             minorValue: '--',
+            majorCount: 0,
+            minorCount: 0,
             majorLabel: config.majorLabel || 'Full',
             minorLabel: config.minorLabel || 'Half',
         };
@@ -62,6 +64,8 @@ export const formatDualCounter = ( rawValue, config = {} ) => {
                 displayText: parts.join( ' ' ).trim(),
                 majorValue: `${ majorCount } ${ preset.major }`,
                 minorValue: `${ minorCount } ${ preset.minor }`,
+                majorCount,
+                minorCount,
                 majorLabel: config.majorLabel || preset.majorFull,
                 minorLabel: config.minorLabel || preset.minorFull,
             };
@@ -93,6 +97,8 @@ export const formatDualCounter = ( rawValue, config = {} ) => {
                 displayText: displayStr,
                 majorValue: `${ majorCount } ${ preset.major }`,
                 minorValue: `${ minorCount } ${ preset.minor }`,
+                majorCount,
+                minorCount,
                 majorLabel: config.majorLabel || preset.majorFull,
                 minorLabel: config.minorLabel || preset.minorFull,
             };
@@ -100,15 +106,32 @@ export const formatDualCounter = ( rawValue, config = {} ) => {
 
         case 'split':
         default: {
+            // Major = Full units (e.g. Math.floor(2.5) => 2)
             const majorCount = Math.floor( numericVal );
-            const minorCount = Math.ceil( numericVal );
+            // Minor = Half units (e.g. 2.5 - 2 => 0.5; if >= 0.5 then 1, otherwise 0)
+            const remainder = numericVal - majorCount;
+            const minorCount = remainder >= 0.5 ? 1 : 0;
+
+            const majorName = config.majorLabel || 'Full';
+            const minorName = config.minorLabel || 'Half';
+
+            // Construct readable summary text
+            const parts = [];
+            if ( majorCount > 0 || minorCount === 0 ) {
+                parts.push( `${ majorCount } ${ majorName }` );
+            }
+            if ( minorCount > 0 ) {
+                parts.push( `${ minorCount } ${ minorName }` );
+            }
 
             return {
-                displayText: `${ majorCount } ${ config.majorLabel || 'Full' } / ${ minorCount } ${ config.minorLabel || 'Half' }`,
-                majorValue: numericVal > 0 ? `x${ majorCount }` : '--',
-                minorValue: numericVal > 0 ? `x${ minorCount }` : '--',
-                majorLabel: config.majorLabel || 'Full',
-                minorLabel: config.minorLabel || 'Half',
+                displayText: parts.join( ' ' ).trim(),
+                majorValue: `x${ majorCount }`,
+                minorValue: `x${ minorCount }`,
+                majorCount,
+                minorCount,
+                majorLabel: majorName,
+                minorLabel: minorName,
             };
         }
     }

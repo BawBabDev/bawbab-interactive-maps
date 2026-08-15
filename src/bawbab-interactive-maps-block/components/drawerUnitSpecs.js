@@ -62,7 +62,7 @@ export const UnitSpecs = ({ specs }) => {
         return indexA - indexB;
     });
 
-    // 3. Build rows dynamically using schema configurations (layout, order, units)
+    // 3. Build rows dynamically using schema configurations
     const rows = [];
     let standaloneBuffer = [];
 
@@ -146,22 +146,29 @@ export const UnitSpecs = ({ specs }) => {
                 // CATEGORY SPLIT: Occupies a full row block
                 flushBuffer();
 
+                const isMajorZero = formatted.majorCount === 0;
+                const isMinorZero = formatted.minorCount === 0;
+
                 rows.push({
                     type: 'dual',
                     items: [
                         {
                             id: `${key}_major`,
-                            type: 'number',
+                            // Convert to boolean style when zero so red cross / disabled state renders
+                            type: isMajorZero ? 'boolean' : 'number',
                             icon: primaryIconSlug,
-                            value: formatted.majorValue !== undefined && formatted.majorValue !== null ? formatted.majorValue : '--',
+                            isTrue: !isMajorZero,
+                            value: isMajorZero ? '' : formatted.majorValue,
                             label: majorSubcategory,
                             parentAttribute: attributeName
                         },
                         {
                             id: `${key}_minor`,
-                            type: 'number',
+                            // Convert to boolean style when zero so red cross / disabled state renders
+                            type: isMinorZero ? 'boolean' : 'number',
                             icon: secondaryIconSlug,
-                            value: formatted.minorValue !== undefined && formatted.minorValue !== null ? formatted.minorValue : '--',
+                            isTrue: !isMinorZero,
+                            value: isMinorZero ? '' : formatted.minorValue,
                             label: minorSubcategory,
                             parentAttribute: attributeName
                         }
@@ -245,6 +252,11 @@ export const UnitSpecs = ({ specs }) => {
                                         </div>
                                     </div>
                                     <span className="spec-label">{item.label}</span>
+                                    {item.parentAttribute && (
+                                        <span className="spec-label" style={{ color: '#aaa', marginTop: '2px', fontWeight: '500' }}>
+                                            {item.parentAttribute}
+                                        </span>
+                                    )}
                                 </div>
                             );
                         }
