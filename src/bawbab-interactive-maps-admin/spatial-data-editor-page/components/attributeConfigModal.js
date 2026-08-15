@@ -22,6 +22,19 @@ const DUAL_MODE_OPTIONS = [
     { label: __('Measurement (Feet / Inches)', TEXT_DOMAIN), value: 'measurement' },
 ];
 
+const TIME_UNIT_OPTIONS = [
+    { label: __('Hours & Minutes (1 hr 30 min)', TEXT_DOMAIN), value: 'hours_minutes' },
+    { label: __('Minutes & Seconds (1 min 30 sec)', TEXT_DOMAIN), value: 'minutes_seconds' },
+    { label: __('Days & Hours (1 d 12 hr)', TEXT_DOMAIN), value: 'days_hours' },
+];
+
+const MEASUREMENT_UNIT_OPTIONS = [
+    { label: __('Feet & Inches (6\' 7")', TEXT_DOMAIN), value: 'feet_inches' },
+    { label: __('Miles & Feet (1 mi 500 ft)', TEXT_DOMAIN), value: 'miles_feet' },
+    { label: __('Kilometers & Meters (1 km 500 m)', TEXT_DOMAIN), value: 'km_meters' },
+    { label: __('Meters & Centimeters (1 m 50 cm)', TEXT_DOMAIN), value: 'meters_cm' },
+];
+
 const renderStyledIcon = (iconSlug, size = 18) => {
     if (!iconSlug) return null;
     const icon = renderIconBySlug(iconSlug, { size });
@@ -73,6 +86,7 @@ export const AttributeConfigModal = ({
     // Dual Counter sub-panel configuration
     const cfg = item.config || {};
     const [dualMode, setDualMode] = useState(cfg.mode || 'split');
+    const [mainUnit, setMainUnit] = useState(cfg.mainUnit || '');
     const [majorLabel, setMajorLabel] = useState(cfg.majorLabel || '');
     const [minorLabel, setMinorLabel] = useState(cfg.minorLabel || '');
     
@@ -80,9 +94,9 @@ export const AttributeConfigModal = ({
     const [pendingType, setPendingType] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Isolated Icon Picker state (Kept inside AttributeConfigModal)
+    // Inner Icon Picker State
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
-    const [pickerSlot, setPickerSlot] = useState('primary'); // 'primary' | 'secondary'
+    const [pickerSlot, setPickerSlot] = useState('primary');
 
     useEffect(() => {
         setLabel(item.label || item.key);
@@ -90,9 +104,21 @@ export const AttributeConfigModal = ({
         setIcon(item.icon || '');
         const currentCfg = item.config || {};
         setDualMode(currentCfg.mode || 'split');
+        setMainUnit(currentCfg.mainUnit || '');
         setMajorLabel(currentCfg.majorLabel || '');
         setMinorLabel(currentCfg.minorLabel || '');
     }, [item]);
+
+    const handleDualModeChange = (newMode) => {
+        setDualMode(newMode);
+        if (newMode === 'time') {
+            setMainUnit('hours_minutes');
+        } else if (newMode === 'measurement') {
+            setMainUnit('feet_inches');
+        } else {
+            setMainUnit('');
+        }
+    };
 
     const handleTypeSelect = (newType) => {
         if (newType === type) return;
@@ -112,9 +138,9 @@ export const AttributeConfigModal = ({
         setIsIconPickerOpen(true);
     };
 
-    // Updates local state ONLY when an icon is selected from IconPickerModal
     const handleSelectIconFromPicker = (selectedSlug) => {
-        if (type === 'dual_counter') {
+        const isSplit = type === 'dual_counter' && dualMode === 'split';
+        if (isSplit) {
             const iconParts = (icon || '').split(',');
             const primary = iconParts[0] || '';
             const secondary = iconParts[1] || '';
@@ -135,6 +161,7 @@ export const AttributeConfigModal = ({
 
         const updatedConfig = type === 'dual_counter' ? {
             mode: dualMode,
+            mainUnit: dualMode === 'time' ? (mainUnit || 'hours_minutes') : (dualMode === 'measurement' ? (mainUnit || 'feet_inches') : ''),
             majorLabel: majorLabel.trim(),
             minorLabel: minorLabel.trim(),
         } : null;
@@ -153,13 +180,14 @@ export const AttributeConfigModal = ({
         }
     };
 
-    // Guard: Prevent AttributeConfigModal from closing when the child IconPickerModal triggers focus events
     const handleModalRequestClose = () => {
         if (isIconPickerOpen) return;
         onClose();
     };
 
     const isDual = type === 'dual_counter';
+    const isSplit = isDual && dualMode === 'split';
+
     const iconParts = (icon || '').split(',');
     const primaryIcon = iconParts[0] || '';
     const secondaryIcon = iconParts[1] || '';
@@ -178,26 +206,109 @@ export const AttributeConfigModal = ({
                         value={label}
                         onChange={setLabel}
                         help={sprintf(__('Database Slug: %s (non-editable)', TEXT_DOMAIN), item.key)}
+                        style={{ height: '36px', minHeight: '36px' }}
                         __nextHasNoMarginBottom
                     />
 
                     {/* 2. FIELD TYPE SELECTION */}
-                    <SelectControl
-                        label={__('Field Type', TEXT_DOMAIN)}
-                        value={type}
-                        options={FIELD_TYPE_OPTIONS}
-                        onChange={handleTypeSelect}
-                        __nextHasNoMarginBottom
-                    />
+                    <div className="bwb-select-control-wrapper">
+                        <SelectControl
+                            label={__('Field Type', TEXT_DOMAIN)}
+                            value={type}
+                            options={FIELD_TYPE_OPTIONS}
+                            onChange={handleTypeSelect}
+                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                            __nextHasNoMarginBottom
+                        />
+                    </div>
 
-                    {/* 3. ICON ASSIGNMENT / CLEARING */}
+                    {/* 3. DUAL COUNTER MODE & UNIT SETTINGS */}
+                    {isDual && (
+                        <div style={{ padding: '14px', background: '#f9f9f9', border: '1px solid #d0d7de', borderRadius: '4px' }}>
+                            <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '10px' }}>
+                                {__('Dual Counter Mode & Unit Settings', TEXT_DOMAIN)}
+                            </Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div className="bwb-select-control-wrapper">
+                                    <SelectControl
+                                        label={__('Display Mode', TEXT_DOMAIN)}
+                                        value={dualMode}
+                                        options={DUAL_MODE_OPTIONS}
+                                        onChange={handleDualModeChange}
+                                        style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                        __nextHasNoMarginBottom
+                                    />
+                                </div>
+
+                                {/* ENFORCED UNIT SELECTION FOR TIME AND MEASUREMENT */}
+                                {dualMode === 'time' && (
+                                    <div className="bwb-select-control-wrapper">
+                                        <SelectControl
+                                            label={__('Main Time Unit Structure', TEXT_DOMAIN)}
+                                            value={mainUnit || 'hours_minutes'}
+                                            options={TIME_UNIT_OPTIONS}
+                                            onChange={setMainUnit}
+                                            help={__('Choose the primary time unit structure for side drawer display.', TEXT_DOMAIN)}
+                                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                            __nextHasNoMarginBottom
+                                        />
+                                    </div>
+                                )}
+
+                                {dualMode === 'measurement' && (
+                                    <div className="bwb-select-control-wrapper">
+                                        <SelectControl
+                                            label={__('Main Distance / Measurement Unit System', TEXT_DOMAIN)}
+                                            value={mainUnit || 'feet_inches'}
+                                            options={MEASUREMENT_UNIT_OPTIONS}
+                                            onChange={setMainUnit}
+                                            help={__('Choose the distance unit system for side drawer display.', TEXT_DOMAIN)}
+                                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                            __nextHasNoMarginBottom
+                                        />
+                                    </div>
+                                )}
+
+                                {/* SUBCATEGORY LABELS FOR SPLIT MODE ONLY */}
+                                {dualMode === 'split' && (
+                                    <Flex gap={2}>
+                                        <FlexItem style={{ flex: 1 }}>
+                                            <TextControl
+                                                label={__('Major Subcategory Label', TEXT_DOMAIN)}
+                                                placeholder={__('e.g. Shower', TEXT_DOMAIN)}
+                                                value={majorLabel}
+                                                onChange={setMajorLabel}
+                                                help={__('Label for primary item', TEXT_DOMAIN)}
+                                                style={{ height: '36px', minHeight: '36px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+                                        </FlexItem>
+                                        <FlexItem style={{ flex: 1 }}>
+                                            <TextControl
+                                                label={__('Minor Subcategory Label', TEXT_DOMAIN)}
+                                                placeholder={__('e.g. Bathroom', TEXT_DOMAIN)}
+                                                value={minorLabel}
+                                                onChange={setMinorLabel}
+                                                help={__('Label for secondary item', TEXT_DOMAIN)}
+                                                style={{ height: '36px', minHeight: '36px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+                                        </FlexItem>
+                                    </Flex>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 4. ICON ASSIGNMENT / CLEARING */}
                     <div>
                         <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '6px' }}>
-                            {isDual ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Assigned Icon', TEXT_DOMAIN)}
+                            {isSplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Assigned Icon', TEXT_DOMAIN)}
                         </label>
 
                         <Flex gap={2} align="center">
-                            {isDual ? (
+                            {isSplit ? (
+                                /* Category Split: 2 Icons */
                                 <Flex gap={1} align="center" style={{ flex: 1 }}>
                                     <Button
                                         variant="secondary"
@@ -230,6 +341,7 @@ export const AttributeConfigModal = ({
                                     </Button>
                                 </Flex>
                             ) : (
+                                /* Time, Measurement, Text, Number, Boolean: 1 Icon */
                                 <Button
                                     variant="secondary"
                                     onClick={() => handleOpenPicker('primary')}
@@ -258,46 +370,6 @@ export const AttributeConfigModal = ({
                             )}
                         </Flex>
                     </div>
-
-                    {/* 4. DUAL COUNTER MODE & SUBCATEGORY CONFIGURATION */}
-                    {isDual && (
-                        <div style={{ padding: '14px', background: '#f9f9f9', border: '1px solid #d0d7de', borderRadius: '4px' }}>
-                            <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '10px' }}>
-                                {__('Dual Counter Subcategories & Mode', TEXT_DOMAIN)}
-                            </Text>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <SelectControl
-                                    label={__('Display Mode', TEXT_DOMAIN)}
-                                    value={dualMode}
-                                    options={DUAL_MODE_OPTIONS}
-                                    onChange={setDualMode}
-                                    __nextHasNoMarginBottom
-                                />
-                                <Flex gap={2}>
-                                    <FlexItem style={{ flex: 1 }}>
-                                        <TextControl
-                                            label={__('Major Subcategory Label', TEXT_DOMAIN)}
-                                            placeholder={dualMode === 'split' ? __('e.g. Shower', TEXT_DOMAIN) : 'Hours'}
-                                            value={majorLabel}
-                                            onChange={setMajorLabel}
-                                            help={__('Displayed under 1st icon box', TEXT_DOMAIN)}
-                                            __nextHasNoMarginBottom
-                                        />
-                                    </FlexItem>
-                                    <FlexItem style={{ flex: 1 }}>
-                                        <TextControl
-                                            label={__('Minor Subcategory Label', TEXT_DOMAIN)}
-                                            placeholder={dualMode === 'split' ? __('e.g. Bathroom', TEXT_DOMAIN) : 'Minutes'}
-                                            value={minorLabel}
-                                            onChange={setMinorLabel}
-                                            help={__('Displayed under 2nd icon box', TEXT_DOMAIN)}
-                                            __nextHasNoMarginBottom
-                                        />
-                                    </FlexItem>
-                                </Flex>
-                            </div>
-                        </div>
-                    )}
 
                     {/* TYPE CHANGE WARNING OVERLAY */}
                     {showTypeWarning && (

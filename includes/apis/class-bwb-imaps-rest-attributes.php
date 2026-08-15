@@ -89,7 +89,7 @@ class BWB_IMaps_REST_Attributes {
         $has_icon_param   = $request->has_param( 'icon' );
         $icon             = $has_icon_param ? sanitize_text_field( $request->get_param( 'icon' ) ) : null;
 
-        // FIXED: Extract and sanitize config parameter for dual_counter (mode, majorLabel, minorLabel)
+        // FIXED: Explicitly sanitize mainUnit alongside mode, majorLabel, and minorLabel
         $has_config_param = $request->has_param( 'config' );
         $raw_config       = $has_config_param ? $request->get_param( 'config' ) : null;
         $config           = null;
@@ -97,6 +97,7 @@ class BWB_IMaps_REST_Attributes {
         if ( is_array( $raw_config ) ) {
             $config = array(
                 'mode'       => sanitize_text_field( $raw_config['mode'] ?? 'split' ),
+                'mainUnit'   => sanitize_text_field( $raw_config['mainUnit'] ?? '' ),
                 'majorLabel' => sanitize_text_field( $raw_config['majorLabel'] ?? '' ),
                 'minorLabel' => sanitize_text_field( $raw_config['minorLabel'] ?? '' ),
                 'majorUnit'  => sanitize_text_field( $raw_config['majorUnit'] ?? '' ),
@@ -203,6 +204,7 @@ class BWB_IMaps_REST_Attributes {
                 if ( isset( $info['config'] ) && is_array( $info['config'] ) ) {
                     $config = array(
                         'mode'       => sanitize_text_field( $info['config']['mode'] ?? 'split' ),
+                        'mainUnit'   => sanitize_text_field( $info['config']['mainUnit'] ?? '' ),
                         'majorLabel' => sanitize_text_field( $info['config']['majorLabel'] ?? '' ),
                         'minorLabel' => sanitize_text_field( $info['config']['minorLabel'] ?? '' ),
                     );

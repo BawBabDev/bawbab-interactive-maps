@@ -109,14 +109,13 @@
 .map-sidebar.is-compact .loc-description { font-size: 0.95rem; }
 .map-sidebar.is-compact .sidebar-title-section { margin: 15px 0; }
 
-/* --- LOCATION SPECS (3-ROW STRUCTURED LAYOUT) --- */
+/* --- LOCATION SPECS (STRUCTURED SIDE DRAWER LAYOUT) --- */
 .location-specs-container { display: flex; flex-direction: column; gap: 16px; padding: 18px 15px; background: #fff; border-radius: 12px; margin: 20px 0; border: 1px solid #f0f0f1; }
 .specs-row { display: flex; width: 100%; }
 .specs-row.area-row { justify-content: center; border-bottom: 1px solid #f5f5f5; padding-bottom: 12px; }
 .specs-row.dual-row { justify-content: space-around; align-items: flex-start; }
-.spec-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.spec-item { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; max-width: 48%; }
 .spec-item.area-item { width: 100%; max-width: 200px; }
-.specs-row.dual-row .spec-item { flex: 1; max-width: 48%; }
 .spec-icon-row { display: flex; align-items: center; justify-content: center; height: 28px; margin-bottom: 6px; gap: 6px; }
 
 /* --- SPECS ICONS & LABELS --- */
@@ -235,11 +234,26 @@
 .navigation-active-panel .components-button.is-link.is-destructive { color: #b32d2e !important; background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; }
 .navigation-active-panel .components-button.is-link.is-destructive:hover { color: #dc3232 !important; text-decoration: underline !important; }
 
-/* SELECT CONTROL DROP-DOWNS PROFILE OVERRIDES */
+/* --- LOCATION SPECS & ADMIN FORM CONTROLS --- */
+
+/* Base Control Spacing & Labels */
 .navigation-active-panel .components-base-control { margin-bottom: 15px; }
 .navigation-active-panel .components-base-control__label { display: block; font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px; }
-.navigation-active-panel .components-select-control__input { width: 100%; padding: 6px 8px; border: 1px solid var(--map-border); border-radius: 4px; background: #ffffff; font-size: 13px; color: var(--map-text-dark); }
-.navigation-active-panel .components-select-control__input:focus { border-color: var(--map-primary); outline: none; }
+
+/* Consolidated Input & Dropdown Styling + Height Uniformity (36px) */
+.bwb-select-control-wrapper select,
+.navigation-active-panel .components-select-control__input,
+.components-select-control__input,
+.components-text-control__input {width: 100%; height: 36px !important; min-height: 36px !important; max-height: 36px !important; line-height: 36px !important; padding: 0 8px !important; border: 1px solid var(--map-border); border-radius: 4px; background: #ffffff; font-size: 13px; color: var(--map-text-dark); box-sizing: border-box !important;
+}
+
+/* Focus States */
+.navigation-active-panel .components-select-control__input:focus,
+.components-select-control__input:focus,
+.components-text-control__input:focus {
+    border-color: var(--map-primary);
+    outline: none;
+}
 
 /* --- ROUTE PLANNER HEADER RULES --- */
 .navigation-active-panel .nav-planner-title { color: var(--map-text-dark) !important; font-weight: 700 !important; text-align: left !important; }

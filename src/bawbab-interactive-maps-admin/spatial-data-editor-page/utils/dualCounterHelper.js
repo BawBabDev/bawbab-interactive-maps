@@ -3,83 +3,117 @@
  * File location: src/utils/dualCounterHelper.js
  */
 
+const TIME_UNIT_PRESETS = {
+    hours_minutes: { major: 'hr', minor: 'min', majorFull: 'Hours', minorFull: 'Minutes', minorRatio: 60 },
+    minutes_seconds: { major: 'min', minor: 'sec', majorFull: 'Minutes', minorFull: 'Seconds', minorRatio: 60 },
+    days_hours: { major: 'd', minor: 'hr', majorFull: 'Days', minorFull: 'Hours', minorRatio: 24 },
+};
+
+const MEASUREMENT_UNIT_PRESETS = {
+    feet_inches: { major: 'ft', minor: 'in', majorFull: 'Feet', minorFull: 'Inches', minorRatio: 12, useSymbols: true },
+    miles_feet: { major: 'mi', minor: 'ft', majorFull: 'Miles', minorFull: 'Feet', minorRatio: 5280, useSymbols: false },
+    km_meters: { major: 'km', minor: 'm', majorFull: 'Kilometers', minorFull: 'Meters', minorRatio: 1000, useSymbols: false },
+    meters_cm: { major: 'm', minor: 'cm', majorFull: 'Meters', minorFull: 'Centimeters', minorRatio: 100, useSymbols: false },
+};
+
 /**
  * Formats a dual_counter numeric value into structured major/minor visual representations.
  *
  * @param {number|string} rawValue - Numeric value (e.g. 1.5)
  * @param {Object} config - Configuration options
  * @param {string} [config.mode='split'] - 'split' | 'time' | 'measurement'
- * @param {string} [config.majorLabel='Full'] - Label for whole unit
- * @param {string} [config.minorLabel='Half'] - Label for fractional unit
- * @param {string} [config.majorUnit='hr'] - Unit suffix for time/measurement
- * @param {string} [config.minorUnit='min'] - Sub-unit suffix for time/measurement
+ * @param {string} [config.mainUnit] - Selected unit key from drop-down
+ * @param {string} [config.majorLabel] - Label/Unit string override
+ * @param {string} [config.minorLabel] - Sub-label/Unit string override
  * @returns {Object} Structured values for major and minor parts
  */
 export const formatDualCounter = ( rawValue, config = {} ) => {
-	const numericVal = parseFloat( rawValue );
-	if ( isNaN( numericVal ) || numericVal < 0 ) {
-		return {
-			displayText: '--',
-			majorValue: '--',
-			minorValue: '--',
-			majorLabel: config.majorLabel || 'Full',
-			minorLabel: config.minorLabel || 'Half',
-		};
-	}
+    const numericVal = parseFloat( rawValue );
+    if ( isNaN( numericVal ) || numericVal < 0 ) {
+        return {
+            displayText: '--',
+            majorValue: '--',
+            minorValue: '--',
+            majorLabel: config.majorLabel || 'Full',
+            minorLabel: config.minorLabel || 'Half',
+        };
+    }
 
-	const mode = config.mode || 'split';
+    const mode = config.mode || 'split';
 
-	switch ( mode ) {
-		case 'time': {
-			const majorCount = Math.floor( numericVal );
-			const remainder = numericVal - majorCount;
-			const minutes = Math.round( remainder * 60 );
-			const hrLabel = config.majorUnit || 'hr';
-			const minLabel = config.minorUnit || 'min';
+    switch ( mode ) {
+        case 'time': {
+            const unitKey = config.mainUnit || 'hours_minutes';
+            const preset = TIME_UNIT_PRESETS[ unitKey ] || TIME_UNIT_PRESETS.hours_minutes;
 
-			return {
-				displayText: `${ majorCount } ${ hrLabel }${
-					minutes > 0 ? ` ${ minutes } ${ minLabel }` : ''
-				}`.trim(),
-				majorValue: `${ majorCount } ${ hrLabel }`,
-				minorValue: `${ minutes } ${ minLabel }`,
-				majorLabel: config.majorLabel || 'Hours',
-				minorLabel: config.minorLabel || 'Minutes',
-			};
-		}
+            const majorCount = Math.floor( numericVal );
+            const remainder = numericVal - majorCount;
+            const minorCount = Math.round( remainder * preset.minorRatio );
 
-		case 'measurement': {
-			const majorCount = Math.floor( numericVal );
-			const remainder = numericVal - majorCount;
-			const inches = Math.round( remainder * 12 );
+            const parts = [];
+            if ( majorCount > 0 || minorCount === 0 ) {
+                parts.push( `${ majorCount } ${ preset.major }` );
+            }
+            if ( minorCount > 0 ) {
+                parts.push( `${ minorCount } ${ preset.minor }` );
+            }
 
-			return {
-				displayText: `${ majorCount }' ${ inches }"`,
-				majorValue: `${ majorCount }'`,
-				minorValue: `${ inches }"`,
-				majorLabel: config.majorLabel || 'Feet',
-				minorLabel: config.minorLabel || 'Inches',
-			};
-		}
+            return {
+                displayText: parts.join( ' ' ).trim(),
+                majorValue: `${ majorCount } ${ preset.major }`,
+                minorValue: `${ minorCount } ${ preset.minor }`,
+                majorLabel: config.majorLabel || preset.majorFull,
+                minorLabel: config.minorLabel || preset.minorFull,
+            };
+        }
 
-		case 'split':
-		default: {
-			// Integer part = Major items (e.g. 1.5 -> 1 Shower/Full Bath)
-			const majorCount = Math.floor( numericVal );
-			// Ceiling part = Minor items (e.g. 1.5 -> 2 Sinks/Bathrooms)
-			const minorCount = Math.ceil( numericVal );
+        case 'measurement': {
+            const unitKey = config.mainUnit || 'feet_inches';
+            const preset = MEASUREMENT_UNIT_PRESETS[ unitKey ] || MEASUREMENT_UNIT_PRESETS.feet_inches;
 
-			return {
-				displayText: `${ majorCount } ${ config.majorLabel || 'Full' } / ${ minorCount } ${ config.minorLabel || 'Half' }`,
-				majorValue: numericVal > 0 ? `x${ majorCount }` : '--',
-				minorValue: numericVal > 0 ? `x${ minorCount }` : '--',
-				majorLabel: config.majorLabel || 'Full',
-				minorLabel: config.minorLabel || 'Half',
-			};
-		}
-	}
+            const majorCount = Math.floor( numericVal );
+            const remainder = numericVal - majorCount;
+            const minorCount = Math.round( remainder * preset.minorRatio );
+
+            let displayStr = '';
+            if ( preset.useSymbols ) {
+                displayStr = `${ majorCount }' ${ minorCount }"`;
+            } else {
+                const parts = [];
+                if ( majorCount > 0 || minorCount === 0 ) {
+                    parts.push( `${ majorCount } ${ preset.major }` );
+                }
+                if ( minorCount > 0 ) {
+                    parts.push( `${ minorCount } ${ preset.minor }` );
+                }
+                displayStr = parts.join( ' ' ).trim();
+            }
+
+            return {
+                displayText: displayStr,
+                majorValue: `${ majorCount } ${ preset.major }`,
+                minorValue: `${ minorCount } ${ preset.minor }`,
+                majorLabel: config.majorLabel || preset.majorFull,
+                minorLabel: config.minorLabel || preset.minorFull,
+            };
+        }
+
+        case 'split':
+        default: {
+            const majorCount = Math.floor( numericVal );
+            const minorCount = Math.ceil( numericVal );
+
+            return {
+                displayText: `${ majorCount } ${ config.majorLabel || 'Full' } / ${ minorCount } ${ config.minorLabel || 'Half' }`,
+                majorValue: numericVal > 0 ? `x${ majorCount }` : '--',
+                minorValue: numericVal > 0 ? `x${ minorCount }` : '--',
+                majorLabel: config.majorLabel || 'Full',
+                minorLabel: config.minorLabel || 'Half',
+            };
+        }
+    }
 };
 
 export const normalizeFieldType = ( type ) => {
-	return type || 'text';
+    return type || 'text';
 };

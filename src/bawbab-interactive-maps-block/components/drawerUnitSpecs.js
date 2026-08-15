@@ -74,27 +74,24 @@ export const UnitSpecs = ({ specs }) => {
         const fieldType = schemaItem?.type || (typeof val === 'boolean' ? 'boolean' : (isFinite(val) ? 'number' : 'text'));
 
         if (fieldType === 'dual_counter') {
-            flushBuffer();
-
-            const rawIcons = (schemaItem?.icon || 'shower,sink').split(',');
-            const primaryIconSlug = rawIcons[0] || 'shower';
-            const secondaryIconSlug = rawIcons[1] || 'sink';
+            const rawIcons = (schemaItem?.icon || '').split(',');
+            const primaryIconSlug = rawIcons[0] || '';
+            const secondaryIconSlug = rawIcons[1] || '';
 
             const config = schemaItem?.config || {};
             const mode = config.mode || 'split';
 
-            // Resolve explicit subcategory labels set in Schema Manager
+            // Resolve explicit subcategory / unit designations set by user in AttributeConfigModal
             let majorSubcategory = config.majorLabel;
             let minorSubcategory = config.minorLabel;
 
-            // Smart defaults when subcategories are not explicitly named
             if (!majorSubcategory) {
                 if (key === 'baths') {
                     majorSubcategory = __('Shower', TEXT_DOMAIN);
                 } else if (mode === 'time') {
-                    majorSubcategory = __('Hours', TEXT_DOMAIN);
+                    majorSubcategory = __('hr', TEXT_DOMAIN);
                 } else if (mode === 'measurement') {
-                    majorSubcategory = __('Feet', TEXT_DOMAIN);
+                    majorSubcategory = __('ft', TEXT_DOMAIN);
                 } else {
                     majorSubcategory = __('Major', TEXT_DOMAIN);
                 }
@@ -104,9 +101,9 @@ export const UnitSpecs = ({ specs }) => {
                 if (key === 'baths') {
                     minorSubcategory = __('Bathroom', TEXT_DOMAIN);
                 } else if (mode === 'time') {
-                    minorSubcategory = __('Minutes', TEXT_DOMAIN);
+                    minorSubcategory = __('min', TEXT_DOMAIN);
                 } else if (mode === 'measurement') {
-                    minorSubcategory = __('Inches', TEXT_DOMAIN);
+                    minorSubcategory = __('in', TEXT_DOMAIN);
                 } else {
                     minorSubcategory = __('Minor', TEXT_DOMAIN);
                 }
@@ -114,34 +111,48 @@ export const UnitSpecs = ({ specs }) => {
 
             const formatted = formatDualCounter(val, {
                 mode,
+                mainUnit: config.mainUnit,
                 majorLabel: majorSubcategory,
                 minorLabel: minorSubcategory,
-                majorUnit: config.majorUnit || 'hr',
-                minorUnit: config.minorUnit || 'min'
             });
 
-            // Push both major and minor subcategories on the exact same row line
-            rows.push({
-                type: 'dual',
-                items: [
-                    {
-                        id: `${key}_major`,
-                        type: 'number',
-                        icon: primaryIconSlug,
-                        value: formatted.majorValue !== undefined && formatted.majorValue !== null ? formatted.majorValue : '--',
-                        label: majorSubcategory,
-                        parentAttribute: attributeName
-                    },
-                    {
-                        id: `${key}_minor`,
-                        type: 'number',
-                        icon: secondaryIconSlug,
-                        value: formatted.minorValue !== undefined && formatted.minorValue !== null ? formatted.minorValue : '--',
-                        label: minorSubcategory,
-                        parentAttribute: attributeName
-                    }
-                ]
-            });
+            // TIME & MEASUREMENT: Single icon, compact single-line text display using selected units
+            if (mode === 'time' || mode === 'measurement') {
+                standaloneBuffer.push({
+                    id: key,
+                    type: 'text',
+                    icon: primaryIconSlug,
+                    value: formatted.displayText || String(val),
+                    label: attributeName
+                });
+
+                if (standaloneBuffer.length === 2) flushBuffer();
+            } else {
+                // CATEGORY SPLIT: 2 icons, 2 subcategories, parent attribute label repeated below each
+                flushBuffer();
+
+                rows.push({
+                    type: 'dual',
+                    items: [
+                        {
+                            id: `${key}_major`,
+                            type: 'number',
+                            icon: primaryIconSlug,
+                            value: formatted.majorValue !== undefined && formatted.majorValue !== null ? formatted.majorValue : '--',
+                            label: majorSubcategory,
+                            parentAttribute: attributeName
+                        },
+                        {
+                            id: `${key}_minor`,
+                            type: 'number',
+                            icon: secondaryIconSlug,
+                            value: formatted.minorValue !== undefined && formatted.minorValue !== null ? formatted.minorValue : '--',
+                            label: minorSubcategory,
+                            parentAttribute: attributeName
+                        }
+                    ]
+                });
+            }
         } else if (fieldType === 'boolean') {
             const isTrue = Boolean(val) && val !== 'false' && val !== '0';
             const defaultIcon = key === 'fireplace' ? 'fireplace' : (key === 'sunroom' ? 'sun' : 'check');
@@ -149,7 +160,7 @@ export const UnitSpecs = ({ specs }) => {
             standaloneBuffer.push({
                 id: key,
                 type: 'boolean',
-                icon: schemaItem?.icon || defaultIcon,
+                icon: schemaItem?.icon !== undefined ? schemaItem.icon : defaultIcon,
                 isTrue,
                 label: attributeName
             });
@@ -159,7 +170,7 @@ export const UnitSpecs = ({ specs }) => {
             standaloneBuffer.push({
                 id: key,
                 type: 'number',
-                icon: schemaItem?.icon || 'hash',
+                icon: schemaItem?.icon || '',
                 value: isFinite(val) ? `x${val}` : val,
                 label: attributeName
             });
@@ -169,7 +180,7 @@ export const UnitSpecs = ({ specs }) => {
             standaloneBuffer.push({
                 id: key,
                 type: 'text',
-                icon: schemaItem?.icon || 'file-text',
+                icon: schemaItem?.icon || '',
                 value: String(val),
                 label: attributeName
             });
@@ -197,39 +208,58 @@ export const UnitSpecs = ({ specs }) => {
                 </div>
             )}
 
-            {/* SUBSEQUENT ROWS: DUAL COUNTER / PAIRED ITEMS */}
+            {/* SUBSEQUENT ROWS */}
             {rows.map((row, rowIndex) => (
                 <div key={rowIndex} className="specs-row dual-row">
-                    {row.items.map((item) => (
-                        <div 
-                            key={item.id} 
-                            className={`spec-item ${item.type === 'boolean' && !item.isTrue ? 'is-disabled' : ''}`}
-                        >
-                            <div className="spec-icon-row">
-                                <div className="icon-wrapper" style={{ position: 'relative', display: 'inline-flex' }}>
-                                    <span className="fa-icon" style={{ color: item.type === 'boolean' && !item.isTrue ? '#a7aaad' : '#333' }}>
-                                        <SafeIcon iconSlug={item.icon} />
-                                    </span>
-                                    {item.type === 'boolean' && !item.isTrue && <span className="no-sign"></span>}
+                    {row.items.map((item) => {
+                        const hasIcon = Boolean(item.icon);
+
+                        if (item.type === 'boolean') {
+                            return (
+                                <div key={item.id} className={`spec-item ${!item.isTrue ? 'is-disabled' : ''}`}>
+                                    <div className="spec-icon-row">
+                                        <div className="icon-wrapper">
+                                            {hasIcon && (
+                                                <span className="fa-icon" style={{ color: !item.isTrue ? '#a7aaad' : '#333' }}>
+                                                    <SafeIcon iconSlug={item.icon} />
+                                                </span>
+                                            )}
+                                            {!item.isTrue && <span className="no-sign"></span>}
+                                        </div>
+                                    </div>
+                                    <span className="spec-label">{item.label}</span>
                                 </div>
-                                {item.type !== 'boolean' && (
-                                    <span className="spec-number">{item.value}</span>
+                            );
+                        }
+
+                        return (
+                            <div key={item.id} className="spec-item">
+                                {/* LINE 1: ICON + VALUE */}
+                                <div className="spec-icon-row">
+                                    {hasIcon && (
+                                        <span className="fa-icon">
+                                            <SafeIcon iconSlug={item.icon} />
+                                        </span>
+                                    )}
+                                    <span className="spec-number">
+                                        {item.value}
+                                    </span>
+                                </div>
+
+                                {/* LINE 2: SUBCATEGORY OR FIELD LABEL */}
+                                <span className="spec-label">
+                                    {item.label}
+                                </span>
+
+                                {/* LINE 3: PARENT ATTRIBUTE LABEL (FOR CATEGORY SPLIT ITEMS) */}
+                                {item.parentAttribute && (
+                                    <span className="spec-label" style={{ color: '#aaa', marginTop: '2px', fontWeight: '500' }}>
+                                        {item.parentAttribute}
+                                    </span>
                                 )}
                             </div>
-
-                            {/* Subcategory Label (e.g. Shower, Bathroom, Full Bath, Half Bath) */}
-                            <span className="spec-label" style={{ fontWeight: '600' }}>
-                                {item.label}
-                            </span>
-
-                            {/* Parent Custom Attribute Name */}
-                            {item.parentAttribute && (
-                                <span className="spec-sublabel" style={{ fontSize: '10px', color: '#888', display: 'block', marginTop: '2px' }}>
-                                    {item.parentAttribute}
-                                </span>
-                            )}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ))}
         </div>

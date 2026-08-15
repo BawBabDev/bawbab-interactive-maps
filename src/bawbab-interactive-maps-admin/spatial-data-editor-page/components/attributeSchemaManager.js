@@ -1,6 +1,6 @@
 import { useState } from '@wordpress/element';
 import { 
-    Button, TextControl, SelectControl, Flex, 
+    Button, TextControl, SelectControl, Flex, FlexItem,
     Spinner, __experimentalText as Text 
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
@@ -16,6 +16,25 @@ const FIELD_TYPE_OPTIONS = [
     { label: __('Number', TEXT_DOMAIN), value: 'number' },
     { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
     { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
+];
+
+const DUAL_MODE_OPTIONS = [
+    { label: __('Category Split (e.g. Shower / Bathroom)', TEXT_DOMAIN), value: 'split' },
+    { label: __('Time Breakdown (Hours / Minutes)', TEXT_DOMAIN), value: 'time' },
+    { label: __('Measurement (Feet / Inches)', TEXT_DOMAIN), value: 'measurement' },
+];
+
+const TIME_UNIT_OPTIONS = [
+    { label: __('Hours & Minutes (1 hr 30 min)', TEXT_DOMAIN), value: 'hours_minutes' },
+    { label: __('Minutes & Seconds (1 min 30 sec)', TEXT_DOMAIN), value: 'minutes_seconds' },
+    { label: __('Days & Hours (1 d 12 hr)', TEXT_DOMAIN), value: 'days_hours' },
+];
+
+const MEASUREMENT_UNIT_OPTIONS = [
+    { label: __('Feet & Inches (6\' 7")', TEXT_DOMAIN), value: 'feet_inches' },
+    { label: __('Miles & Feet (1 mi 500 ft)', TEXT_DOMAIN), value: 'miles_feet' },
+    { label: __('Kilometers & Meters (1 km 500 m)', TEXT_DOMAIN), value: 'km_meters' },
+    { label: __('Meters & Centimeters (1 m 50 cm)', TEXT_DOMAIN), value: 'meters_cm' },
 ];
 
 const createKeySlug = (label) => {
@@ -73,6 +92,13 @@ export const AttributeSchemaManager = ({
     const [newType, setNewType] = useState('text');
     const [newIconPrimary, setNewIconPrimary] = useState('');
     const [newIconSecondary, setNewIconSecondary] = useState('');
+    
+    // Dual Counter registration options
+    const [newDualMode, setNewDualMode] = useState('split');
+    const [newMainUnit, setNewMainUnit] = useState('hours_minutes');
+    const [newMajorLabel, setNewMajorLabel] = useState('');
+    const [newMinorLabel, setNewMinorLabel] = useState('');
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Configuration Modal state
@@ -85,20 +111,39 @@ export const AttributeSchemaManager = ({
 
     const derivedKey = createKeySlug(newLabel);
 
+    const handleTypeChange = (val) => {
+        setNewType(val);
+        if (val === 'dual_counter') {
+            setNewDualMode('split');
+            setNewMainUnit('hours_minutes');
+        }
+    };
+
     const handleAddKey = async () => {
         if (!newLabel.trim() || !derivedKey) return;
         setIsSubmitting(true);
 
+        const isDual = newType === 'dual_counter';
+        const isSplit = isDual && newDualMode === 'split';
+
         let formattedIcon = newIconPrimary;
-        if (newType === 'dual_counter') {
+        if (isSplit) {
             formattedIcon = `${newIconPrimary || ''},${newIconSecondary || ''}`;
         }
+
+        const config = isDual ? {
+            mode: newDualMode,
+            mainUnit: newDualMode === 'time' ? newMainUnit : (newDualMode === 'measurement' ? newMainUnit : ''),
+            majorLabel: newMajorLabel.trim(),
+            minorLabel: newMinorLabel.trim(),
+        } : null;
 
         const res = await onUpdateKey({
             key: derivedKey,
             label: newLabel.trim(),
             type: newType,
-            icon: formattedIcon
+            icon: formattedIcon,
+            config
         });
 
         if (res.success) {
@@ -106,6 +151,10 @@ export const AttributeSchemaManager = ({
             setNewType('text');
             setNewIconPrimary('');
             setNewIconSecondary('');
+            setNewDualMode('split');
+            setNewMainUnit('hours_minutes');
+            setNewMajorLabel('');
+            setNewMinorLabel('');
             if (onRefreshFeatures) onRefreshFeatures();
         }
         setIsSubmitting(false);
@@ -138,8 +187,9 @@ export const AttributeSchemaManager = ({
             if (item) {
                 let updatedIcon = selectedIconKey;
                 const normalizedType = normalizeFieldType(item.type);
+                const isSplit = normalizedType === 'dual_counter' && item.config?.mode === 'split';
 
-                if (normalizedType === 'dual_counter') {
+                if (isSplit) {
                     const rawIcons = (item.icon || '').split(',');
                     const primary = rawIcons[0] || '';
                     const secondary = rawIcons[1] || '';
@@ -160,13 +210,16 @@ export const AttributeSchemaManager = ({
                 });
             }
         } else {
-            if (newType === 'dual_counter' && editingTargetSlot === 'secondary') {
+            if (newType === 'dual_counter' && newDualMode === 'split' && editingTargetSlot === 'secondary') {
                 setNewIconSecondary(selectedIconKey);
             } else {
                 setNewIconPrimary(selectedIconKey);
             }
         }
     };
+
+    const isNewDual = newType === 'dual_counter';
+    const isNewSplit = isNewDual && newDualMode === 'split';
 
     return (
         <div style={{ padding: '20px 0' }}>
@@ -183,87 +236,159 @@ export const AttributeSchemaManager = ({
                     {__('Register New Custom Field', TEXT_DOMAIN)}
                 </Text>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px 180px auto', gap: '12px', alignItems: 'end' }}>
-                    <div>
-                        <TextControl
-                            label={__('Field Display Label', TEXT_DOMAIN)}
-                            placeholder="e.g. Duration, Square Feet, or Fireplace"
-                            value={newLabel}
-                            onChange={setNewLabel}
-                            style={{ height: '36px', minHeight: '36px' }}
-                            __nextHasNoMarginBottom
-                        />
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isNewSplit ? '1fr 160px 180px auto' : '1fr 160px 140px auto', gap: '12px', alignItems: 'end' }}>
+                        <div>
+                            <TextControl
+                                label={__('Field Display Label', TEXT_DOMAIN)}
+                                placeholder="e.g. Duration, Square Feet, or Fireplace"
+                                value={newLabel}
+                                onChange={setNewLabel}
+                                style={{ height: '36px', minHeight: '36px' }}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
 
-                    <div className="bwb-select-control-wrapper">
-                        <SelectControl
-                            label={__('Field Type', TEXT_DOMAIN)}
-                            value={normalizeFieldType(newType)}
-                            options={FIELD_TYPE_OPTIONS}
-                            onChange={(val) => {
-                                setNewType(val);
-                            }}
-                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
-                            __nextHasNoMarginBottom
-                        />
-                    </div>
+                        <div className="bwb-select-control-wrapper">
+                            <SelectControl
+                                label={__('Field Type', TEXT_DOMAIN)}
+                                value={normalizeFieldType(newType)}
+                                options={FIELD_TYPE_OPTIONS}
+                                onChange={handleTypeChange}
+                                style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px', marginTop: 0 }}
+                                __nextHasNoMarginBottom
+                            />
+                        </div>
 
-                    <div>
-                        <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
-                            {normalizeFieldType(newType) === 'dual_counter' ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Icon', TEXT_DOMAIN)}
-                        </label>
+                        <div>
+                            <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
+                                {isNewSplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Icon', TEXT_DOMAIN)}
+                            </label>
 
-                        {normalizeFieldType(newType) === 'dual_counter' ? (
-                            <Flex gap={1} align="center">
+                            {isNewSplit ? (
+                                <Flex gap={1} align="center">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => handleOpenIconPicker(null, 'primary')}
+                                        style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
+                                        label={__('Select Major Unit Icon', TEXT_DOMAIN)}
+                                        showTooltip
+                                    >
+                                        {renderStyledIcon(newIconPrimary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', TEXT_DOMAIN)}</span>}
+                                    </Button>
+                                    <span style={{ fontSize: '12px', color: '#888' }}>/</span>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => handleOpenIconPicker(null, 'secondary')}
+                                        style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
+                                        label={__('Select Minor Unit Icon', TEXT_DOMAIN)}
+                                        showTooltip
+                                    >
+                                        {renderStyledIcon(newIconSecondary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', TEXT_DOMAIN)}</span>}
+                                    </Button>
+                                </Flex>
+                            ) : (
                                 <Button
                                     variant="secondary"
                                     onClick={() => handleOpenIconPicker(null, 'primary')}
-                                    style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                    label={__('Select Major Unit Icon', TEXT_DOMAIN)}
-                                    showTooltip
+                                    style={{ height: '36px', minHeight: '36px', width: '100%', justifyContent: 'center', gap: '6px' }}
                                 >
-                                    {renderStyledIcon(newIconPrimary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose Icon', TEXT_DOMAIN)}</span>}
+                                    {newIconPrimary && renderIconBySlug(newIconPrimary) ? (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            {renderStyledIcon(newIconPrimary, 18)}
+                                            <span style={{ fontSize: '12px', color: '#333', textTransform: 'capitalize' }}>{newIconPrimary}</span>
+                                        </span>
+                                    ) : (
+                                        <span>{__('Choose Icon', TEXT_DOMAIN)}</span>
+                                    )}
                                 </Button>
-                                <span style={{ fontSize: '12px', color: '#888' }}>/</span>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleOpenIconPicker(null, 'secondary')}
-                                    style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                    label={__('Select Minor Unit Icon', TEXT_DOMAIN)}
-                                    showTooltip
-                                >
-                                    {renderStyledIcon(newIconSecondary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose Icon', TEXT_DOMAIN)}</span>}
-                                </Button>
-                            </Flex>
-                        ) : (
+                            )}
+                        </div>
+
+                        <div>
                             <Button
-                                variant="secondary"
-                                onClick={() => handleOpenIconPicker(null, 'primary')}
-                                style={{ height: '36px', minHeight: '36px', width: '100%', justifyContent: 'center', gap: '6px' }}
+                                variant="primary"
+                                onClick={handleAddKey}
+                                isBusy={isSubmitting}
+                                disabled={!newLabel.trim() || isSubmitting}
+                                style={{ height: '36px', minHeight: '36px', padding: '0 16px' }}
                             >
-                                {newIconPrimary && renderIconBySlug(newIconPrimary) ? (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        {renderStyledIcon(newIconPrimary, 18)}
-                                        <span style={{ fontSize: '12px', color: '#333', textTransform: 'capitalize' }}>{newIconPrimary}</span>
-                                    </span>
-                                ) : (
-                                    <span>{__('Choose Icon', TEXT_DOMAIN)}</span>
-                                )}
+                                {__('Add Field', TEXT_DOMAIN)}
                             </Button>
-                        )}
+                        </div>
                     </div>
 
-                    <div>
-                        <Button
-                            variant="primary"
-                            onClick={handleAddKey}
-                            isBusy={isSubmitting}
-                            disabled={!newLabel.trim() || isSubmitting}
-                            style={{ height: '36px', minHeight: '36px', padding: '0 16px' }}
-                        >
-                            {__('Add Field', TEXT_DOMAIN)}
-                        </Button>
-                    </div>
+                    {/* DUAL COUNTER SPECIFIC CREATION OPTIONS */}
+                    {isNewDual && (
+                        <div style={{ padding: '12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+                            <Flex gap={2} align="end">
+                                <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                    <SelectControl
+                                        label={__('Dual Counter Mode', TEXT_DOMAIN)}
+                                        value={newDualMode}
+                                        options={DUAL_MODE_OPTIONS}
+                                        onChange={(mode) => {
+                                            setNewDualMode(mode);
+                                            setNewMainUnit(mode === 'time' ? 'hours_minutes' : 'feet_inches');
+                                        }}
+                                        style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px' }}
+                                        __nextHasNoMarginBottom
+                                    />
+                                </FlexItem>
+
+                                {newDualMode === 'time' && (
+                                    <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                        <SelectControl
+                                            label={__('Main Time Unit', TEXT_DOMAIN)}
+                                            value={newMainUnit}
+                                            options={TIME_UNIT_OPTIONS}
+                                            onChange={setNewMainUnit}
+                                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px' }}
+                                            __nextHasNoMarginBottom
+                                        />
+                                    </FlexItem>
+                                )}
+
+                                {newDualMode === 'measurement' && (
+                                    <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                        <SelectControl
+                                            label={__('Distance Unit', TEXT_DOMAIN)}
+                                            value={newMainUnit}
+                                            options={MEASUREMENT_UNIT_OPTIONS}
+                                            onChange={setNewMainUnit}
+                                            style={{ height: '36px', minHeight: '36px', lineHeight: '36px', padding: '0 8px' }}
+                                            __nextHasNoMarginBottom
+                                        />
+                                    </FlexItem>
+                                )}
+
+                                {newDualMode === 'split' && (
+                                    <>
+                                        <FlexItem style={{ flex: 1 }}>
+                                            <TextControl
+                                                label={__('Major Label', TEXT_DOMAIN)}
+                                                placeholder={__('e.g. Shower', TEXT_DOMAIN)}
+                                                value={newMajorLabel}
+                                                onChange={setNewMajorLabel}
+                                                style={{ height: '36px', minHeight: '36px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+                                        </FlexItem>
+                                        <FlexItem style={{ flex: 1 }}>
+                                            <TextControl
+                                                label={__('Minor Label', TEXT_DOMAIN)}
+                                                placeholder={__('e.g. Bathroom', TEXT_DOMAIN)}
+                                                value={newMinorLabel}
+                                                onChange={setNewMinorLabel}
+                                                style={{ height: '36px', minHeight: '36px' }}
+                                                __nextHasNoMarginBottom
+                                            />
+                                        </FlexItem>
+                                    </>
+                                )}
+                            </Flex>
+                        </div>
+                    )}
                 </div>
 
                 {derivedKey && (
@@ -293,6 +418,9 @@ export const AttributeSchemaManager = ({
                     {schema.map((item) => {
                         const normalizedType = normalizeFieldType(item.type);
                         const isDualCounter = normalizedType === 'dual_counter';
+                        const dualMode = item.config?.mode || 'split';
+                        const isSplit = isDualCounter && dualMode === 'split';
+
                         const effectiveIconSlug = item.icon || '';
                         const iconParts = effectiveIconSlug.split(',');
                         
@@ -305,11 +433,11 @@ export const AttributeSchemaManager = ({
                                 <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '3px', fontSize: '12px', width: 'fit-content' }}>{item.key}</code>
                                 
                                 <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', background: '#f0f6fb', padding: '2px 8px', borderRadius: '10px', width: 'fit-content', fontWeight: '600' }}>
-                                    {normalizedType}
+                                    {isDualCounter ? `dual (${dualMode})` : normalizedType}
                                 </span>
                                 
                                 <Flex align="center" gap={1}>
-                                    {isDualCounter ? (
+                                    {isSplit ? (
                                         <>
                                             {renderStyledIcon(primarySlug, 16) || <span style={{ fontSize: '11px', color: '#bbb' }}>--</span>}
                                             <span style={{ fontSize: '10px', color: '#aaa' }}>/</span>
@@ -321,7 +449,6 @@ export const AttributeSchemaManager = ({
                                 </Flex>
 
                                 <Flex justify="end" gap={1}>
-                                    {/* CONFIGURE ATTRIBUTE MODAL TRIGGER */}
                                     <Button
                                         variant="secondary"
                                         icon="admin-generic"
@@ -364,12 +491,14 @@ export const AttributeSchemaManager = ({
                         ? (() => {
                             const item = schema.find(s => s.key === editingItemKey);
                             const normalizedType = normalizeFieldType(item?.type);
+                            const isSplit = normalizedType === 'dual_counter' && item?.config?.mode === 'split';
                             const raw = item?.icon || '';
-                            if (normalizedType === 'dual_counter') {
+
+                            if (isSplit) {
                                 const parts = raw.split(',');
                                 return editingTargetSlot === 'secondary' ? (parts[1] || '') : (parts[0] || '');
                             }
-                            return raw;
+                            return raw.split(',')[0] || '';
                         })()
                         : (editingTargetSlot === 'secondary' ? newIconSecondary : newIconPrimary)
                 }
