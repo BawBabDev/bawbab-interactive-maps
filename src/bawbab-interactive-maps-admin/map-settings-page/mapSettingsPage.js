@@ -56,10 +56,12 @@ const MapSettingsPage = () => {
         setTypography,
     } = setters;
 
-    // Dedicated typography hook for central font state and live CSS custom variables
-    const { typographySettings, updateTypography } = useTypographySettings(
-        typography || {}
-    );
+    // Dedicated typography hook for central font state, reset, and dynamic CSS variables
+    const {
+        typographySettings,
+        updateTypography,
+        resetTypography,
+    } = useTypographySettings( typography || {} );
 
     const handleTypographyChange = ( key, value ) => {
         updateTypography( key, value );
@@ -68,6 +70,13 @@ const MapSettingsPage = () => {
                 ...( prev || {} ),
                 [ key ]: value,
             } ) );
+        }
+    };
+
+    const handleResetTypography = () => {
+        resetTypography();
+        if ( setTypography ) {
+            setTypography( {} );
         }
     };
 
@@ -188,6 +197,7 @@ const MapSettingsPage = () => {
                                     setGoogleMapId={ setGoogleMapId }
                                     typographySettings={ typographySettings }
                                     updateTypography={ handleTypographyChange }
+                                    resetTypography={ handleResetTypography }
                                 />
                             </div>
                             <div

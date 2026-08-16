@@ -175,6 +175,10 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         } );
     };
 
+    const resetTypography = () => {
+        setSettings( DEFAULT_TYPOGRAPHY );
+    };
+
     const saveTypographySettings = async () => {
         setIsSaving( true );
         try {
@@ -341,6 +345,7 @@ export const useTypographySettings = ( initialSettings = {} ) => {
     return {
         typographySettings: settings,
         updateTypography,
+        resetTypography,
         saveTypographySettings,
         cssVariables,
         isLoading,

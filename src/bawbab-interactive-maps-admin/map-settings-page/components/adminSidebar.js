@@ -1,19 +1,5 @@
-import {
-    TabPanel,
-    PanelBody,
-    Button,
-    TextControl,
-    TextareaControl,
-    ExternalLink,
-    SelectControl,
-    ToggleControl,
-    Flex,
-    FlexItem,
-    Dashicon,
-    __experimentalText as Text,
-} from '@wordpress/components';
+import { TabPanel, Dashicon } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { useState } from '@wordpress/element';
 import { MapsTab } from './tabs/mapsTab';
 import { LocationsTab } from './tabs/locationsTab';
 import { SettingsTab } from './tabs/settingsTab';
@@ -45,6 +31,7 @@ const AdminSidebar = ( {
     setGoogleMapId,
     typographySettings,
     updateTypography,
+    resetTypography,
 } ) => {
     const tabs = [
         {
@@ -97,11 +84,14 @@ const AdminSidebar = ( {
                             fontSize: '13px',
                             lineHeight: 1,
                             letterSpacing: '-1px',
-                            display: 'inline-block',
-                            marginRight: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '20px',
+                            height: '20px',
                         } }
                     >
-                        AA
+                        Aa
                     </span>
                     <span>
                         { __( 'Font Management', 'bawbab-interactive-maps' ) }
@@ -188,10 +178,11 @@ const AdminSidebar = ( {
                                 />
                             ) }
 
-							{ tab.name === 'typography' && (
+                            { tab.name === 'typography' && (
                                 <TypographyTab
                                     typographySettings={ typographySettings }
                                     updateTypography={ updateTypography }
+                                    resetTypography={ resetTypography }
                                 />
                             ) }
 

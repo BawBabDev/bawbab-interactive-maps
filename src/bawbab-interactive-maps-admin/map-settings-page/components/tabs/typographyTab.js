@@ -5,6 +5,7 @@ import {
     SelectControl,
     PanelBody,
     Flex,
+    Button,
 } from '@wordpress/components';
 import { TypographyRowControl } from '../typographyRowControl';
 
@@ -25,17 +26,54 @@ const FONT_FAMILY_OPTIONS = [
 export const TypographyTab = ( {
     typographySettings = {},
     updateTypography,
+    resetTypography,
     disabled = false,
 } ) => {
     return (
         <div className="tab-content">
-            <Text
-                variant="title.small"
-                display="block"
-                style={ { marginBottom: '15px' } }
+            { /* TOP HEADER BANNER WITH CENTERED RESET BUTTON */ }
+            <div
+                style={ {
+                    marginBottom: '20px',
+                    paddingBottom: '16px',
+                    borderBottom: '1px solid #e0e0e0',
+                } }
             >
-                { __( 'Global Typography & Font Management', TEXT_DOMAIN ) }
-            </Text>
+                <Text
+                    variant="title.small"
+                    display="block"
+                    style={ { fontWeight: '700', marginBottom: '4px' } }
+                >
+                    { __( 'Global Typography & Font Management', TEXT_DOMAIN ) }
+                </Text>
+                <Text
+                    variant="caption"
+                    display="block"
+                    style={ { color: '#666', fontSize: '12px', marginBottom: '14px' } }
+                >
+                    { __( 'Configure typography rules across map components.', TEXT_DOMAIN ) }
+                </Text>
+
+                { resetTypography && (
+                    <Button
+                        variant="secondary"
+                        isSmall
+                        icon="undo"
+                        onClick={ resetTypography }
+                        disabled={ disabled }
+                        style={ {
+                            height: '36px',
+                            width: '100%',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            display: 'inline-flex',
+                            gap: '6px',
+                        } }
+                    >
+                        { __( 'Reset All to Defaults', TEXT_DOMAIN ) }
+                    </Button>
+                ) }
+            </div>
 
             { /* GLOBAL FONT FAMILY SELECTION */ }
             <div
@@ -72,7 +110,7 @@ export const TypographyTab = ( {
             >
                 <PanelBody
                     title={ __( '1. Map Legend Typography', TEXT_DOMAIN ) }
-                    initialOpen={ true }
+                    initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
@@ -336,8 +374,6 @@ export const TypographyTab = ( {
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
-
-
                         <TypographyRowControl
                             title={ __( 'Search Menu Top-Level Tab Buttons', TEXT_DOMAIN ) }
                             sizeKey="searchTabFontSize"
@@ -382,7 +418,7 @@ export const TypographyTab = ( {
                             updateTypography={ updateTypography }
                             disabled={ disabled }
                         />
-                        
+
                         <TypographyRowControl
                             title={ __( 'Search Input Placeholder & Text', TEXT_DOMAIN ) }
                             sizeKey="searchInputFontSize"
