@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class BWB_IMaps_REST_Settings {
 
     public static function register_routes( $namespace ) {
-        // Public endpoint to retrieve general settings and styling configurations
+        // Public endpoint to retrieve general settings, navigation, legend, and styling configurations
         register_rest_route( $namespace, '/get-map-settings', array(
             'methods'             => 'GET',
             'callback'            => array( __CLASS__, 'handle_get_settings' ),
             'permission_callback' => '__return_true',
         ) );
 
-        // Authenticated admin endpoint to update settings, typography, and styling
+        // Authenticated admin endpoint to update settings, categories, legend, typography, and styling
         register_rest_route( $namespace, '/update-map-settings', array(
             'methods'             => 'POST',
             'callback'            => array( __CLASS__, 'handle_update_settings' ),
@@ -27,15 +27,28 @@ class BWB_IMaps_REST_Settings {
     }
 
     /**
-     * Retrieve all map settings, themes, and typography configurations
+     * Retrieve all map settings, category maps, legend configs, themes, and typography
      */
     public static function handle_get_settings() {
         $settings = get_option( 'bwb_imaps_options_data', array() );
 
+        // Preserve exact saved categoryConfig structure without forced non-empty fallbacks
+        $saved_category_config = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] )
+            ? $settings['categoryConfig']
+            : array();
+
         $default_category_config = array(
-            'groups'      => array(),
-            'categoryMap' => array(),
+            'groups'       => array(),
+            'categoryMap'  => array(),
+            'legendConfig' => array(
+                'enabled'            => true,
+                'showSectionHeaders' => true,
+                'sections'           => array(),
+            ),
         );
+
+        // Merge saved structure with defaults while preserving empty arrays verbatim
+        $category_config = array_merge( $default_category_config, $saved_category_config );
 
         $default_typography = array(
             'fontFamily'                  => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
@@ -153,7 +166,7 @@ class BWB_IMaps_REST_Settings {
             'googleMapId'      => $settings['googleMapId'] ?? '',
             'locations'        => $settings['locations'] ?? array(),
             'attribute_schema' => $settings['attribute_schema'] ?? array(),
-            'categoryConfig'   => $settings['categoryConfig'] ?? $default_category_config,
+            'categoryConfig'   => $category_config,
             'typography'       => isset( $settings['typography'] ) ? array_merge( $default_typography, $settings['typography'] ) : $default_typography,
         );
 
@@ -161,7 +174,7 @@ class BWB_IMaps_REST_Settings {
     }
 
     /**
-     * Update map settings, theme choices, and typography options
+     * Update map settings, category maps, legend section configurations, and typography
      */
     public static function handle_update_settings( $request ) {
         $existing_settings = get_option( 'bwb_imaps_options_data', array() );
@@ -174,10 +187,9 @@ class BWB_IMaps_REST_Settings {
         // Work on a copy of existing settings
         $updated_settings = $existing_settings;
 
-        // Apply top-level scalar / array parameters
+        // Apply top-level structured parameters directly without stripping empty arrays
         foreach ( $params as $key => $value ) {
             if ( 'categoryConfig' === $key || 'attribute_schema' === $key || 'typography' === $key ) {
-                // For structured subsystems, completely replace the key when provided so empty arrays aren't merged back
                 if ( is_array( $value ) ) {
                     $updated_settings[ $key ] = $value;
                 }
@@ -192,12 +204,8 @@ class BWB_IMaps_REST_Settings {
 
         $saved = update_option( 'bwb_imaps_options_data', $updated_settings );
 
-        if ( false === $saved ) {
-            return new WP_REST_Response( array(
-                'success' => true,
-                'message' => 'Settings unchanged or already up to date.',
-            ), 200 );
-        }
+        // Invalidate spatial GeoJSON transient cache so public frontend map updates immediately
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
 
         return new WP_REST_Response( array(
             'success'  => true,

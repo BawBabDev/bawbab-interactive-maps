@@ -28,9 +28,6 @@ const LAYER_TITLES = {
     entries: 'Entries & Doors',
 };
 
-/**
- * Helper: Auto-maps a category slug to a navigation group using fuzzy term matching
- */
 const autoMatchCategoryToGroup = ( catSlug, groups = [] ) => {
     if ( ! catSlug || ! groups.length ) return '';
 
@@ -48,12 +45,8 @@ const autoMatchCategoryToGroup = ( catSlug, groups = [] ) => {
         }
 
         if (
-            /(apt|apartment|residential|flat|housing|unit)/i.test(
-                cleanSlug
-            ) &&
-            /(apt|apartment|residential|housing)/i.test(
-                `${ gTitle } ${ gId }`
-            )
+            /(apt|apartment|residential|flat|housing|unit)/i.test( cleanSlug ) &&
+            /(apt|apartment|residential|housing)/i.test( `${ gTitle } ${ gId }` )
         ) {
             return group.id;
         }
@@ -64,20 +57,14 @@ const autoMatchCategoryToGroup = ( catSlug, groups = [] ) => {
             return group.id;
         }
         if (
-            /(amenity|care|center|club|pool|park|gym|playground)/i.test(
-                cleanSlug
-            ) &&
+            /(amenity|care|center|club|pool|park|gym|playground)/i.test( cleanSlug ) &&
             /(amenit|care|center|facility)/i.test( `${ gTitle } ${ gId }` )
         ) {
             return group.id;
         }
         if (
-            /(path|road|trail|patio|drive|support|infra|utility)/i.test(
-                cleanSlug
-            ) &&
-            /(path|road|trail|support|infra|util)/i.test(
-                `${ gTitle } ${ gId }`
-            )
+            /(path|road|trail|patio|drive|support|infra|utility)/i.test( cleanSlug ) &&
+            /(path|road|trail|support|infra|util)/i.test( `${ gTitle } ${ gId }` )
         ) {
             return group.id;
         }
@@ -88,17 +75,14 @@ const autoMatchCategoryToGroup = ( catSlug, groups = [] ) => {
 
 export const useCategoryManager = () => {
     const [ groups, setGroups ] = useState( DEFAULT_GROUPS );
-    const [ categoryMap, setCategoryMap ] = useState(
-        DEFAULT_CATEGORY_MAPPINGS
-    );
+    const [ categoryMap, setCategoryMap ] = useState( DEFAULT_CATEGORY_MAPPINGS );
     const [ legendConfig, setLegendConfig ] = useState( DEFAULT_LEGEND_CONFIG );
     const [ isLoading, setIsLoading ] = useState( true );
     const [ isSaving, setIsSaving ] = useState( false );
 
-    const { createSuccessNotice, createErrorNotice } =
-        useDispatch( noticesStore );
+    const { createSuccessNotice, createErrorNotice } = useDispatch( noticesStore );
 
-    // 1. Fetch saved settings from new /get-map-settings REST route + discover spatial categories
+    // 1. Fetch saved settings from /get-map-settings REST route
     const loadCategoryData = useCallback( async () => {
         setIsLoading( true );
         try {
@@ -139,7 +123,7 @@ export const useCategoryManager = () => {
             );
             const spatialData = await spatialRes.json();
 
-            // Composite key discovery: "layer_type::category_slug"
+            // Discover active composite keys from DB: "layer_type::category_slug"
             const discoveredCompositeMap = {};
             if ( spatialData?.features ) {
                 spatialData.features.forEach( ( f ) => {
@@ -163,7 +147,7 @@ export const useCategoryManager = () => {
             let paletteIdx = 0;
             const updatedMap = {};
 
-            // A. Preserve ALL existing saved composite categories
+            // Preserve ALL existing saved composite categories
             Object.keys( currentCategoryMap ).forEach( ( key ) => {
                 const item = currentCategoryMap[ key ] || {};
 
@@ -201,7 +185,7 @@ export const useCategoryManager = () => {
                 }
             } );
 
-            // B. ADD newly discovered composite keys from active spatial data with AUTO-GROUP MATCHING
+            // Add ONLY newly discovered spatial keys that are completely unknown
             Object.keys( discoveredCompositeMap ).forEach( ( compositeKey ) => {
                 const info = discoveredCompositeMap[ compositeKey ];
 
@@ -231,81 +215,10 @@ export const useCategoryManager = () => {
                         color: fallbackColor,
                     };
                     paletteIdx++;
-                } else if ( ! updatedMap[ compositeKey ].groupId ) {
-                    const catSlug = compositeKey.includes( '::' )
-                        ? compositeKey.split( '::' )[ 1 ]
-                        : compositeKey;
-                    const matchedGroupId = autoMatchCategoryToGroup(
-                        catSlug,
-                        currentGroups
-                    );
-                    if ( matchedGroupId ) {
-                        updatedMap[ compositeKey ].groupId = matchedGroupId;
-                    }
                 }
             } );
 
-            const activeCompositeKeys = new Set( Object.keys( updatedMap ) );
-
-            // Sync Legend Sections and Items (ADDITIVE)
-            let sections = Array.isArray( currentLegendConfig.sections )
-                ? [ ...currentLegendConfig.sections ]
-                : [];
-            const existingLegendCompositeKeys = new Set();
-
-            sections.forEach( ( section ) => {
-                ( section.items || [] ).forEach( ( item ) => {
-                    ( item.categories || [] ).forEach( ( ck ) =>
-                        existingLegendCompositeKeys.add( ck )
-                    );
-                } );
-            } );
-
-            const unassignedKeys = [ ...activeCompositeKeys ].filter(
-                ( ck ) => ! existingLegendCompositeKeys.has( ck )
-            );
-
-            if ( unassignedKeys.length > 0 ) {
-                unassignedKeys.forEach( ( ck ) => {
-                    const layer =
-                        updatedMap[ ck ]?.layer_type ||
-                        ( ck.includes( '::' )
-                            ? ck.split( '::' )[ 0 ]
-                            : 'buildings' );
-                    const catSlug = ck.includes( '::' )
-                        ? ck.split( '::' )[ 1 ]
-                        : ck;
-
-                    let targetSec = sections.find(
-                        ( s ) =>
-                            s.layer_type === layer ||
-                            s.id === `sec_layer_${ layer }`
-                    );
-
-                    if ( ! targetSec ) {
-                        const layerTitle =
-                            LAYER_TITLES[ layer ] || layer.toUpperCase();
-                        targetSec = {
-                            id: `sec_layer_${ layer }`,
-                            title: layerTitle,
-                            layer_type: layer,
-                            items: [],
-                        };
-                        sections.push( targetSec );
-                    }
-
-                    targetSec.items.push( {
-                        id: `leg_${ ck }_${ Date.now() }`,
-                        label: updatedMap[ ck ]?.label || catSlug,
-                        type: 'single',
-                        categories: [ ck ],
-                        showInLegend: true,
-                    } );
-                } );
-            }
-
-            currentLegendConfig.sections = sections;
-
+            // IMPORTANT FIX: Preserve exact saved legend sections without auto-injecting deleted items!
             setGroups( currentGroups );
             setCategoryMap( updatedMap );
             setLegendConfig( currentLegendConfig );
@@ -367,9 +280,7 @@ export const useCategoryManager = () => {
                     'Category & Navigation settings saved successfully!',
                     TEXT_DOMAIN
                 ),
-                {
-                    type: 'snackbar',
-                }
+                { type: 'snackbar' }
             );
             return true;
         } catch ( err ) {
@@ -427,7 +338,7 @@ export const useCategoryManager = () => {
         [ categoryMap ]
     );
 
-    // 4. Prunes unused categories
+    // 4. Prune unused categories
     const cleanupUnusedCategories = useCallback( async () => {
         setIsSaving( true );
         try {
@@ -475,18 +386,7 @@ export const useCategoryManager = () => {
                                 .filter( Boolean );
 
                             return { ...section, items: validItems };
-                        } )
-                        .filter( ( section ) => section.items.length > 0 );
-                }
-
-                if ( cleanedSections.length === 0 ) {
-                    cleanedSections = [
-                        {
-                            id: `sec_layer_default`,
-                            title: __( 'General', TEXT_DOMAIN ),
-                            items: [],
-                        },
-                    ];
+                        } );
                 }
 
                 const newLegendConfig = {
@@ -494,8 +394,11 @@ export const useCategoryManager = () => {
                     sections: cleanedSections,
                 };
 
-                // Save state to backend
-                const success = await saveCategoryData( groups, cleanedMap, newLegendConfig );
+                const success = await saveCategoryData(
+                    groups,
+                    cleanedMap,
+                    newLegendConfig
+                );
 
                 if ( success ) {
                     setCategoryMap( cleanedMap );
@@ -508,9 +411,7 @@ export const useCategoryManager = () => {
                             'Unused categories and stale legend items pruned successfully.',
                             TEXT_DOMAIN
                         ),
-                    {
-                        type: 'snackbar',
-                    }
+                    { type: 'snackbar' }
                 );
                 return true;
             } else {

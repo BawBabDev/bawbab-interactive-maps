@@ -67,6 +67,39 @@ class BWB_IMaps_REST_Categories {
             }
         }
 
+        // Clean up legend sections by removing references to pruned categories
+        if ( isset( $config['legendConfig']['sections'] ) && is_array( $config['legendConfig']['sections'] ) ) {
+            $cleaned_sections = array();
+
+            foreach ( $config['legendConfig']['sections'] as $section ) {
+                if ( ! isset( $section['items'] ) || ! is_array( $section['items'] ) ) {
+                    $cleaned_sections[] = $section;
+                    continue;
+                }
+
+                $valid_items = array();
+                foreach ( $section['items'] as $item ) {
+                    if ( ! isset( $item['categories'] ) || ! is_array( $item['categories'] ) ) {
+                        continue;
+                    }
+
+                    $valid_cats = array_filter( $item['categories'], function( $ck ) use ( $cleaned_map ) {
+                        return isset( $cleaned_map[ $ck ] );
+                    } );
+
+                    if ( ! empty( $valid_cats ) ) {
+                        $item['categories'] = array_values( $valid_cats );
+                        $valid_items[]      = $item;
+                    }
+                }
+
+                $section['items']   = $valid_items;
+                $cleaned_sections[] = $section;
+            }
+
+            $config['legendConfig']['sections'] = $cleaned_sections;
+        }
+
         $config['categoryMap']      = $cleaned_map;
         $settings['categoryConfig'] = $config;
         update_option( 'bwb_imaps_options_data', $settings );
@@ -77,6 +110,7 @@ class BWB_IMaps_REST_Categories {
             'success'      => true,
             'pruned_count' => $pruned_count,
             'categoryMap'  => (object) $cleaned_map,
+            'legendConfig' => $config['legendConfig'] ?? array(),
             'message'      => sprintf( 'Cleanup complete. %d unused categories removed.', $pruned_count )
         ), 200 );
     }
@@ -120,13 +154,11 @@ class BWB_IMaps_REST_Categories {
                     $g_id    = strtolower( $group['id'] ?? '' );
                     $g_title = strtolower( $group['title'] ?? '' );
 
-                    // Direct substring match
                     if ( ! empty( $g_title ) && ( strpos( $clean_readable, $g_title ) !== false || strpos( $g_title, $clean_readable ) !== false ) ) {
                         $target_group_id = $group['id'];
                         break;
                     }
 
-                    // Fuzzy term matching
                     if ( preg_match( '/(apt|apartment|residential|flat|housing|unit)/i', $clean_readable ) && preg_match( '/(apt|apartment|residential|housing)/i', $g_title . ' ' . $g_id ) ) {
                         $target_group_id = $group['id'];
                         break;
