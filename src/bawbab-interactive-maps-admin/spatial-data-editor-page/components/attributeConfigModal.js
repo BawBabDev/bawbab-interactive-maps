@@ -3,7 +3,7 @@ import {
     Modal, Button, TextControl, SelectControl, Flex, FlexItem, __experimentalText as Text 
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
-import { renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
+import { renderIconBySlug, LEGACY_ICON_NAMES } from '../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
 import { IconPickerModal } from './iconPickerModal';
 

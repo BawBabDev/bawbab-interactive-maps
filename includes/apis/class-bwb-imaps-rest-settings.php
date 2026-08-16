@@ -40,28 +40,63 @@ class BWB_IMaps_REST_Settings {
         $default_typography = array(
             'fontFamily'              => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
             
-            // Sizes
+            // --- LEGEND DEFAULTS ---
             'legendHeaderFontSize'    => 13,
             'legendSectionFontSize'   => 10,
             'legendItemFontSize'      => 11,
-            'drawerTitleFontSize'     => 2.0,
-            'drawerBodyFontSize'      => 1.1,
-            'controlsFontSize'        => 13,
-
-            // Weights
             'legendHeaderFontWeight'  => '800',
             'legendSectionFontWeight' => '800',
             'legendItemFontWeight'    => '600',
-
-            // Styles
             'legendHeaderFontStyle'   => 'normal',
             'legendSectionFontStyle'  => 'normal',
             'legendItemFontStyle'     => 'normal',
-
-            // Decorations
             'legendHeaderDecoration'  => 'none',
             'legendSectionDecoration' => 'none',
             'legendItemDecoration'    => 'none',
+
+            // --- DRAWER DEFAULTS ---
+            'drawerCategoryFontSize'  => 11,
+            'drawerCategoryFontWeight'=> '700',
+            'drawerCategoryFontStyle' => 'normal',
+            'drawerCategoryDecoration'=> 'none',
+
+            'drawerTitleFontSize'     => 28,
+            'drawerTitleFontWeight'   => '800',
+            'drawerTitleFontStyle'    => 'normal',
+            'drawerTitleDecoration'   => 'none',
+
+            'drawerSubtitleFontSize'  => 16,
+            'drawerSubtitleFontWeight'=> '600',
+            'drawerSubtitleFontStyle' => 'normal',
+            'drawerSubtitleDecoration'=> 'none',
+
+            'drawerHeadingFontSize'   => 20,
+            'drawerHeadingFontWeight' => '700',
+            'drawerHeadingFontStyle'  => 'normal',
+            'drawerHeadingDecoration' => 'none',
+
+            'drawerBodyFontSize'      => 14,
+            'drawerBodyFontWeight'    => '400',
+            'drawerBodyFontStyle'     => 'normal',
+            'drawerBodyDecoration'    => 'none',
+
+            'drawerQuoteFontSize'     => 14,
+            'drawerQuoteFontWeight'   => '400',
+            'drawerQuoteFontStyle'    => 'italic',
+            'drawerQuoteDecoration'   => 'none',
+
+            'drawerSpecsNumberFontSize'  => 14,
+            'drawerSpecsNumberFontWeight'=> '800',
+            'drawerSpecsNumberFontStyle' => 'normal',
+            'drawerSpecsNumberDecoration'=> 'none',
+
+            'drawerSpecsLabelFontSize'   => 9,
+            'drawerSpecsLabelFontWeight' => '700',
+            'drawerSpecsLabelFontStyle'  => 'normal',
+            'drawerSpecsLabelDecoration' => 'none',
+
+            // --- CONTROLS DEFAULTS ---
+            'controlsFontSize'        => 13,
         );
 
         $payload = array(

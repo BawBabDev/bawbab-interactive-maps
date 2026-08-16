@@ -1,5 +1,5 @@
 import { __ } from '@wordpress/i18n';
-import { renderIconBySlug } from '../../constants/iconRegistry';
+import { renderIconBySlug } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/constants/iconRegistry';
 import { useAttributeSchema } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/hooks/useAttributeSchema';
 import { formatDualCounter } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/utils/dualCounterHelper';
 

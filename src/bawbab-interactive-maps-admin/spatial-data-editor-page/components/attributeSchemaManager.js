@@ -6,7 +6,7 @@ import {
 import { __, sprintf } from '@wordpress/i18n';
 import { IconPickerModal } from './iconPickerModal';
 import { AttributeConfigModal } from './attributeConfigModal';
-import { renderIconBySlug, LEGACY_ICON_NAMES } from '../../../constants/iconRegistry';
+import { renderIconBySlug, LEGACY_ICON_NAMES } from '../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
 import { useAttributeSchema } from '../hooks/useAttributeSchema';
 

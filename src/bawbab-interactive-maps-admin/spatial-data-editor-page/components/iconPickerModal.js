@@ -6,7 +6,7 @@ import {
     getIconsByCategory, 
     renderIconBySlug, 
     LEGACY_ICON_NAMES 
-} from '../../../constants/iconRegistry';
+} from '../constants/iconRegistry';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

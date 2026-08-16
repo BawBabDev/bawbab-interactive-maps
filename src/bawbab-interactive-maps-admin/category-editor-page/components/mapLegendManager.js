@@ -1,6 +1,6 @@
 /**
  * MapLegendManager Component
- * Admin panel for legend organization, section grouping, and typography controls.
+ * Admin panel for legend organization and section grouping.
  *
  * File: src/components/mapLegendManager.jsx
  */
@@ -19,8 +19,6 @@ import {
     Modal,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
-import { useTypographySettings } from '../../../hooks/useTypographySettings';
-import { LegendTypographyAccordion } from './legendTypographyAccordion';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
@@ -36,11 +34,6 @@ export const MapLegendManager = ( {
     const [ selectedMergeCats, setSelectedMergeCats ] = useState( [] );
     const [ targetSectionId, setTargetSectionId ] = useState( '' );
     const [ newSectionTitle, setNewSectionTitle ] = useState( '' );
-
-    // Dedicated hook for handling font settings, options persistence, and CSS variables
-    const { typographySettings, updateTypography } = useTypographySettings(
-        legendConfig?.typography || {}
-    );
 
     const allCategoryKeys = Object.keys( categoryMap );
 
@@ -74,7 +67,7 @@ export const MapLegendManager = ( {
             const currentSections = prev.sections || [];
 
             if ( currentSections.length <= 1 ) {
-                // Instead of blocking deletion completely, clear items if it's the last section
+                // Clear items if it's the last section instead of blocking completely
                 const updatedSections = currentSections.map( ( s ) =>
                     s.id === secId ? { ...s, items: [] } : s
                 );
@@ -247,18 +240,6 @@ export const MapLegendManager = ( {
             .filter( ( i ) => i.id !== itemId )
             .concat( restoredItems );
         setLegendConfig( ( prev ) => ( { ...prev, sections } ) );
-    };
-
-    // Handler to sync typography updates directly into legendConfig state
-    const handleTypographyChange = ( key, value ) => {
-        updateTypography( key, value );
-        setLegendConfig( ( prev ) => ( {
-            ...prev,
-            typography: {
-                ...( prev.typography || {} ),
-                [ key ]: value,
-            },
-        } ) );
     };
 
     const sectionDropdownOptions = ( legendConfig.sections || [] ).map(
@@ -667,15 +648,6 @@ export const MapLegendManager = ( {
                             >
                                 { __( 'Add Section', TEXT_DOMAIN ) }
                             </Button>
-                        </div>
-
-                        { /* MODULAR ADVANCED LEGEND TYPOGRAPHY ACCORDION WITH TOP MARGIN */ }
-                        <div style={ { marginTop: '25px' } }>
-                            <LegendTypographyAccordion
-                                typographySettings={ typographySettings }
-                                updateTypography={ handleTypographyChange }
-                                disabled={ ! legendConfig.enabled }
-                            />
                         </div>
                     </div>
                 ) }

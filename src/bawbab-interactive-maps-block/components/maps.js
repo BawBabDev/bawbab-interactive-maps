@@ -31,7 +31,7 @@ import { __ } from '@wordpress/i18n';
 import { useMapDimensions } from '../hooks/useMapDimensions';
 import { useMapLayers } from '../hooks/useMapLayers';
 import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor-page/hooks/useCategoryManager';
-import { useTypographySettings } from '../../hooks/useTypographySettings';
+import { useTypographySettings } from '../../bawbab-interactive-maps-admin/map-settings-page/hooks/useTypographySettings';
 import { calculateSpatialBounds } from '../utils/mapBounds';
 import { SpatialFeaturesRenderer } from './spatialFeaturesRenderer';
 import {
@@ -78,7 +78,16 @@ export default function BawBabIMaps( {
     const MAP_LOGO = mapLogoProp || '';
     const NAV_BACKGROUND = navBackgroundProp || '';
 
-    const { cssVariables } = useTypographySettings();
+    // Pass live feature draft typography in editMode, or fall back to database API settings
+    const activeTypographyInput = useMemo( () => {
+        return (
+            selectedLocationProp?.properties?.typography ||
+            selectedLocationProp?.typography ||
+            {}
+        );
+    }, [ selectedLocationProp?.properties?.typography, selectedLocationProp?.typography ] );
+
+    const { cssVariables } = useTypographySettings( activeTypographyInput );
 
     const { formatCoords } = useCoordinateFormatter();
     const [ isDrawerOpen, setIsDrawerOpen ] = useState( false );

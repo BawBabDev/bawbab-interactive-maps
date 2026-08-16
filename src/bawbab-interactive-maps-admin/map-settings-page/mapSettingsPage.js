@@ -14,11 +14,10 @@ import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
 import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 import { useMapSettings } from './hooks/useMapSettings';
+import { useTypographySettings } from './hooks/useTypographySettings';
 
 /**
  * MapSettingsPage Component
- *
- * Root administration panel managing global map options via dedicated REST APIs.
  */
 const MapSettingsPage = () => {
     const [ refreshTrigger, setRefreshTrigger ] = useState( 0 );
@@ -43,6 +42,7 @@ const MapSettingsPage = () => {
         navBackground,
         googleApiKey,
         googleMapId,
+        typography,
     } = settings;
 
     const {
@@ -53,7 +53,23 @@ const MapSettingsPage = () => {
         setNavBackground,
         setGoogleApiKey,
         setGoogleMapId,
+        setTypography,
     } = setters;
+
+    // Dedicated typography hook for central font state and live CSS custom variables
+    const { typographySettings, updateTypography } = useTypographySettings(
+        typography || {}
+    );
+
+    const handleTypographyChange = ( key, value ) => {
+        updateTypography( key, value );
+        if ( setTypography ) {
+            setTypography( ( prev ) => ( {
+                ...( prev || {} ),
+                [ key ]: value,
+            } ) );
+        }
+    };
 
     // Notices dispatchers
     const { createSuccessNotice, createErrorNotice, removeNotice } =
@@ -170,6 +186,8 @@ const MapSettingsPage = () => {
                                     setGoogleApiKey={ setGoogleApiKey }
                                     googleMapId={ googleMapId }
                                     setGoogleMapId={ setGoogleMapId }
+                                    typographySettings={ typographySettings }
+                                    updateTypography={ handleTypographyChange }
                                 />
                             </div>
                             <div
@@ -220,6 +238,9 @@ const MapSettingsPage = () => {
                                 colorThemeProp={ colorTheme }
                                 apiKeyProp={ googleApiKey }
                                 mapIdProp={ googleMapId }
+                                selectedLocationProp={ {
+                                    properties: { typography: typographySettings },
+                                } }
                             />
                         ) : (
                             <div
