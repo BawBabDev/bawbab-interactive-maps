@@ -76,20 +76,35 @@
 .wp-link-container { margin-top: 20px; border-top: 1px solid var(--map-border); padding-top: 15px; }
 
 /* --- UNIFORM HEADING STYLES INSIDE SIDEBAR --- */
-.loc-description h1, .loc-description .wp-page-content-block h1 { font-size: 1.6rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 10px 0 !important; line-height: 1.3 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h2, .loc-description .wp-page-content-block h2 { font-size: 1.4rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 8px 0 !important; line-height: 1.35 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h3, .loc-description .wp-page-content-block h3 { font-size: 1.25rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h4, .loc-description h5, .loc-description h6, .loc-description .wp-page-content-block h4, .loc-description .wp-page-content-block h5, .loc-description .wp-page-content-block h6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h1, .loc-description .sidebar-heading-1 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 8px 0 !important; line-height: 1.3 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h2, .loc-description .sidebar-heading-2 { font-size: 1.35rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 6px 0 !important; line-height: 1.35 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h3, .loc-description .sidebar-heading-3 { font-size: 1.2rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h4, .loc-description .sidebar-heading-4, .loc-description h5, .loc-description .sidebar-heading-5, .loc-description h6, .loc-description .sidebar-heading-6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
 
 /* --- UNIFORM PARAGRAPH & BODY TEXT STYLES --- */
-.loc-description p, .loc-description span, .loc-description div, .loc-description .wp-page-content-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 12px !important; }
+.loc-description p, .loc-description span, .loc-description div:not(.sidebar-quote-block), .loc-description .wp-page-content-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 12px !important; }
 
 /* --- UNIFORM LIST & BULLET POINT STYLES --- */
 .loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: 1.1rem !important; }
 .loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
 
-/* --- NEUTRALIZE IMPORTED GUTENBERG CONTAINER BORDERS & BACKGROUNDS --- */
-.loc-description .wp-block-group, .loc-description .wp-block-columns, .loc-description .wp-block-column, .loc-description .card, .loc-description .container { border: none !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+/* --- UNIFORM QUOTE BLOCK / CITATION STYLES (WP ADMIN, SHORTCODE & GUTENBERG) --- */
+.loc-description blockquote, .loc-description .sidebar-quote-block { margin: 16px 0 16px 10px !important; padding: 6px 0 6px 16px !important; border-left: 3px solid var(--map-primary, #2271b1) !important; border-top: none !important; border-right: none !important; border-bottom: none !important; background: transparent !important; box-shadow: none !important; font-style: italic !important; }
+.loc-description blockquote > *:first-child, .loc-description .sidebar-quote-block > *:first-child, .loc-description blockquote p:first-child, .loc-description .sidebar-quote-block p:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+.loc-description blockquote p, .loc-description .sidebar-quote-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 6px !important; }
+.loc-description blockquote cite, .loc-description .sidebar-quote-cite, .loc-description .wp-block-quote__citation { display: block !important; font-size: 0.95rem !important; font-style: normal !important; font-weight: 600 !important; color: #646970 !important; margin-top: 6px !important; margin-bottom: 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+
+/* --- GUTENBERG BLOCK CONTENT OVERRIDES --- */
+.loc-description .wp-page-content-block { display: block !important; width: 100% !important; clear: both !important; overflow: hidden !important; }
+.loc-description .wp-page-content-block .alignfull { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; left: 0 !important; right: 0 !important; box-sizing: border-box !important; }
+.loc-description .wp-page-content-block [style*="margin-top:-"], .loc-description .wp-page-content-block [style*="margin-top: -"] { margin-top: 0 !important; }
+.loc-description .wp-page-content-block .wp-block-group, .loc-description .wp-page-content-block .wp-block-columns { position: relative !important; clear: both !important; float: none !important; height: auto !important; min-height: 0 !important; }
+.loc-description .wp-page-content-block .wp-block-columns { flex-direction: column !important; }
+.loc-description .wp-page-content-block .wp-block-column { flex-basis: 100% !important; width: 100% !important; max-width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
+.loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: 1.1rem !important; }
+.loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
+.map-sidebar.is-compact .loc-description ul, .map-sidebar.is-compact .loc-description ol, .map-sidebar.is-compact .loc-description .wp-block-list { font-size: 0.95rem !important; }
+.map-sidebar.is-compact .loc-description li, .map-sidebar.is-compact .loc-description li p, .map-sidebar.is-compact .loc-description li span, .map-sidebar.is-compact .loc-description li div, .map-sidebar.is-compact .loc-description .wp-block-list li { font-size: 0.95rem !important; }
 
 /* --- COMPACT SIDEBAR OVERRIDES (SMALL UI / MOBILE) --- */
 .map-sidebar.is-compact .sidebar-inner-padding { padding: 15px; }
@@ -97,11 +112,12 @@
 .map-sidebar.is-compact .loc-title { font-size: 1.4rem !important; }
 .map-sidebar.is-compact .loc-subtitle { font-size: 1rem !important; margin-top: 8px !important; }
 .map-sidebar.is-compact .sidebar-title-section { margin: 15px 0; }
-.map-sidebar.is-compact .loc-description p, .map-sidebar.is-compact .loc-description span, .map-sidebar.is-compact .loc-description div, .map-sidebar.is-compact .loc-description li, .map-sidebar.is-compact .loc-description li p, .map-sidebar.is-compact .loc-description li span { font-size: 0.95rem !important; }
-.map-sidebar.is-compact .loc-description h1 { font-size: 1.3rem !important; }
-.map-sidebar.is-compact .loc-description h2 { font-size: 1.15rem !important; }
-.map-sidebar.is-compact .loc-description h3 { font-size: 1.05rem !important; }
-.map-sidebar.is-compact .loc-description h4, .map-sidebar.is-compact .loc-description h5, .map-sidebar.is-compact .loc-description h6 { font-size: 0.95rem !important; }
+.map-sidebar.is-compact .loc-description p, .map-sidebar.is-compact .loc-description span, .map-sidebar.is-compact .loc-description div, .map-sidebar.is-compact .loc-description li, .map-sidebar.is-compact .loc-description li p, .map-sidebar.is-compact .loc-description li span, .map-sidebar.is-compact .sidebar-quote-block p { font-size: 0.95rem !important; }
+.map-sidebar.is-compact .sidebar-quote-cite { font-size: 0.85rem !important; }
+.map-sidebar.is-compact .loc-description h1, .map-sidebar.is-compact .loc-description .sidebar-heading-1 { font-size: 1.3rem !important; }
+.map-sidebar.is-compact .loc-description h2, .map-sidebar.is-compact .loc-description .sidebar-heading-2 { font-size: 1.15rem !important; }
+.map-sidebar.is-compact .loc-description h3, .map-sidebar.is-compact .loc-description .sidebar-heading-3 { font-size: 1.05rem !important; }
+.map-sidebar.is-compact .loc-description h4, .map-sidebar.is-compact .loc-description .sidebar-heading-4, .map-sidebar.is-compact .loc-description h5, .map-sidebar.is-compact .loc-description .sidebar-heading-5, .map-sidebar.is-compact .loc-description h6, .map-sidebar.is-compact .loc-description .sidebar-heading-6 { font-size: 0.95rem !important; }
 
 /* --- LOCATION SPECS (STRUCTURED SIDE DRAWER LAYOUT) --- */
 .location-specs-container { display: flex; flex-direction: column; gap: 16px; padding: 18px 15px; background: #fff; border-radius: 12px; margin: 20px 0; border: 1px solid #f0f0f1; }

@@ -70,8 +70,21 @@ export const useWpLinkedContent = (
             heading.classList.add( `sidebar-heading-${ tag.replace( 'h', '' ) }` );
         } );
 
-        // 3. Strip inline style overrides from paragraphs, lists, and text nodes
-        doc.querySelectorAll( 'p, ul, ol, li, span, div' ).forEach( ( el ) => {
+        // 3. Normalize Blockquotes & Citations
+        doc.querySelectorAll( 'blockquote, .wp-block-quote' ).forEach( ( quote ) => {
+            quote.removeAttribute( 'style' );
+            quote.removeAttribute( 'class' );
+            quote.classList.add( 'sidebar-quote-block' );
+
+            quote.querySelectorAll( 'cite, .wp-block-quote__citation' ).forEach( ( cite ) => {
+                cite.removeAttribute( 'style' );
+                cite.removeAttribute( 'class' );
+                cite.classList.add( 'sidebar-quote-cite' );
+            } );
+        } );
+
+        // 4. Strip inline layout/typography overrides while preserving formatting (bold, italic, underline)
+        doc.querySelectorAll( 'p, ul, ol, li, span, div, blockquote, cite' ).forEach( ( el ) => {
             if ( el.style ) {
                 el.style.removeProperty( 'font-size' );
                 el.style.removeProperty( 'font-family' );
@@ -79,10 +92,12 @@ export const useWpLinkedContent = (
                 el.style.removeProperty( 'margin-top' );
                 el.style.removeProperty( 'margin-bottom' );
                 el.style.removeProperty( 'padding' );
+                el.style.removeProperty( 'border' );
+                el.style.removeProperty( 'background' );
             }
         } );
 
-        // 4. Unwrap unnecessary layout containers (Gutenberg groups, columns, cards)
+        // 5. Unwrap unnecessary layout containers (Gutenberg groups, columns, cards) - DO NOT unwrap blockquotes
         doc.querySelectorAll(
             '.wp-block-group, .wp-block-columns, .wp-block-column, .card, .container, section, article'
         ).forEach( ( container ) => {
@@ -92,12 +107,11 @@ export const useWpLinkedContent = (
             container.parentNode.removeChild( container );
         } );
 
-        // 5. Remove empty elements & whitespace-only paragraphs/divs (Iterative to clean nested empty nodes)
+        // 6. Remove empty elements & whitespace-only nodes (Iterative cleanup)
         let removedEmpty = true;
         while ( removedEmpty ) {
             removedEmpty = false;
-            doc.querySelectorAll( 'p, div, span, ul, ol, li, h1, h2, h3, h4, h5, h6' ).forEach( ( el ) => {
-                // If element has no text content (ignoring spaces & &nbsp;) and no image/video children
+            doc.querySelectorAll( 'p, div, span, ul, ol, li, h1, h2, h3, h4, h5, h6, cite' ).forEach( ( el ) => {
                 const textContent = el.textContent.replace( /\u00A0/g, ' ' ).trim();
                 if ( ! textContent && el.children.length === 0 ) {
                     el.remove();
