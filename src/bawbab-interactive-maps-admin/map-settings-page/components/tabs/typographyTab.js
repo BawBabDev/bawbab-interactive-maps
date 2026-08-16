@@ -270,20 +270,50 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '3. Map Overlay & Search Bar Controls', TEXT_DOMAIN ) }
+                    title={ __( '3. Map Overlay Controls Typography', TEXT_DOMAIN ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Search Input & Layer Control Buttons', TEXT_DOMAIN ) }
-                            sizeKey="controlsFontSize"
-                            defaultSize={ 13 }
-                            minSize={ 10 }
+                            title={ __( 'Layer Toggler Header Title', TEXT_DOMAIN ) }
+                            sizeKey="controlsHeaderFontSize"
+                            defaultSize={ 12 }
+                            minSize={ 9 }
                             maxSize={ 20 }
-                            weightKey="controlsFontWeight"
+                            weightKey="controlsHeaderFontWeight"
+                            defaultWeight="800"
+                            styleKey="controlsHeaderFontStyle"
+                            decorationKey="controlsHeaderDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Layer Item Row Labels', TEXT_DOMAIN ) }
+                            sizeKey="controlsItemFontSize"
+                            defaultSize={ 11 }
+                            minSize={ 8 }
+                            maxSize={ 18 }
+                            weightKey="controlsItemFontWeight"
                             defaultWeight="600"
-                            styleKey="controlsFontStyle"
-                            decorationKey="controlsDecoration"
+                            styleKey="controlsItemFontStyle"
+                            decorationKey="controlsItemDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Floor Switcher Button Labels', TEXT_DOMAIN ) }
+                            sizeKey="controlsFloorFontSize"
+                            defaultSize={ 11 }
+                            minSize={ 8 }
+                            maxSize={ 18 }
+                            weightKey="controlsFloorFontWeight"
+                            defaultWeight="800"
+                            styleKey="controlsFloorFontStyle"
+                            decorationKey="controlsFloorDecoration"
                             typographySettings={ typographySettings }
                             updateTypography={ updateTypography }
                             disabled={ disabled }

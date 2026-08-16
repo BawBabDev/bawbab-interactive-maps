@@ -65,8 +65,21 @@ const DEFAULT_TYPOGRAPHY = {
     drawerSpecsLabelFontStyle: 'normal',
     drawerSpecsLabelDecoration: 'none',
 
-    // --- MAP CONTROLS ---
-    controlsFontSize: 13,
+    // --- MAP CONTROLS DEFAULTS ---
+    controlsHeaderFontSize: 12,
+    controlsHeaderFontWeight: '800',
+    controlsHeaderFontStyle: 'normal',
+    controlsHeaderDecoration: 'none',
+
+    controlsItemFontSize: 11,
+    controlsItemFontWeight: '600',
+    controlsItemFontStyle: 'normal',
+    controlsItemDecoration: 'none',
+
+    controlsFloorFontSize: 11,
+    controlsFloorFontWeight: '800',
+    controlsFloorFontStyle: 'normal',
+    controlsFloorDecoration: 'none',
 };
 
 export const useTypographySettings = ( initialSettings = {} ) => {
@@ -246,8 +259,21 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         '--map-drawer-specs-label-style': settings.drawerSpecsLabelFontStyle,
         '--map-drawer-specs-label-decoration': settings.drawerSpecsLabelDecoration,
 
-        // --- CONTROLS ---
-        '--map-controls-font-size': `${ settings.controlsFontSize }px`,
+        // --- MAP CONTROLS (LAYER TOGGLER & FLOOR SWITCHER) ---
+        '--map-controls-header-size': `${ settings.controlsHeaderFontSize }px`,
+        '--map-controls-header-weight': settings.controlsHeaderFontWeight,
+        '--map-controls-header-style': settings.controlsHeaderFontStyle,
+        '--map-controls-header-decoration': settings.controlsHeaderDecoration,
+
+        '--map-controls-item-size': `${ settings.controlsItemFontSize }px`,
+        '--map-controls-item-weight': settings.controlsItemFontWeight,
+        '--map-controls-item-style': settings.controlsItemFontStyle,
+        '--map-controls-item-decoration': settings.controlsItemDecoration,
+
+        '--map-controls-floor-size': `${ settings.controlsFloorFontSize }px`,
+        '--map-controls-floor-weight': settings.controlsFloorFontWeight,
+        '--map-controls-floor-style': settings.controlsFloorFontStyle,
+        '--map-controls-floor-decoration': settings.controlsFloorDecoration,
     };
 
     return {

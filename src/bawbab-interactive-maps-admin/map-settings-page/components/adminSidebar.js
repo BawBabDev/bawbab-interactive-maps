@@ -77,6 +77,17 @@ const AdminSidebar = ( {
             ),
         },
         {
+            name: 'settings',
+            title: (
+                <div className="tab-label">
+                    <Dashicon icon="admin-settings" />
+                    <span>
+                        { __( 'Layout Settings', 'bawbab-interactive-maps' ) }
+                    </span>
+                </div>
+            ),
+        },
+        {
             name: 'typography',
             title: (
                 <div className="tab-label">
@@ -94,17 +105,6 @@ const AdminSidebar = ( {
                     </span>
                     <span>
                         { __( 'Font Management', 'bawbab-interactive-maps' ) }
-                    </span>
-                </div>
-            ),
-        },
-        {
-            name: 'settings',
-            title: (
-                <div className="tab-label">
-                    <Dashicon icon="admin-settings" />
-                    <span>
-                        { __( 'Layout Settings', 'bawbab-interactive-maps' ) }
                     </span>
                 </div>
             ),
@@ -177,13 +177,6 @@ const AdminSidebar = ( {
                                 />
                             ) }
 
-                            { tab.name === 'typography' && (
-                                <TypographyTab
-                                    typographySettings={ typographySettings }
-                                    updateTypography={ updateTypography }
-                                />
-                            ) }
-
                             { tab.name === 'settings' && (
                                 <SettingsTab
                                     mapLogo={ mapLogo }
@@ -192,6 +185,13 @@ const AdminSidebar = ( {
                                     setNavBackground={ setNavBackground }
                                     colorTheme={ colorTheme }
                                     setColorTheme={ setColorTheme }
+                                />
+                            ) }
+
+							{ tab.name === 'typography' && (
+                                <TypographyTab
+                                    typographySettings={ typographySettings }
+                                    updateTypography={ updateTypography }
                                 />
                             ) }
 

@@ -4,26 +4,8 @@
 /* --- SIDEBAR TYPOGRAPHY CENTRAL DESIGN TOKENS --- */
 :root { --map-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; --map-font-size-base: 1.1rem; --map-line-height-base: 1.6; --map-drawer-title-size: 2rem; --map-drawer-title-weight: 800; --map-drawer-title-style: normal; --map-drawer-title-decoration: none; --map-drawer-subtitle-size: 1.2rem; --map-drawer-subtitle-weight: 600; --map-drawer-subtitle-style: normal; --map-drawer-subtitle-decoration: none; --map-drawer-category-size: 11px; --map-drawer-category-weight: 700; --map-drawer-category-style: normal; --map-drawer-category-decoration: none; --map-drawer-h1-size: 1.5rem; --map-drawer-h1-weight: 700; --map-drawer-h1-style: normal; --map-drawer-h1-decoration: none; --map-drawer-h2-size: 1.35rem; --map-drawer-h2-weight: 700; --map-drawer-h2-style: normal; --map-drawer-h2-decoration: none; --map-drawer-h3-size: 1.2rem; --map-drawer-h3-weight: 600; --map-drawer-h3-style: normal; --map-drawer-h3-decoration: none; --map-drawer-h4-size: 1.1rem; --map-drawer-h4-weight: 600; --map-drawer-h4-style: normal; --map-drawer-h4-decoration: none; --map-drawer-body-size: 1.1rem; --map-drawer-body-weight: 400; --map-drawer-body-style: normal; --map-drawer-body-decoration: none; --map-drawer-quote-size: 1.1rem; --map-drawer-quote-weight: 400; --map-drawer-quote-style: italic; --map-drawer-quote-decoration: none; --map-drawer-cite-size: 0.95rem; --map-drawer-cite-weight: 600; --map-drawer-cite-style: normal; --map-drawer-cite-decoration: none; --map-drawer-specs-number-size: 14px; --map-drawer-specs-number-weight: 800; --map-drawer-specs-label-size: 9px; --map-drawer-specs-label-weight: 700; }
 
-/* --- APPLIED CSS RULE MAPPINGS --- */
-.sidebar-category-label { font-size: var(--map-drawer-category-size); font-weight: var(--map-drawer-category-weight); font-style: var(--map-drawer-category-style); text-decoration: var(--map-drawer-category-decoration); font-family: var(--map-font-family); }
-.loc-title { font-size: var(--map-drawer-title-size); font-weight: var(--map-drawer-title-weight); font-style: var(--map-drawer-title-style); text-decoration: var(--map-drawer-title-decoration); color: var(--map-text-dark); line-height: 1.4; font-family: var(--map-font-family); }
-.loc-subtitle { font-size: var(--map-drawer-subtitle-size); font-weight: var(--map-drawer-subtitle-weight); font-style: var(--map-drawer-subtitle-style); text-decoration: var(--map-drawer-subtitle-decoration); color: #646970; font-family: var(--map-font-family); }
-
-/* WordPress Body Content, Paragraphs, Lists & Custom Descriptions */
-.loc-description p, .loc-description span, .loc-description div:not(.sidebar-quote-block), .loc-description .wp-page-content-block p, .loc-description li, .description-text { font-size: var(--map-drawer-body-size); font-weight: var(--map-drawer-body-weight); font-style: var(--map-drawer-body-style); text-decoration: var(--map-drawer-body-decoration); font-family: var(--map-font-family); color: #3c434a; }
-
-/* Headings inside WP Page Content */
-.loc-description h1, .loc-description .sidebar-heading-1 { font-size: var(--map-drawer-h1-size); font-weight: var(--map-drawer-h1-weight); font-style: var(--map-drawer-h1-style); text-decoration: var(--map-drawer-h1-decoration); color: var(--map-text-dark); font-family: var(--map-font-family); }
-.loc-description h2, .loc-description .sidebar-heading-2 { font-size: var(--map-drawer-h2-size); font-weight: var(--map-drawer-h2-weight); font-style: var(--map-drawer-h2-style); text-decoration: var(--map-drawer-h2-decoration); color: var(--map-text-dark); font-family: var(--map-font-family); }
-.loc-description h3, .loc-description .sidebar-heading-3 { font-size: var(--map-drawer-h3-size); font-weight: var(--map-drawer-h3-weight); font-style: var(--map-drawer-h3-style); text-decoration: var(--map-drawer-h3-decoration); color: var(--map-text-dark); font-family: var(--map-font-family); }
-
-/* Quotes & Citations */
-.loc-description blockquote p, .loc-description .sidebar-quote-block p { font-size: var(--map-drawer-quote-size); font-weight: var(--map-drawer-quote-weight); font-style: var(--map-drawer-quote-style); text-decoration: var(--map-drawer-quote-decoration); font-family: var(--map-font-family); }
-.loc-description blockquote cite, .loc-description .sidebar-quote-cite, .loc-description .wp-block-quote__citation { font-size: var(--map-drawer-cite-size); font-weight: var(--map-drawer-cite-weight); font-style: var(--map-drawer-cite-style); text-decoration: var(--map-drawer-cite-decoration); font-family: var(--map-font-family); }
-
-/* Unit Specs / Custom Field Cards */
-.spec-number { font-size: var(--map-drawer-spec-value-size); font-weight: var(--map-drawer-spec-value-weight); font-style: var(--map-drawer-spec-value-style); text-decoration: var(--map-drawer-spec-value-decoration); color: var(--map-text-dark); }
-.spec-label { font-size: var(--map-drawer-spec-label-size); font-weight: var(--map-drawer-spec-label-weight); font-style: var(--map-drawer-spec-label-style); text-decoration: var(--map-drawer-spec-label-decoration); color: #8c8f94; }
+/* --- MAP CONTROLS CENTRAL DESIGN TOKENS --- */
+:root { --map-controls-font-size: 13px; --map-controls-font-weight: 600; --map-controls-font-style: normal; --map-controls-decoration: none; --map-controls-header-size: 12px; --map-controls-header-weight: 800; --map-controls-header-style: normal; --map-controls-header-decoration: none; --map-controls-item-size: 11px; --map-controls-item-weight: 600; --map-controls-item-style: normal; --map-controls-item-decoration: none; --map-controls-floor-size: 11px; --map-controls-floor-weight: 800; --map-controls-floor-style: normal; --map-controls-floor-decoration: none; }
 
 /* --- THEME DEFINITIONS --- */
 .map-theme-blue { --map-primary: #2271b1; --map-accent: #f0f6fb; --map-header-bg: #f0f2f5; --map-text-dark: #1d2327; --map-border: #e0e0e0; }
@@ -232,7 +214,12 @@
 
 @media (max-width: 768px) { .nav-logo-section { display: none; } .nav-search-section { max-width: 160px; } }
 
-/* --- MAP CONTROLS --- */
+/* --- MAP CONTROLS (LAYER TOGGLER & FLOOR SWITCHER) --- */
+.map-layer-toggler-header { font-size: var(--map-controls-header-size, 12px); font-weight: var(--map-controls-header-weight, 800); font-style: var(--map-controls-header-style, normal); text-decoration: var(--map-controls-header-decoration, none); color: #333; font-family: var(--map-font-family); }
+.map-layer-toggler-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--map-controls-item-size, 11px); font-weight: var(--map-controls-item-weight, 600); font-style: var(--map-controls-item-style, normal); text-decoration: var(--map-controls-item-decoration, none); text-transform: capitalize; color: #000; margin: 0; font-family: var(--map-font-family); }
+.map-floor-btn { width: 100%; aspect-ratio: 1; border-radius: 8px; font-size: var(--map-controls-floor-size, 11px); font-weight: var(--map-controls-floor-weight, 800); font-style: var(--map-controls-floor-style, normal); text-decoration: var(--map-controls-floor-decoration, none); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, border-color 0.15s, color 0.15s; letter-spacing: 0.02em; font-family: var(--map-font-family); }
+
+/* --- SLIDERS & CHECKBOXES --- */
 .subtle-slider { -webkit-appearance: none; width: 100%; height: 2px; background: #eee; outline: none; border-radius: 2px; margin: 6px 0; }
 .subtle-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #999; cursor: pointer; border-radius: 50%; border: 1px solid #fff; }
 .cb-wrapper { width: 16px; height: 16px; border: 1.5px solid #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; background: #fff; flex-shrink: 0; }
