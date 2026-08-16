@@ -197,6 +197,21 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
 							</Button>
 						</FlexItem>
 					</Flex>
+					<Flex
+						wrap="wrap"
+						gap={ 2 }
+						style={ {
+							margin: '10px 0px',
+							justifyContent: 'flex-end',
+						} }
+					>
+						<ExternalLink
+							href="https://drive.google.com/file/d/10MCwKA_8h_gtj9pKiG1m6G4Z7nryRLxY/view?usp=sharing"
+							style={ { color: '#2271b1' } }
+						>
+							{ __( 'Sample Import Data', TEXT_DOMAIN ) }
+						</ExternalLink>
+					</Flex>
 				</div>
 
 				{ /* Import Wizard Modal Trigger */ }

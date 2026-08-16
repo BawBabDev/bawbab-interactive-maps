@@ -35,20 +35,26 @@ const DrawingSidebar = ( {
 		return raw
 			.map( ( item ) => {
 				if ( typeof item === 'string' ) return item;
-				if ( item && typeof item === 'object' && item.url ) return item.url;
+				if ( item && typeof item === 'object' && item.url )
+					return item.url;
 				return null;
 			} )
 			.filter( Boolean );
 	}, [ selectedLoc?.gallery, selectedLoc?.lat, selectedLoc?.lng ] );
 
 	// Fetch remote WP Page data ONLY for linked spatial features (stablePageId > 0)
-	const { wpData, isLoading, currentImage: remoteImage, setCurrentImage: setRemoteImage, allImages: remoteImages } =
-		useWpLinkedContent(
-			isStaticMarker ? 0 : stablePageId,
-			selectedLoc?.fid,
-			localMarkerImages,
-			selectedLoc
-		);
+	const {
+		wpData,
+		isLoading,
+		currentImage: remoteImage,
+		setCurrentImage: setRemoteImage,
+		allImages: remoteImages,
+	} = useWpLinkedContent(
+		isStaticMarker ? 0 : stablePageId,
+		selectedLoc?.fid,
+		localMarkerImages,
+		selectedLoc
+	);
 
 	// Local state management for static marker carousel interactions
 	const [ localCurrentImage, setLocalCurrentImage ] = useState( null );
@@ -57,12 +63,20 @@ const DrawingSidebar = ( {
 		if ( isStaticMarker ) {
 			setLocalCurrentImage( localMarkerImages[ 0 ] || null );
 		}
-	}, [ selectedLoc?.lat, selectedLoc?.lng, selectedLoc?.fid, localMarkerImages, isStaticMarker ] );
+	}, [
+		selectedLoc?.lat,
+		selectedLoc?.lng,
+		selectedLoc?.fid,
+		localMarkerImages,
+		isStaticMarker,
+	] );
 
 	// Resolve active carousel media based on selection type
 	const activeAllImages = isStaticMarker ? localMarkerImages : remoteImages;
 	const activeCurrentImage = isStaticMarker ? localCurrentImage : remoteImage;
-	const setActiveCurrentImage = isStaticMarker ? setLocalCurrentImage : setRemoteImage;
+	const setActiveCurrentImage = isStaticMarker
+		? setLocalCurrentImage
+		: setRemoteImage;
 
 	const mapSettings = window.bwbimapsSettings || {};
 	const colorTheme = mapSettings.colorTheme;
@@ -178,7 +192,9 @@ const DrawingSidebar = ( {
 										: {
 												geometry: selectedLoc?.geometry,
 												properties: selectedLoc,
-												manualOriginNode: selectedLoc?.manualOriginNode || null,
+												manualOriginNode:
+													selectedLoc?.manualOriginNode ||
+													null,
 										  }
 								}
 								manualOriginNode={
