@@ -1,6 +1,6 @@
 # Bawbab Interactive Maps
 
-Contributors:       Bawbab Technologies  
+Contributors:       Bawbab Technologies, marcellus89, @corentinsanchez    
 Tags:               block, campus-map, interactive-map, facility-map, gis  
 Tested up to:       7.0  
 Stable tag:         0.1.0  
