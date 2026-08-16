@@ -375,13 +375,6 @@ export const MapLegendManager = ( {
 
                 { legendConfig.enabled && (
                     <div>
-                        { /* MODULAR ADVANCED LEGEND TYPOGRAPHY ACCORDION */ }
-                        <LegendTypographyAccordion
-                            typographySettings={ typographySettings }
-                            updateTypography={ handleTypographyChange }
-                            disabled={ ! legendConfig.enabled }
-                        />
-
                         { /* SECTIONS RENDERING */ }
                         { ( legendConfig.sections || [] ).map(
                             ( section, secIdx ) => (
@@ -674,6 +667,15 @@ export const MapLegendManager = ( {
                             >
                                 { __( 'Add Section', TEXT_DOMAIN ) }
                             </Button>
+                        </div>
+
+                        { /* MODULAR ADVANCED LEGEND TYPOGRAPHY ACCORDION WITH TOP MARGIN */ }
+                        <div style={ { marginTop: '25px' } }>
+                            <LegendTypographyAccordion
+                                typographySettings={ typographySettings }
+                                updateTypography={ handleTypographyChange }
+                                disabled={ ! legendConfig.enabled }
+                            />
                         </div>
                     </div>
                 ) }

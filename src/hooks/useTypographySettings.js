@@ -19,7 +19,17 @@ export const useTypographySettings = ( initialSettings = {} ) => {
     const [ isLoading, setIsLoading ] = useState( false );
     const [ isSaving, setIsSaving ] = useState( false );
 
-    // Fetch typography settings from the new GET route on mount
+    // Keep state synchronized whenever initialSettings prop changes
+    useEffect( () => {
+        if ( Object.keys( initialSettings ).length > 0 ) {
+            setSettings( ( prev ) => ( {
+                ...prev,
+                ...initialSettings,
+            } ) );
+        }
+    }, [ JSON.stringify( initialSettings ) ] );
+
+    // Fetch typography settings from GET route if no initialSettings are provided
     useEffect( () => {
         const fetchSettings = async () => {
             setIsLoading( true );
@@ -29,10 +39,11 @@ export const useTypographySettings = ( initialSettings = {} ) => {
                 );
                 if ( response.ok ) {
                     const data = await response.json();
-                    if ( data?.typography ) {
+                    const fetchedTypography = data?.categoryConfig?.legendConfig?.typography || data?.typography;
+                    if ( fetchedTypography ) {
                         setSettings( ( prev ) => ( {
                             ...prev,
-                            ...data.typography,
+                            ...fetchedTypography,
                         } ) );
                     }
                 }
@@ -46,13 +57,11 @@ export const useTypographySettings = ( initialSettings = {} ) => {
             }
         };
 
-        // Skip fetch if initialSettings were explicitly passed
         if ( Object.keys( initialSettings ).length === 0 ) {
             fetchSettings();
         }
     }, [] );
 
-    // Single-field or bulk typography updater
     const updateTypography = ( keyOrObject, value ) => {
         setSettings( ( prev ) => {
             if ( typeof keyOrObject === 'object' ) {
@@ -62,7 +71,6 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         } );
     };
 
-    // Save typography settings to WordPress options via the POST route
     const saveTypographySettings = async () => {
         setIsSaving( true );
         try {
@@ -90,7 +98,6 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         }
     };
 
-    // Compute dynamic CSS variables for any map wrapper container
     const cssVariables = {
         '--map-font-family': settings.fontFamily,
         '--map-legend-header-size': `${ settings.legendHeaderFontSize }px`,

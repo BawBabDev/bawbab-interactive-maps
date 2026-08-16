@@ -30,8 +30,10 @@ export const MapLegend = ( { mapDimensions } ) => {
 
     const { categoryMap, legendConfig } = useCategoryManager();
 
-    // Generate dynamic CSS variables from legend typography config
-    const { cssVariables } = useTypographySettings( legendConfig?.typography || {} );
+    // Hook consumes typography from legendConfig or falls back to global API settings
+    const { typographySettings, cssVariables } = useTypographySettings(
+        legendConfig?.typography || {}
+    );
 
     useEffect( () => {
         if ( width > 0 && ! hasInitialized.current ) {
@@ -89,6 +91,22 @@ export const MapLegend = ( { mapDimensions } ) => {
         return showHeaders ? [] : activeSections.flatMap( ( s ) => s.items );
     }, [ showHeaders, activeSections ] );
 
+    // Explicit style objects calculated directly from the hook settings
+    const headerTitleStyle = {
+        fontSize: `${ typographySettings.legendHeaderFontSize }px`,
+        fontFamily: typographySettings.fontFamily,
+    };
+
+    const sectionTitleStyle = {
+        fontSize: `${ typographySettings.legendSectionFontSize }px`,
+        fontFamily: typographySettings.fontFamily,
+    };
+
+    const itemLabelStyle = {
+        fontSize: `${ typographySettings.legendItemFontSize }px`,
+        fontFamily: typographySettings.fontFamily,
+    };
+
     if ( ! isLegendEnabled || activeSections.length === 0 ) {
         return <div style={ { display: 'none' } } className="map-legend-hidden" />;
     }
@@ -106,7 +124,7 @@ export const MapLegend = ( { mapDimensions } ) => {
                     </div>
                 ) : (
                     <>
-                        <span className="map-legend-title">
+                        <span className="map-legend-title" style={ headerTitleStyle }>
                             { __( 'Legend', 'bawbab-interactive-maps' ) }
                         </span>
                         <button
@@ -129,7 +147,10 @@ export const MapLegend = ( { mapDimensions } ) => {
                     { showHeaders
                         ? activeSections.map( ( section ) => (
                                 <div key={ section.id } className="map-legend-section">
-                                    <div className="map-legend-section-title">
+                                    <div
+                                        className="map-legend-section-title"
+                                        style={ sectionTitleStyle }
+                                    >
                                         { section.title }
                                     </div>
                                     <div className="map-legend-items-list">
@@ -147,7 +168,10 @@ export const MapLegend = ( { mapDimensions } ) => {
                                                         />
                                                     ) ) }
                                                 </div>
-                                                <span className="map-legend-item-label">
+                                                <span
+                                                    className="map-legend-item-label"
+                                                    style={ itemLabelStyle }
+                                                >
                                                     { item.label }
                                                 </span>
                                             </div>
@@ -166,7 +190,10 @@ export const MapLegend = ( { mapDimensions } ) => {
                                             />
                                         ) ) }
                                     </div>
-                                    <span className="map-legend-item-label">
+                                    <span
+                                        className="map-legend-item-label"
+                                        style={ itemLabelStyle }
+                                    >
                                         { item.label }
                                     </span>
                                 </div>
