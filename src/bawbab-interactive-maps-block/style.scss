@@ -4,18 +4,15 @@
 .map-theme-yellow { --map-primary: #d97706; --map-accent: #fffbeb; --map-header-bg: #fef3c7; --map-text-dark: #451a03; --map-border: #f7e8b5; }
 
 /* --- GENERAL STYLE --- */
+/* The following styles get applied both on the front of your site and in the editor. */
 .map-shortcode-container, .map-container {
     position: relative;     /* Required for z-index to take effect */
     z-index: 1;             /* Sets the widget's global elevation relative to the site */
     isolation: isolate;     /* Forcefully creates a brand new CSS stacking context */
 }
-
-/* The following styles get applied both on the front of your site and in the editor. */
 .wp-block-create-block-interactive-map { background-color: #21759b; color: #fff; padding: 2px; }
 .editor-map-wrapper { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
 .wp-block-create-block-interactive-map { border: 1px dotted #f00; }
-
-/* Ensure the Google Map container has height in the editor */
 .editor-map-wrapper > div { min-height: 400px; }
 
 /* --- SIDEBAR STYLES --- */
@@ -27,10 +24,6 @@
 .sidebar-inner-padding { padding: 25px; opacity: 0; transition: opacity 0.3s; }
 .sidebar-inner-padding.visible { opacity: 1; }
 
-/* --- ENFORCE DRAWER BULLET POINT STYLES --- */
-.loc-description ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; }
-.loc-description li { display: list-item !important; margin-bottom: 6px !important; color: inherit !important; }
-
 /* THEMED HEADER */
 .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin: -25px -25px 20px -25px; padding: 10px 15px; background: var(--map-header-bg); border-bottom: 1px solid var(--map-border); }
 .sidebar-category-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
@@ -41,29 +34,17 @@
 
 /* --- SIDEBAR LOADING & MAIN VIEWPORT --- */
 .sidebar-loader-container { display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
-.main-image-viewport { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f1; border-radius: 12px; overflow: hidden; margin-bottom: 12px; max-height: 500px; cursor: zoom-in; }
-.main-image-viewport video { width: 100%; height: auto; object-fit: contain; }
-.main-display-img { max-width: 100%; max-height: 100%; width: 100%; height: auto; display: block; object-fit: contain; }
-.main-image-viewport.force-full-height { height: 400px; background: #ffffff; }
-.main-image-viewport.force-full-height .main-display-img { object-fit: contain; }
 
-/* --- CAROUSEL NAVIGATION ARROWS --- */
-.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.nav-arrow.prev { left: 10px; }
-.nav-arrow.next { right: 10px; }
+/* --- ANIMATIONS & MEDIA QUERIES --- */
+@keyframes sidebarInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@media (max-height: 700px) { .main-image-viewport { max-height: 250px; } }
 
-/* --- SIDEBAR LOADING & MAIN VIEWPORT --- */
-.sidebar-loader-container { display: flex; flex-direction: column; align-items: center; padding-top: 100px; }
+/* --- MAIN IMAGE VIEWPORT & DISPLAY --- */
 .main-image-viewport { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; background: transparent; border-radius: 12px; overflow: hidden; margin-bottom: 12px; max-height: 500px; cursor: zoom-in; }
 .main-image-viewport video { width: 100%; height: auto; object-fit: contain; }
 .main-display-img { width: 100%; height: auto; max-height: 500px; display: block; object-fit: cover; border-radius: 12px; }
 .main-image-viewport.force-full-height { height: auto; min-height: unset; background: transparent; }
 .main-image-viewport.force-full-height .main-display-img { height: auto; max-height: 500px; object-fit: cover; }
-
-/* --- CAROUSEL NAVIGATION ARROWS --- */
-.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.nav-arrow.prev { left: 10px; }
-.nav-arrow.next { right: 10px; }
 
 /* --- THUMBNAIL CAROUSEL CONTAINER & STRIP --- */
 .thumb-carousel-container { position: relative; width: 100%; }
@@ -82,32 +63,45 @@
 .thumb-wrapper.is-video::after { content: '▶'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; background: rgba(0,0,0,0.6); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 9px; padding-left: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: none; z-index: 2; }
 .sidebar-title-section { margin: 25px 0; }
 
-/* THEMED TITLE */
-.loc-title { margin: 0; font-size: 2rem; font-weight: 800; color: var(--map-text-dark); line-height: 1.4; }
-.loc-subtitle { display: block; font-size: 1.2rem; color: #646970; margin-top: 12px; font-weight: 600; }
-.loc-description { font-size: 1.1rem; line-height: 1.6; color: #3c434a; }
-.description-text { white-space: pre-wrap; }
+/* --- CAROUSEL NAVIGATION ARROWS --- */
+.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.nav-arrow.prev { left: 10px; }
+.nav-arrow.next { right: 10px; }
+
+/* --- THEMED TEXT & TYPOGRAPHY SINGLE SOURCE OF TRUTH --- */
+.loc-title { margin: 0; font-size: 2rem !important; font-weight: 800 !important; color: var(--map-text-dark) !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-subtitle { display: block; font-size: 1.2rem !important; color: #646970 !important; margin-top: 12px !important; font-weight: 600 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description { font-size: 1.1rem !important; line-height: 1.6 !important; color: #3c434a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.description-text { white-space: pre-wrap; font-size: 1.1rem !important; line-height: 1.6 !important; color: #3c434a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
 .wp-link-container { margin-top: 20px; border-top: 1px solid var(--map-border); padding-top: 15px; }
 
-/* --- ANIMATIONS & MEDIA QUERIES --- */
-@keyframes sidebarInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-@media (max-height: 700px) { .main-image-viewport { max-height: 250px; } }
+/* --- UNIFORM HEADING STYLES INSIDE SIDEBAR --- */
+.loc-description h1, .loc-description .wp-page-content-block h1 { font-size: 1.6rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 10px 0 !important; line-height: 1.3 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h2, .loc-description .wp-page-content-block h2 { font-size: 1.4rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 8px 0 !important; line-height: 1.35 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h3, .loc-description .wp-page-content-block h3 { font-size: 1.25rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h4, .loc-description h5, .loc-description h6, .loc-description .wp-page-content-block h4, .loc-description .wp-page-content-block h5, .loc-description .wp-page-content-block h6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
 
-/* --- THEMED LINKS & CONTENT --- */
-.sidebar-wp-link { display: inline-flex; align-items: center; color: var(--map-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem; gap: 5px; }
-.sidebar-wp-link:hover { text-decoration: underline; color: var(--map-primary); opacity: 0.8; }
-.sidebar-wp-link span { transition: transform 0.2s ease; }
-.sidebar-wp-link:hover span { transform: translateX(3px); }
-.wp-content-wrapper img, .wp-content-wrapper figure, .wp-content-wrapper .wp-block-gallery { display: none !important; }
-.sidebar-content-fade { animation: sidebarInLeft 0.4s ease-out; }
+/* --- UNIFORM PARAGRAPH & BODY TEXT STYLES --- */
+.loc-description p, .loc-description span, .loc-description div, .loc-description .wp-page-content-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 12px !important; }
 
-/* --- COMPACT MAP SIDEBAR --- */
+/* --- UNIFORM LIST & BULLET POINT STYLES --- */
+.loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: 1.1rem !important; }
+.loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
+
+/* --- NEUTRALIZE IMPORTED GUTENBERG CONTAINER BORDERS & BACKGROUNDS --- */
+.loc-description .wp-block-group, .loc-description .wp-block-columns, .loc-description .wp-block-column, .loc-description .card, .loc-description .container { border: none !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+
+/* --- COMPACT SIDEBAR OVERRIDES (SMALL UI / MOBILE) --- */
 .map-sidebar.is-compact .sidebar-inner-padding { padding: 15px; }
 .map-sidebar.is-compact .sidebar-header { margin: -15px -15px 15px -15px; }
-.map-sidebar.is-compact .loc-title { font-size: 1.4rem; }
-.map-sidebar.is-compact .loc-subtitle { font-size: 1rem; margin-top: 8px; }
-.map-sidebar.is-compact .loc-description { font-size: 0.95rem; }
+.map-sidebar.is-compact .loc-title { font-size: 1.4rem !important; }
+.map-sidebar.is-compact .loc-subtitle { font-size: 1rem !important; margin-top: 8px !important; }
 .map-sidebar.is-compact .sidebar-title-section { margin: 15px 0; }
+.map-sidebar.is-compact .loc-description p, .map-sidebar.is-compact .loc-description span, .map-sidebar.is-compact .loc-description div, .map-sidebar.is-compact .loc-description li, .map-sidebar.is-compact .loc-description li p, .map-sidebar.is-compact .loc-description li span { font-size: 0.95rem !important; }
+.map-sidebar.is-compact .loc-description h1 { font-size: 1.3rem !important; }
+.map-sidebar.is-compact .loc-description h2 { font-size: 1.15rem !important; }
+.map-sidebar.is-compact .loc-description h3 { font-size: 1.05rem !important; }
+.map-sidebar.is-compact .loc-description h4, .map-sidebar.is-compact .loc-description h5, .map-sidebar.is-compact .loc-description h6 { font-size: 0.95rem !important; }
 
 /* --- LOCATION SPECS (STRUCTURED SIDE DRAWER LAYOUT) --- */
 .location-specs-container { display: flex; flex-direction: column; gap: 16px; padding: 18px 15px; background: #fff; border-radius: 12px; margin: 20px 0; border: 1px solid #f0f0f1; }
