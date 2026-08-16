@@ -7,8 +7,6 @@
 
 import { useState } from '@wordpress/element';
 import {
-    Panel,
-    PanelBody,
     Button,
     CheckboxControl,
     ToggleControl,
@@ -26,8 +24,6 @@ export const MapLegendManager = ( {
     categoryMap,
     legendConfig,
     setLegendConfig,
-    isOpen,
-    onToggle,
 } ) => {
     const [ showMergeModal, setShowMergeModal ] = useState( false );
     const [ mergeLabel, setMergeLabel ] = useState( '' );
@@ -67,7 +63,6 @@ export const MapLegendManager = ( {
             const currentSections = prev.sections || [];
 
             if ( currentSections.length <= 1 ) {
-                // Clear items if it's the last section instead of blocking completely
                 const updatedSections = currentSections.map( ( s ) =>
                     s.id === secId ? { ...s, items: [] } : s
                 );
@@ -81,7 +76,6 @@ export const MapLegendManager = ( {
                 ( s ) => s.id !== secId
             );
 
-            // Move orphan items into the first remaining section
             if ( targetSec.items.length > 0 && remainingSections.length > 0 ) {
                 remainingSections[ 0 ].items = [
                     ...remainingSections[ 0 ].items,
@@ -250,43 +244,55 @@ export const MapLegendManager = ( {
     );
 
     return (
-        <Panel
+        <div
             style={ {
                 background: '#fff',
                 border: '1px solid #e0e0e0',
                 borderRadius: '6px',
-                marginBottom: '25px',
+                padding: '20px',
+                marginBottom: '15px',
             } }
         >
-            <PanelBody
-                title={ __(
-                    '3. Map Legend Customizer & Sections',
+            <h2
+                style={ {
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    marginTop: 0,
+                    marginBottom: '8px',
+                } }
+            >
+                { __( 'Map Legend Customizer & Sections', TEXT_DOMAIN ) }
+            </h2>
+            <p
+                style={ {
+                    fontSize: '13px',
+                    color: '#666',
+                    marginBottom: '15px',
+                } }
+            >
+                { __(
+                    'Create custom section groups for the legend, rename headers, reorder entries, or move items across sections without altering underlying spatial keys.',
                     TEXT_DOMAIN
                 ) }
-                opened={ isOpen }
-                onToggle={ onToggle }
-            >
-                <p
-                    style={ {
-                        fontSize: '13px',
-                        color: '#666',
-                        marginBottom: '15px',
-                    } }
-                >
-                    { __(
-                        'Create custom section groups for the legend, rename headers, reorder entries, or move items across sections without altering underlying spatial keys.',
-                        TEXT_DOMAIN
-                    ) }
-                </p>
+            </p>
 
-                { /* CONTROL HEADER */ }
+            { /* CONTROL HEADER */ }
+            <div
+                style={ {
+                    marginBottom: '20px',
+                    padding: '14px',
+                    background: '#f9f9f9',
+                    borderRadius: '6px',
+                    border: '1px solid #eee',
+                } }
+            >
                 <div
                     style={ {
-                        marginBottom: '20px',
-                        padding: '14px',
-                        background: '#f9f9f9',
-                        borderRadius: '6px',
-                        border: '1px solid #eee',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '16px',
                     } }
                 >
                     <div
@@ -294,364 +300,354 @@ export const MapLegendManager = ( {
                             display: 'flex',
                             flexWrap: 'wrap',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '16px',
+                            gap: '20px',
                         } }
                     >
-                        <div
-                            style={ {
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                alignItems: 'center',
-                                gap: '20px',
-                            } }
-                        >
-                            <ToggleControl
-                                label={ __(
-                                    'Enable Public Map Legend',
-                                    TEXT_DOMAIN
-                                ) }
-                                checked={ Boolean( legendConfig.enabled ) }
-                                onChange={ ( val ) =>
-                                    setLegendConfig( ( prev ) => ( {
-                                        ...prev,
-                                        enabled: val,
-                                    } ) )
-                                }
-                                __nextHasNoMarginBottom
-                            />
+                        <ToggleControl
+                            label={ __(
+                                'Enable Public Map Legend',
+                                TEXT_DOMAIN
+                            ) }
+                            checked={ Boolean( legendConfig.enabled ) }
+                            onChange={ ( val ) =>
+                                setLegendConfig( ( prev ) => ( {
+                                    ...prev,
+                                    enabled: val,
+                                } ) )
+                            }
+                            __nextHasNoMarginBottom
+                        />
 
-                            <ToggleControl
+                        <ToggleControl
+                            label={ __(
+                                'Show Section Titles in Public Legend',
+                                TEXT_DOMAIN
+                            ) }
+                            checked={
+                                legendConfig.showSectionHeaders !== false
+                            }
+                            onChange={ ( val ) =>
+                                setLegendConfig( ( prev ) => ( {
+                                    ...prev,
+                                    showSectionHeaders: val,
+                                } ) )
+                            }
+                            disabled={ ! legendConfig.enabled }
+                            __nextHasNoMarginBottom
+                        />
+                    </div>
+
+                    <Button
+                        variant="secondary"
+                        icon="groups"
+                        onClick={ () => setShowMergeModal( true ) }
+                        disabled={ ! legendConfig.enabled }
+                    >
+                        { __(
+                            'Merge Categories into 1 Line',
+                            TEXT_DOMAIN
+                        ) }
+                    </Button>
+                </div>
+            </div>
+
+            { legendConfig.enabled && (
+                <div>
+                    { /* SECTIONS RENDERING */ }
+                    { ( legendConfig.sections || [] ).map(
+                        ( section, secIdx ) => (
+                            <div
+                                key={ section.id }
+                                style={ {
+                                    marginBottom: '20px',
+                                    border: '1px solid #e0e0e0',
+                                    borderRadius: '4px',
+                                    background: '#fff',
+                                    overflow: 'hidden',
+                                } }
+                            >
+                                <div
+                                    style={ {
+                                        padding: '10px 12px',
+                                        background: '#f5f5f5',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    } }
+                                >
+                                    <Flex
+                                        align="center"
+                                        justify="space-between"
+                                        gap={ 3 }
+                                    >
+                                        <FlexItem style={ { flex: 1 } }>
+                                            <TextControl
+                                                value={ section.title }
+                                                onChange={ ( val ) =>
+                                                    handleRenameSection(
+                                                        section.id,
+                                                        val
+                                                    )
+                                                }
+                                                style={ {
+                                                    height: '32px',
+                                                    fontWeight: '700',
+                                                } }
+                                                __nextHasNoMarginBottom
+                                            />
+                                        </FlexItem>
+                                        <Button
+                                            isDestructive
+                                            isSmall
+                                            icon="trash"
+                                            onClick={ () =>
+                                                handleRemoveSection(
+                                                    section.id
+                                                )
+                                            }
+                                            label={ __(
+                                                'Delete Section Header',
+                                                TEXT_DOMAIN
+                                            ) }
+                                        />
+                                    </Flex>
+                                </div>
+
+                                <div style={ { borderBottom: '1px solid #eee' } }>
+                                    <div
+                                        style={ {
+                                            display: 'grid',
+                                            gridTemplateColumns:
+                                                '50px 1fr 140px 120px 80px 70px',
+                                            gap: '8px',
+                                            padding: '8px 12px',
+                                            background: '#fafafa',
+                                            fontSize: '11px',
+                                            fontWeight: '600',
+                                            color: '#666',
+                                        } }
+                                    >
+                                        <span style={ { textAlign: 'center' } }>
+                                            { __( 'Show', TEXT_DOMAIN ) }
+                                        </span>
+                                        <span>
+                                            { __( 'Legend Label', TEXT_DOMAIN ) }
+                                        </span>
+                                        <span>
+                                            { __( 'Move to Section', TEXT_DOMAIN ) }
+                                        </span>
+                                        <span>
+                                            { __( 'Swatches', TEXT_DOMAIN ) }
+                                        </span>
+                                        <span style={ { textAlign: 'center' } }>
+                                            { __( 'Reorder', TEXT_DOMAIN ) }
+                                        </span>
+                                        <span style={ { textAlign: 'center' } }>
+                                            { __( 'Action', TEXT_DOMAIN ) }
+                                        </span>
+                                    </div>
+
+                                    { section.items.map(
+                                        ( item, itemIdx ) => {
+                                            const isFirst = itemIdx === 0;
+                                            const isLast =
+                                                itemIdx ===
+                                                section.items.length - 1;
+
+                                            return (
+                                                <div
+                                                    key={ item.id }
+                                                    style={ {
+                                                        display: 'grid',
+                                                        gridTemplateColumns:
+                                                            '50px 1fr 140px 120px 80px 70px',
+                                                        gap: '8px',
+                                                        padding: '8px 12px',
+                                                        alignItems: 'center',
+                                                        borderTop: '1px solid #eee',
+                                                        opacity: item.showInLegend
+                                                            ? 1
+                                                            : 0.5,
+                                                    } }
+                                                >
+                                                    <div style={ { textAlign: 'center' } }>
+                                                        <CheckboxControl
+                                                            checked={ Boolean(
+                                                                item.showInLegend
+                                                            ) }
+                                                            onChange={ ( checked ) =>
+                                                                handleToggleItem(
+                                                                    section.id,
+                                                                    item.id,
+                                                                    checked
+                                                                )
+                                                            }
+                                                            __nextHasNoMarginBottom
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <strong>{ item.label }</strong>
+                                                        { item.type === 'merged' && (
+                                                            <span
+                                                                style={ {
+                                                                    fontSize: '10px',
+                                                                    color: '#2271b1',
+                                                                    marginLeft: '6px',
+                                                                    background: '#f0f6fb',
+                                                                    padding: '2px 4px',
+                                                                    borderRadius: '3px',
+                                                                } }
+                                                            >
+                                                                { sprintf(
+                                                                    __(
+                                                                        '[Merged %d]',
+                                                                        TEXT_DOMAIN
+                                                                    ),
+                                                                    item.categories.length
+                                                                ) }
+                                                            </span>
+                                                        ) }
+                                                    </div>
+
+                                                    <div>
+                                                        <SelectControl
+                                                            value={ section.id }
+                                                            options={ sectionDropdownOptions }
+                                                            onChange={ ( newSecId ) =>
+                                                                handleTransferItemToSection(
+                                                                    section.id,
+                                                                    item.id,
+                                                                    newSecId
+                                                                )
+                                                            }
+                                                            style={ {
+                                                                height: '28px',
+                                                                fontSize: '11px',
+                                                                padding: '0 6px',
+                                                            } }
+                                                            __nextHasNoMarginBottom
+                                                        />
+                                                    </div>
+
+                                                    <Flex align="center" gap={ 1 }>
+                                                        { item.categories.map(
+                                                            ( compositeKey ) => {
+                                                                const catColor =
+                                                                    categoryMap[
+                                                                        compositeKey
+                                                                    ]?.color ||
+                                                                    '#007cba';
+                                                                return (
+                                                                    <div
+                                                                        key={ compositeKey }
+                                                                        title={ `${
+                                                                            categoryMap[
+                                                                                compositeKey
+                                                                            ]?.label ||
+                                                                            compositeKey
+                                                                        } (${ catColor })` }
+                                                                        style={ {
+                                                                            width: '16px',
+                                                                            height: '16px',
+                                                                            borderRadius: '50%',
+                                                                            background: catColor,
+                                                                            border: '1px solid #ccc',
+                                                                        } }
+                                                                    />
+                                                                );
+                                                            }
+                                                        ) }
+                                                    </Flex>
+
+                                                    <Flex justify="center" gap={ 1 }>
+                                                        <Button
+                                                            isSmall
+                                                            icon="arrow-up-alt2"
+                                                            disabled={ isFirst }
+                                                            onClick={ () =>
+                                                                handleMoveItemOrder(
+                                                                    secIdx,
+                                                                    itemIdx,
+                                                                    -1
+                                                                )
+                                                            }
+                                                        />
+                                                        <Button
+                                                            isSmall
+                                                            icon="arrow-down-alt2"
+                                                            disabled={ isLast }
+                                                            onClick={ () =>
+                                                                handleMoveItemOrder(
+                                                                    secIdx,
+                                                                    itemIdx,
+                                                                    1
+                                                                )
+                                                            }
+                                                        />
+                                                    </Flex>
+
+                                                    <div style={ { textAlign: 'center' } }>
+                                                        { item.type === 'merged' && (
+                                                            <Button
+                                                                isSmall
+                                                                isDestructive
+                                                                icon="editor-break"
+                                                                onClick={ () =>
+                                                                    handleUnmergeItem(
+                                                                        section.id,
+                                                                        item.id
+                                                                    )
+                                                                }
+                                                                label={ __(
+                                                                    'Unmerge Categories',
+                                                                    TEXT_DOMAIN
+                                                                ) }
+                                                            />
+                                                        ) }
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                    ) }
+                                </div>
+                            </div>
+                        )
+                    ) }
+
+                    { /* CREATE NEW LEGEND SECTION HEADER */ }
+                    <div
+                        style={ {
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'flex-end',
+                            paddingTop: '15px',
+                            borderTop: '1px solid #eee',
+                        } }
+                    >
+                        <div style={ { flex: 1 } }>
+                            <TextControl
                                 label={ __(
-                                    'Show Section Titles in Public Legend',
+                                    'Add Custom Legend Section Header',
                                     TEXT_DOMAIN
                                 ) }
-                                checked={
-                                    legendConfig.showSectionHeaders !== false
-                                }
-                                onChange={ ( val ) =>
-                                    setLegendConfig( ( prev ) => ( {
-                                        ...prev,
-                                        showSectionHeaders: val,
-                                    } ) )
-                                }
-                                disabled={ ! legendConfig.enabled }
+                                placeholder="e.g. Housing & Residential, Amenities, or Outdoor Features"
+                                value={ newSectionTitle }
+                                onChange={ setNewSectionTitle }
+                                style={ { height: '36px' } }
                                 __nextHasNoMarginBottom
                             />
                         </div>
-
                         <Button
                             variant="secondary"
-                            icon="groups"
-                            onClick={ () => setShowMergeModal( true ) }
-                            disabled={ ! legendConfig.enabled }
+                            icon="plus-alt"
+                            onClick={ handleAddSection }
+                            disabled={ ! newSectionTitle.trim() }
+                            style={ { height: '36px' } }
                         >
-                            { __(
-                                'Merge Categories into 1 Line',
-                                TEXT_DOMAIN
-                            ) }
+                            { __( 'Add Section', TEXT_DOMAIN ) }
                         </Button>
                     </div>
                 </div>
-
-                { legendConfig.enabled && (
-                    <div>
-                        { /* SECTIONS RENDERING */ }
-                        { ( legendConfig.sections || [] ).map(
-                            ( section, secIdx ) => (
-                                <div
-                                    key={ section.id }
-                                    style={ {
-                                        marginBottom: '20px',
-                                        border: '1px solid #e0e0e0',
-                                        borderRadius: '4px',
-                                        background: '#fff',
-                                        overflow: 'hidden',
-                                    } }
-                                >
-                                    <div
-                                        style={ {
-                                            padding: '10px 12px',
-                                            background: '#f5f5f5',
-                                            borderBottom: '1px solid #e0e0e0',
-                                        } }
-                                    >
-                                        <Flex
-                                            align="center"
-                                            justify="space-between"
-                                            gap={ 3 }
-                                        >
-                                            <FlexItem style={ { flex: 1 } }>
-                                                <TextControl
-                                                    value={ section.title }
-                                                    onChange={ ( val ) =>
-                                                        handleRenameSection(
-                                                            section.id,
-                                                            val
-                                                        )
-                                                    }
-                                                    style={ {
-                                                        height: '32px',
-                                                        fontWeight: '700',
-                                                    } }
-                                                    __nextHasNoMarginBottom
-                                                />
-                                            </FlexItem>
-                                            <Button
-                                                isDestructive
-                                                isSmall
-                                                icon="trash"
-                                                onClick={ () =>
-                                                    handleRemoveSection(
-                                                        section.id
-                                                    )
-                                                }
-                                                label={ __(
-                                                    'Delete Section Header',
-                                                    TEXT_DOMAIN
-                                                ) }
-                                            />
-                                        </Flex>
-                                    </div>
-
-                                    <div style={ { borderBottom: '1px solid #eee' } }>
-                                        <div
-                                            style={ {
-                                                display: 'grid',
-                                                gridTemplateColumns:
-                                                    '50px 1fr 140px 120px 80px 70px',
-                                                gap: '8px',
-                                                padding: '8px 12px',
-                                                background: '#fafafa',
-                                                fontSize: '11px',
-                                                fontWeight: '600',
-                                                color: '#666',
-                                            } }
-                                        >
-                                            <span style={ { textAlign: 'center' } }>
-                                                { __( 'Show', TEXT_DOMAIN ) }
-                                            </span>
-                                            <span>
-                                                { __( 'Legend Label', TEXT_DOMAIN ) }
-                                            </span>
-                                            <span>
-                                                { __( 'Move to Section', TEXT_DOMAIN ) }
-                                            </span>
-                                            <span>
-                                                { __( 'Swatches', TEXT_DOMAIN ) }
-                                            </span>
-                                            <span style={ { textAlign: 'center' } }>
-                                                { __( 'Reorder', TEXT_DOMAIN ) }
-                                            </span>
-                                            <span style={ { textAlign: 'center' } }>
-                                                { __( 'Action', TEXT_DOMAIN ) }
-                                            </span>
-                                        </div>
-
-                                        { section.items.map(
-                                            ( item, itemIdx ) => {
-                                                const isFirst = itemIdx === 0;
-                                                const isLast =
-                                                    itemIdx ===
-                                                    section.items.length - 1;
-
-                                                return (
-                                                    <div
-                                                        key={ item.id }
-                                                        style={ {
-                                                            display: 'grid',
-                                                            gridTemplateColumns:
-                                                                '50px 1fr 140px 120px 80px 70px',
-                                                            gap: '8px',
-                                                            padding: '8px 12px',
-                                                            alignItems: 'center',
-                                                            borderTop: '1px solid #eee',
-                                                            opacity: item.showInLegend
-                                                                ? 1
-                                                                : 0.5,
-                                                        } }
-                                                    >
-                                                        <div style={ { textAlign: 'center' } }>
-                                                            <CheckboxControl
-                                                                checked={ Boolean(
-                                                                    item.showInLegend
-                                                                ) }
-                                                                onChange={ ( checked ) =>
-                                                                    handleToggleItem(
-                                                                        section.id,
-                                                                        item.id,
-                                                                        checked
-                                                                    )
-                                                                }
-                                                                __nextHasNoMarginBottom
-                                                            />
-                                                        </div>
-
-                                                        <div>
-                                                            <strong>{ item.label }</strong>
-                                                            { item.type === 'merged' && (
-                                                                <span
-                                                                    style={ {
-                                                                        fontSize: '10px',
-                                                                        color: '#2271b1',
-                                                                        marginLeft: '6px',
-                                                                        background: '#f0f6fb',
-                                                                        padding: '2px 4px',
-                                                                        borderRadius: '3px',
-                                                                    } }
-                                                                >
-                                                                    { sprintf(
-                                                                        __(
-                                                                            '[Merged %d]',
-                                                                            TEXT_DOMAIN
-                                                                        ),
-                                                                        item.categories.length
-                                                                    ) }
-                                                                </span>
-                                                            ) }
-                                                        </div>
-
-                                                        <div>
-                                                            <SelectControl
-                                                                value={ section.id }
-                                                                options={ sectionDropdownOptions }
-                                                                onChange={ ( newSecId ) =>
-                                                                    handleTransferItemToSection(
-                                                                        section.id,
-                                                                        item.id,
-                                                                        newSecId
-                                                                    )
-                                                                }
-                                                                style={ {
-                                                                    height: '28px',
-                                                                    fontSize: '11px',
-                                                                    padding: '0 6px',
-                                                                } }
-                                                                __nextHasNoMarginBottom
-                                                            />
-                                                        </div>
-
-                                                        <Flex align="center" gap={ 1 }>
-                                                            { item.categories.map(
-                                                                ( compositeKey ) => {
-                                                                    const catColor =
-                                                                        categoryMap[
-                                                                            compositeKey
-                                                                        ]?.color ||
-                                                                        '#007cba';
-                                                                    return (
-                                                                        <div
-                                                                            key={ compositeKey }
-                                                                            title={ `${
-                                                                                categoryMap[
-                                                                                    compositeKey
-                                                                                ]?.label ||
-                                                                                compositeKey
-                                                                            } (${ catColor })` }
-                                                                            style={ {
-                                                                                width: '16px',
-                                                                                height: '16px',
-                                                                                borderRadius: '50%',
-                                                                                background: catColor,
-                                                                                border: '1px solid #ccc',
-                                                                            } }
-                                                                        />
-                                                                    );
-                                                                }
-                                                            ) }
-                                                        </Flex>
-
-                                                        <Flex justify="center" gap={ 1 }>
-                                                            <Button
-                                                                isSmall
-                                                                icon="arrow-up-alt2"
-                                                                disabled={ isFirst }
-                                                                onClick={ () =>
-                                                                    handleMoveItemOrder(
-                                                                        secIdx,
-                                                                        itemIdx,
-                                                                        -1
-                                                                    )
-                                                                }
-                                                            />
-                                                            <Button
-                                                                isSmall
-                                                                icon="arrow-down-alt2"
-                                                                disabled={ isLast }
-                                                                onClick={ () =>
-                                                                    handleMoveItemOrder(
-                                                                        secIdx,
-                                                                        itemIdx,
-                                                                        1
-                                                                    )
-                                                                }
-                                                            />
-                                                        </Flex>
-
-                                                        <div style={ { textAlign: 'center' } }>
-                                                            { item.type === 'merged' && (
-                                                                <Button
-                                                                    isSmall
-                                                                    isDestructive
-                                                                    icon="editor-break"
-                                                                    onClick={ () =>
-                                                                        handleUnmergeItem(
-                                                                            section.id,
-                                                                            item.id
-                                                                        )
-                                                                    }
-                                                                    label={ __(
-                                                                        'Unmerge Categories',
-                                                                        TEXT_DOMAIN
-                                                                    ) }
-                                                                />
-                                                            ) }
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }
-                                        ) }
-                                    </div>
-                                </div>
-                            )
-                        ) }
-
-                        { /* CREATE NEW LEGEND SECTION HEADER */ }
-                        <div
-                            style={ {
-                                display: 'flex',
-                                gap: '12px',
-                                alignItems: 'flex-end',
-                                paddingTop: '15px',
-                                borderTop: '1px solid #eee',
-                            } }
-                        >
-                            <div style={ { flex: 1 } }>
-                                <TextControl
-                                    label={ __(
-                                        'Add Custom Legend Section Header',
-                                        TEXT_DOMAIN
-                                    ) }
-                                    placeholder="e.g. Housing & Residential, Amenities, or Outdoor Features"
-                                    value={ newSectionTitle }
-                                    onChange={ setNewSectionTitle }
-                                    style={ { height: '36px' } }
-                                    __nextHasNoMarginBottom
-                                />
-                            </div>
-                            <Button
-                                variant="secondary"
-                                icon="plus-alt"
-                                onClick={ handleAddSection }
-                                disabled={ ! newSectionTitle.trim() }
-                                style={ { height: '36px' } }
-                            >
-                                { __( 'Add Section', TEXT_DOMAIN ) }
-                            </Button>
-                        </div>
-                    </div>
-                ) }
-            </PanelBody>
+            ) }
 
             { /* MODAL: MERGE CATEGORIES */ }
             { showMergeModal && (
@@ -803,6 +799,6 @@ export const MapLegendManager = ( {
                     </div>
                 </Modal>
             ) }
-        </Panel>
+        </div>
     );
 };
