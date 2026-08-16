@@ -6,7 +6,6 @@
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect, useRef, useMemo } from '@wordpress/element';
 import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor-page/hooks/useCategoryManager';
-import { useTypographySettings } from '../../hooks/useTypographySettings';
 
 const LegendIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -29,11 +28,6 @@ export const MapLegend = ( { mapDimensions } ) => {
     const hasInitialized = useRef( false );
 
     const { categoryMap, legendConfig } = useCategoryManager();
-
-    // Hook consumes typography from legendConfig or falls back to global API settings
-    const { typographySettings, cssVariables } = useTypographySettings(
-        legendConfig?.typography || {}
-    );
 
     useEffect( () => {
         if ( width > 0 && ! hasInitialized.current ) {
@@ -91,22 +85,6 @@ export const MapLegend = ( { mapDimensions } ) => {
         return showHeaders ? [] : activeSections.flatMap( ( s ) => s.items );
     }, [ showHeaders, activeSections ] );
 
-    // Explicit style objects calculated directly from the hook settings
-    const headerTitleStyle = {
-        fontSize: `${ typographySettings.legendHeaderFontSize }px`,
-        fontFamily: typographySettings.fontFamily,
-    };
-
-    const sectionTitleStyle = {
-        fontSize: `${ typographySettings.legendSectionFontSize }px`,
-        fontFamily: typographySettings.fontFamily,
-    };
-
-    const itemLabelStyle = {
-        fontSize: `${ typographySettings.legendItemFontSize }px`,
-        fontFamily: typographySettings.fontFamily,
-    };
-
     if ( ! isLegendEnabled || activeSections.length === 0 ) {
         return <div style={ { display: 'none' } } className="map-legend-hidden" />;
     }
@@ -115,7 +93,6 @@ export const MapLegend = ( { mapDimensions } ) => {
         <div
             className={ `map-legend-container ${ isOpen ? 'is-open' : 'is-collapsed' }` }
             onClick={ () => ! isOpen && setIsOpen( true ) }
-            style={ cssVariables }
         >
             <div className="map-legend-header">
                 { ! isOpen ? (
@@ -124,7 +101,7 @@ export const MapLegend = ( { mapDimensions } ) => {
                     </div>
                 ) : (
                     <>
-                        <span className="map-legend-title" style={ headerTitleStyle }>
+                        <span className="map-legend-title">
                             { __( 'Legend', 'bawbab-interactive-maps' ) }
                         </span>
                         <button
@@ -147,10 +124,7 @@ export const MapLegend = ( { mapDimensions } ) => {
                     { showHeaders
                         ? activeSections.map( ( section ) => (
                                 <div key={ section.id } className="map-legend-section">
-                                    <div
-                                        className="map-legend-section-title"
-                                        style={ sectionTitleStyle }
-                                    >
+                                    <div className="map-legend-section-title">
                                         { section.title }
                                     </div>
                                     <div className="map-legend-items-list">
@@ -168,10 +142,7 @@ export const MapLegend = ( { mapDimensions } ) => {
                                                         />
                                                     ) ) }
                                                 </div>
-                                                <span
-                                                    className="map-legend-item-label"
-                                                    style={ itemLabelStyle }
-                                                >
+                                                <span className="map-legend-item-label">
                                                     { item.label }
                                                 </span>
                                             </div>
@@ -190,10 +161,7 @@ export const MapLegend = ( { mapDimensions } ) => {
                                             />
                                         ) ) }
                                     </div>
-                                    <span
-                                        className="map-legend-item-label"
-                                        style={ itemLabelStyle }
-                                    >
+                                    <span className="map-legend-item-label">
                                         { item.label }
                                     </span>
                                 </div>
