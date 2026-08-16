@@ -2,64 +2,52 @@ import { createRoot } from '@wordpress/element';
 import BawBabIMaps from './components/maps';
 
 const MIN_MAP_ZOOM = 15;
+const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
 
 const viewBawbabImap = async () => {
-    // Fetch Global Settings once for the whole page
-    let globalSettings = { colorTheme: 'blue', mapLogo: '' };
+    let globalSettings = {};
+
     try {
-        const response = await fetch(
-            '/wp-json/bwb-imaps-federated-api/v1/map-locations'
-        );
+        const response = await fetch( ENDPOINT_GET_SETTINGS );
         if ( response.ok ) {
-            const data = await response.json();
-            globalSettings = {
-                colorTheme: data.colorTheme || 'blue',
-                mapLogo: data.mapLogo || '',
-            };
-            // Set global for components that might peek at it
-            window.bwbimapsSettings = data;
+            globalSettings = await response.json();
+            window.bwbimapsSettings = globalSettings;
         }
     } catch ( err ) {
         console.error( 'Bawbab IMaps: Could not load global settings', err );
     }
 
-    // TARGET ALL MAP CONTAINERS: Shortcodes (#interactive-map-root, .map-shortcode-container, .bwb-interactive-map-root) AND Blocks (.bawbab-imaps-container)
     const targetContainers = document.querySelectorAll(
         '.bawbab-imaps-container:not([data-rendered="true"]), .map-shortcode-container:not([data-rendered="true"]), #interactive-map-root:not([data-rendered="true"]), .bwb-interactive-map-root:not([data-rendered="true"])'
     );
 
     targetContainers.forEach( ( container ) => {
         try {
-            const parsedZoom = Number.parseInt(
-                container.dataset.zoom,
-                10
-            );
-            const clampedZoom = Number.isNaN( parsedZoom )
-                ? MIN_MAP_ZOOM
-                : Math.max( MIN_MAP_ZOOM, parsedZoom );
+            const parsedZoom = Number.parseInt( container.dataset.zoom, 10 );
+            const clampedZoom = Number.isNaN( parsedZoom ) ? MIN_MAP_ZOOM : Math.max( MIN_MAP_ZOOM, parsedZoom );
 
-            const parsedTilt = Number.parseInt(
-                container.dataset.tilt,
-                10
-            );
-            const clampedTilt = Number.isNaN( parsedTilt )
-                ? 0
-                : Math.min( Math.max( 0, parsedTilt ), 90 );
+            const parsedTilt = Number.parseInt( container.dataset.tilt, 10 );
+            const clampedTilt = Number.isNaN( parsedTilt ) ? 0 : Math.min( Math.max( 0, parsedTilt ), 90 );
 
+            const selectedTheme = container.dataset.colorTheme || globalSettings.colorTheme || 'blue';
+
+            // Pass all database settings directly as explicit props
             const attributes = {
                 zoom: clampedZoom,
                 tilt: clampedTilt,
                 width: container.dataset.width || '100%',
                 height: container.dataset.height || '650px',
-                mapType: container.dataset.mapType || 'hybrid',
-                colorTheme: globalSettings.colorTheme,
-                mapLogo: globalSettings.mapLogo,
+                mapType: container.dataset.mapType || globalSettings.mapType || 'hybrid',
+                colorThemeProp: selectedTheme,
+                mapLogoProp: globalSettings.mapLogo || '',
+                navBackgroundProp: globalSettings.navBackground || '',
+                apiKeyProp: globalSettings.googleApiKey || '',
+                mapIdProp: globalSettings.googleMapId || '',
+                locations: globalSettings.locations || [],
             };
 
-            // Apply the theme class to the container itself
-            container.classList.add(
-                `map-theme-${ globalSettings.colorTheme }`
-            );
+            container.classList.remove( 'map-theme-blue', 'map-theme-green', 'map-theme-yellow' );
+            container.classList.add( `map-theme-${ selectedTheme }` );
 
             const root = createRoot( container );
             root.render( <BawBabIMaps { ...attributes } /> );
@@ -71,11 +59,7 @@ const viewBawbabImap = async () => {
     } );
 };
 
-// SAFEGUARD: Run immediately if DOM is ready, or hook to DOMContentLoaded
-if (
-    document.readyState === 'complete' ||
-    document.readyState === 'interactive'
-) {
+if ( document.readyState === 'complete' || document.readyState === 'interactive' ) {
     viewBawbabImap();
 } else {
     window.addEventListener( 'DOMContentLoaded', viewBawbabImap );

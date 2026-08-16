@@ -163,9 +163,9 @@ export default function Edit( { attributes, setAttributes } ) {
                 tilt={ tilt }
                 width={ attributes.width }
                 height={ attributes.height }
-                mapLogo={ mapLogo }
+                mapLogoProp={ mapLogo }
                 navBackgroundProp={ navBackground }
-                colorTheme={ colorTheme }
+                colorThemeProp={ colorTheme }
                 apiKeyProp={ googleApiKey }
                 mapIdProp={ googleMapId }
                 mapTypeProp={ mapType }

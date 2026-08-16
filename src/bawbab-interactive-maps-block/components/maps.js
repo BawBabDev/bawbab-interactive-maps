@@ -1,3 +1,8 @@
+/**
+ * Main Map Renderer Component
+ * File: src/components/maps.jsx
+ */
+
 import {
     useState,
     useEffect,
@@ -26,6 +31,7 @@ import { __ } from '@wordpress/i18n';
 import { useMapDimensions } from '../hooks/useMapDimensions';
 import { useMapLayers } from '../hooks/useMapLayers';
 import { useCategoryManager } from '../../bawbab-interactive-maps-admin/category-editor-page/hooks/useCategoryManager';
+import { useTypographySettings } from '../../hooks/useTypographySettings';
 import { calculateSpatialBounds } from '../utils/mapBounds';
 import { SpatialFeaturesRenderer } from './spatialFeaturesRenderer';
 import {
@@ -42,40 +48,37 @@ import {
 import { useMapUrlParams } from '../hooks/useMapUrlParams';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
-const SETTINGS_ENDPOINT = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
 
 export default function BawBabIMaps( {
-    mapTypeProp = '',
+    colorThemeProp,
+    mapLogoProp,
+    navBackgroundProp,
+    apiKeyProp,
+    mapIdProp,
+    mapTypeProp,
     locations: propsLocations = [],
     zoom = 16,
     tilt = 0,
-    onMarkerClick,
     width = '100%',
     height = 'stretch',
-    mapLogo: mapLogoProp = '',
-    navBackground: navBackgroundProp = '',
-    colorTheme: colorThemeProp = '',
     selectedLocationProp = null,
     isDrawerOpenProp = false,
     editMode = false,
+    onMarkerClick,
     onFeatureSelect,
-    apiKeyProp = '',
-    mapIdProp = '',
 } ) {
-    // 1. Reactive Container Dimension Hook
     const [ dimensions, containerRef ] = useMapDimensions();
     const isLayoutReady = dimensions.width > 0;
 
-    // 2. Direct State for Global Map Settings Fetched Inside Component
-    const [ fetchedSettings, setFetchedSettings ] = useState( null );
+    // Direct Prop Resolution (Prioritizes Admin state props, then view.js props, then default)
+    const API_KEY = apiKeyProp || '';
+    const MAP_ID = mapIdProp || '';
+    const MAP_TYPE = mapTypeProp || 'roadmap';
+    const COLOR_THEME = colorThemeProp || 'blue';
+    const MAP_LOGO = mapLogoProp || '';
+    const NAV_BACKGROUND = navBackgroundProp || '';
 
-    // Fallback Priority: Explicit Prop -> In-Component Fetched Setting -> Window Object Baseline
-    const API_KEY = apiKeyProp || fetchedSettings?.googleApiKey || window.bwbimapsSettings?.googleApiKey || '';
-    const MAP_ID = mapIdProp || fetchedSettings?.googleMapId || window.bwbimapsSettings?.googleMapId || '';
-    const MAP_TYPE = mapTypeProp || fetchedSettings?.mapType || window.bwbimapsSettings?.mapType || 'roadmap';
-    const COLOR_THEME = colorThemeProp || fetchedSettings?.colorTheme || window.bwbimapsSettings?.colorTheme || 'blue';
-    const MAP_LOGO = mapLogoProp || fetchedSettings?.mapLogo || window.bwbimapsSettings?.mapLogo || '';
-    const NAV_BACKGROUND = navBackgroundProp || fetchedSettings?.navBackground || window.bwbimapsSettings?.navBackground || '';
+    const { cssVariables } = useTypographySettings();
 
     const { formatCoords } = useCoordinateFormatter();
     const [ isDrawerOpen, setIsDrawerOpen ] = useState( false );
@@ -85,8 +88,7 @@ export default function BawBabIMaps( {
     const [ isLightboxOpen, setIsLightboxOpen ] = useState( false );
     const [ lightboxImage, setLightboxImage ] = useState( null );
 
-    const [ isListeningForOriginClick, setIsListeningForOriginClick ] =
-        useState( false );
+    const [ isListeningForOriginClick, setIsListeningForOriginClick ] = useState( false );
     const [ manualOriginNode, setManualOriginNode ] = useState( null );
     const [ activeNavigationPath, setActiveNavigationPath ] = useState( null );
 
@@ -104,15 +106,12 @@ export default function BawBabIMaps( {
         availableFloors,
     } = useMapLayers( spatialFeatures );
 
-    // 3. Central Category & Color Manager
     const { categoryMap, processSpatialFeatures } = useCategoryManager();
 
-    // Process spatial features with group IDs, display labels, and fill colors
     const processedSpatialFeatures = useMemo( () => {
         return processSpatialFeatures( spatialFeatures );
     }, [ spatialFeatures, processSpatialFeatures ] );
 
-    // Build flat category-to-color lookup map for Legend component
     const categoryColorMap = useMemo( () => {
         const flatMap = {};
         Object.keys( categoryMap ).forEach( ( cat ) => {
@@ -133,7 +132,6 @@ export default function BawBabIMaps( {
         setIsLightboxOpen( true );
     };
 
-    // 4. Compute Container-Relative Sidebar Width & Bounds
     const containerWidth = dimensions.width || 0;
 
     const sidebarWidth = useMemo( () => {
@@ -208,27 +206,7 @@ export default function BawBabIMaps( {
         fetchTableData();
     }, [] );
 
-    // Direct REST API fetch to recover full settings (including API Key & Map ID) inside map component
-    useEffect( () => {
-        const fetchGlobalSettings = async () => {
-            try {
-                const response = await fetch( SETTINGS_ENDPOINT );
-                if ( response.ok ) {
-                    const data = await response.json();
-                    setFetchedSettings( data );
-                    if ( propsLocations.length === 0 ) {
-                        setLocations( data.locations || [] );
-                    }
-                }
-            } catch ( err ) {
-                console.error( 'Map Settings Fetch Error:', err );
-            } finally {
-                setIsLoading( false );
-            }
-        };
-        fetchGlobalSettings();
-    }, [] );
-
+    // Sync locations from props
     useEffect( () => {
         if ( propsLocations.length > 0 ) {
             setLocations( propsLocations );
@@ -286,8 +264,9 @@ export default function BawBabIMaps( {
 
     return (
         <div
-            className={ `map-theme-${ COLOR_THEME || 'blue' }` }
+            className={ `map-theme-${ COLOR_THEME } map-container` }
             style={ {
+                ...cssVariables,
                 display: 'flex',
                 flexDirection: 'column',
                 width,

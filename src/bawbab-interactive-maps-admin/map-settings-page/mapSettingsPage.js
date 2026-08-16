@@ -215,9 +215,9 @@ const MapSettingsPage = () => {
                             <BawBabIMaps
                                 mapTypeProp={ mapType }
                                 locations={ locations }
-                                mapLogo={ mapLogo }
-                                navBackground={ navBackground }
-                                colorTheme={ colorTheme }
+                                mapLogoProp={ mapLogo }
+                                navBackgroundProp={ navBackground }
+                                colorThemeProp={ colorTheme }
                                 apiKeyProp={ googleApiKey }
                                 mapIdProp={ googleMapId }
                             />

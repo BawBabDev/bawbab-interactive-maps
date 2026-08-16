@@ -1229,9 +1229,9 @@ const SpatialDataEditorPage = () => {
                                                 apiKeyProp={ googleApiKey }
                                                 mapIdProp={ googleMapId }
                                                 mapTypeProp={ mapType }
-                                                mapLogo={ mapLogo }
-                                                navBackground={ navBackground }
-                                                colorTheme={ colorTheme }
+                                                mapLogoProp={ mapLogo }
+                                                navBackgroundProp={ navBackground }
+                                                colorThemeProp={ colorTheme }
                                             />
                                         </div>
                                     </div>
