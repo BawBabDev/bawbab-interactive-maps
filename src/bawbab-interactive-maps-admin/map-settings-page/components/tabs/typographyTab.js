@@ -321,6 +321,115 @@ export const TypographyTab = ( {
                     </Flex>
                 </PanelBody>
             </div>
+
+            { /* SECTION 4: SEARCH BAR & SEARCH MENU TYPOGRAPHY */ }
+            <div
+                style={ {
+                    marginBottom: '20px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                } }
+            >
+                <PanelBody
+                    title={ __( '4. Search Input & Search Menu Typography', TEXT_DOMAIN ) }
+                    initialOpen={ false }
+                >
+                    <Flex direction="column" gap={ 3 }>
+
+
+                        <TypographyRowControl
+                            title={ __( 'Search Menu Top-Level Tab Buttons', TEXT_DOMAIN ) }
+                            sizeKey="searchTabFontSize"
+                            defaultSize={ 14 }
+                            minSize={ 10 }
+                            maxSize={ 22 }
+                            weightKey="searchTabFontWeight"
+                            defaultWeight="600"
+                            styleKey="searchTabFontStyle"
+                            decorationKey="searchTabDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Search Menu Group Header Accordions', TEXT_DOMAIN ) }
+                            sizeKey="searchGroupHeaderFontSize"
+                            defaultSize={ 13 }
+                            minSize={ 9 }
+                            maxSize={ 20 }
+                            weightKey="searchGroupHeaderFontWeight"
+                            defaultWeight="600"
+                            styleKey="searchGroupHeaderFontStyle"
+                            decorationKey="searchGroupHeaderDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Search Menu Sub-List Row Items', TEXT_DOMAIN ) }
+                            sizeKey="searchItemFontSize"
+                            defaultSize={ 12 }
+                            minSize={ 8 }
+                            maxSize={ 18 }
+                            weightKey="searchItemFontWeight"
+                            defaultWeight="400"
+                            styleKey="searchItemFontStyle"
+                            decorationKey="searchItemDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+                        
+                        <TypographyRowControl
+                            title={ __( 'Search Input Placeholder & Text', TEXT_DOMAIN ) }
+                            sizeKey="searchInputFontSize"
+                            defaultSize={ 13 }
+                            minSize={ 10 }
+                            maxSize={ 22 }
+                            weightKey="searchInputFontWeight"
+                            defaultWeight="400"
+                            styleKey="searchInputFontStyle"
+                            decorationKey="searchInputDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Autocomplete Result Title Text', TEXT_DOMAIN ) }
+                            sizeKey="searchResultTitleFontSize"
+                            defaultSize={ 12 }
+                            minSize={ 8 }
+                            maxSize={ 18 }
+                            weightKey="searchResultTitleFontWeight"
+                            defaultWeight="600"
+                            styleKey="searchResultTitleFontStyle"
+                            decorationKey="searchResultTitleDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Autocomplete Result Category Label', TEXT_DOMAIN ) }
+                            sizeKey="searchResultCatFontSize"
+                            defaultSize={ 9 }
+                            minSize={ 7 }
+                            maxSize={ 16 }
+                            weightKey="searchResultCatFontWeight"
+                            defaultWeight="700"
+                            styleKey="searchResultCatFontStyle"
+                            decorationKey="searchResultCatDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+                    </Flex>
+                </PanelBody>
+            </div>
         </div>
     );
 };

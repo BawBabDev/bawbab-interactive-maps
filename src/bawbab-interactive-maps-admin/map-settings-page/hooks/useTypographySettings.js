@@ -80,6 +80,37 @@ const DEFAULT_TYPOGRAPHY = {
     controlsFloorFontWeight: '800',
     controlsFloorFontStyle: 'normal',
     controlsFloorDecoration: 'none',
+
+    // --- SEARCH BAR & SEARCH LIST DEFAULTS ---
+    searchInputFontSize: 13,
+    searchInputFontWeight: '400',
+    searchInputFontStyle: 'normal',
+    searchInputDecoration: 'none',
+
+    searchTabFontSize: 14,
+    searchTabFontWeight: '600',
+    searchTabFontStyle: 'normal',
+    searchTabDecoration: 'none',
+
+    searchGroupHeaderFontSize: 13,
+    searchGroupHeaderFontWeight: '600',
+    searchGroupHeaderFontStyle: 'normal',
+    searchGroupHeaderDecoration: 'none',
+
+    searchItemFontSize: 12,
+    searchItemFontWeight: '400',
+    searchItemFontStyle: 'normal',
+    searchItemDecoration: 'none',
+
+    searchResultTitleFontSize: 12,
+    searchResultTitleFontWeight: '600',
+    searchResultTitleFontStyle: 'normal',
+    searchResultTitleDecoration: 'none',
+
+    searchResultCatFontSize: 9,
+    searchResultCatFontWeight: '700',
+    searchResultCatFontStyle: 'normal',
+    searchResultCatDecoration: 'none',
 };
 
 export const useTypographySettings = ( initialSettings = {} ) => {
@@ -274,6 +305,37 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         '--map-controls-floor-weight': settings.controlsFloorFontWeight,
         '--map-controls-floor-style': settings.controlsFloorFontStyle,
         '--map-controls-floor-decoration': settings.controlsFloorDecoration,
+
+        // --- SEARCH BAR & SEARCH LIST ---
+        '--map-search-input-size': `${ settings.searchInputFontSize }px`,
+        '--map-search-input-weight': settings.searchInputFontWeight,
+        '--map-search-input-style': settings.searchInputFontStyle,
+        '--map-search-input-decoration': settings.searchInputDecoration,
+
+        '--map-search-tab-size': `${ settings.searchTabFontSize }px`,
+        '--map-search-tab-weight': settings.searchTabFontWeight,
+        '--map-search-tab-style': settings.searchTabFontStyle,
+        '--map-search-tab-decoration': settings.searchTabDecoration,
+
+        '--map-search-group-header-size': `${ settings.searchGroupHeaderFontSize }px`,
+        '--map-search-group-header-weight': settings.searchGroupHeaderFontWeight,
+        '--map-search-group-header-style': settings.searchGroupHeaderFontStyle,
+        '--map-search-group-header-decoration': settings.searchGroupHeaderDecoration,
+
+        '--map-search-item-size': `${ settings.searchItemFontSize }px`,
+        '--map-search-item-weight': settings.searchItemFontWeight,
+        '--map-search-item-style': settings.searchItemFontStyle,
+        '--map-search-item-decoration': settings.searchItemDecoration,
+
+        '--map-search-result-title-size': `${ settings.searchResultTitleFontSize }px`,
+        '--map-search-result-title-weight': settings.searchResultTitleFontWeight,
+        '--map-search-result-title-style': settings.searchResultTitleFontStyle,
+        '--map-search-result-title-decoration': settings.searchResultTitleDecoration,
+
+        '--map-search-result-cat-size': `${ settings.searchResultCatFontSize }px`,
+        '--map-search-result-cat-weight': settings.searchResultCatFontWeight,
+        '--map-search-result-cat-style': settings.searchResultCatFontStyle,
+        '--map-search-result-cat-decoration': settings.searchResultCatDecoration,
     };
 
     return {

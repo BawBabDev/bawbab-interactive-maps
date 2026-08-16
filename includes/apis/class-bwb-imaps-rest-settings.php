@@ -110,6 +110,37 @@ class BWB_IMaps_REST_Settings {
             'controlsFloorFontWeight'     => '800',
             'controlsFloorFontStyle'      => 'normal',
             'controlsFloorDecoration'     => 'none',
+
+            // --- SEARCH BAR & LIST DEFAULTS ---
+            'searchInputFontSize'         => 13,
+            'searchInputFontWeight'       => '400',
+            'searchInputFontStyle'        => 'normal',
+            'searchInputDecoration'       => 'none',
+
+            'searchTabFontSize'           => 14,
+            'searchTabFontWeight'         => '600',
+            'searchTabFontStyle'          => 'normal',
+            'searchTabDecoration'         => 'none',
+
+            'searchGroupHeaderFontSize'   => 13,
+            'searchGroupHeaderFontWeight' => '600',
+            'searchGroupHeaderFontStyle'  => 'normal',
+            'searchGroupHeaderDecoration' => 'none',
+
+            'searchItemFontSize'          => 12,
+            'searchItemFontWeight'        => '400',
+            'searchItemFontStyle'         => 'normal',
+            'searchItemDecoration'        => 'none',
+
+            'searchResultTitleFontSize'   => 12,
+            'searchResultTitleFontWeight' => '600',
+            'searchResultTitleFontStyle'  => 'normal',
+            'searchResultTitleDecoration' => 'none',
+
+            'searchResultCatFontSize'     => 9,
+            'searchResultCatFontWeight'   => '700',
+            'searchResultCatFontStyle'    => 'normal',
+            'searchResultCatDecoration'   => 'none',
         );
 
         $payload = array(
