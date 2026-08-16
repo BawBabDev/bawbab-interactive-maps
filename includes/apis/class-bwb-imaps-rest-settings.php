@@ -38,27 +38,44 @@ class BWB_IMaps_REST_Settings {
         );
 
         $default_typography = array(
-            'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-            'legendHeaderFontSize'  => 13,
-            'legendSectionFontSize' => 10,
-            'legendItemFontSize'    => 11,
-            'drawerTitleFontSize'   => 2.0,
-            'drawerBodyFontSize'    => 1.1,
-            'controlsFontSize'      => 13,
+            'fontFamily'              => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            
+            // Sizes
+            'legendHeaderFontSize'    => 13,
+            'legendSectionFontSize'   => 10,
+            'legendItemFontSize'      => 11,
+            'drawerTitleFontSize'     => 2.0,
+            'drawerBodyFontSize'      => 1.1,
+            'controlsFontSize'        => 13,
+
+            // Weights
+            'legendHeaderFontWeight'  => '800',
+            'legendSectionFontWeight' => '800',
+            'legendItemFontWeight'    => '600',
+
+            // Styles
+            'legendHeaderFontStyle'   => 'normal',
+            'legendSectionFontStyle'  => 'normal',
+            'legendItemFontStyle'     => 'normal',
+
+            // Decorations
+            'legendHeaderDecoration'  => 'none',
+            'legendSectionDecoration' => 'none',
+            'legendItemDecoration'    => 'none',
         );
 
         $payload = array(
             'mapDescription'   => $settings['mapDescription'] ?? 'Bawbab Interactive Maps',
             'mapType'          => $settings['mapType'] ?? 'hybrid',
             'mapLogo'          => $settings['mapLogo'] ?? '',
-            'colorTheme'       => $settings['colorTheme'] ?? 'blue',
+            'colorTheme'       => ! empty( $settings['colorTheme'] ) ? $settings['colorTheme'] : 'blue',
             'navBackground'    => $settings['navBackground'] ?? '',
             'googleApiKey'     => $settings['googleApiKey'] ?? '',
             'googleMapId'      => $settings['googleMapId'] ?? '',
             'locations'        => $settings['locations'] ?? array(),
             'attribute_schema' => $settings['attribute_schema'] ?? array(),
             'categoryConfig'   => $settings['categoryConfig'] ?? $default_category_config,
-            'typography'       => $settings['typography'] ?? $default_typography,
+            'typography'       => isset( $settings['typography'] ) ? array_merge( $default_typography, $settings['typography'] ) : $default_typography,
         );
 
         return new WP_REST_Response( $payload, 200 );

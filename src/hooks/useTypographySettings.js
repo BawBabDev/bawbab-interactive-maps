@@ -3,12 +3,29 @@ import { useState, useEffect } from '@wordpress/element';
 const DEFAULT_TYPOGRAPHY = {
     fontFamily:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+    
+    // Font Sizes
     legendHeaderFontSize: 13,
     legendSectionFontSize: 10,
     legendItemFontSize: 11,
     drawerTitleFontSize: 2.0,
     drawerBodyFontSize: 1.1,
     controlsFontSize: 13,
+
+    // Font Weights
+    legendHeaderFontWeight: '800',
+    legendSectionFontWeight: '800',
+    legendItemFontWeight: '600',
+
+    // Font Styles (normal | italic)
+    legendHeaderFontStyle: 'normal',
+    legendSectionFontStyle: 'normal',
+    legendItemFontStyle: 'normal',
+
+    // Text Decoration (none | underline | line-through)
+    legendHeaderDecoration: 'none',
+    legendSectionDecoration: 'none',
+    legendItemDecoration: 'none',
 };
 
 export const useTypographySettings = ( initialSettings = {} ) => {
@@ -98,11 +115,31 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         }
     };
 
+    // Compute dynamic CSS variables for any map wrapper container
     const cssVariables = {
         '--map-font-family': settings.fontFamily,
+
+        // Legend Sizes
         '--map-legend-header-size': `${ settings.legendHeaderFontSize }px`,
         '--map-legend-section-size': `${ settings.legendSectionFontSize }px`,
         '--map-legend-item-size': `${ settings.legendItemFontSize }px`,
+
+        // Legend Weights
+        '--map-legend-header-weight': settings.legendHeaderFontWeight,
+        '--map-legend-section-weight': settings.legendSectionFontWeight,
+        '--map-legend-item-weight': settings.legendItemFontWeight,
+
+        // Legend Styles (normal | italic)
+        '--map-legend-header-style': settings.legendHeaderFontStyle,
+        '--map-legend-section-style': settings.legendSectionFontStyle,
+        '--map-legend-item-style': settings.legendItemFontStyle,
+
+        // Legend Text Decorations (none | underline | line-through)
+        '--map-legend-header-decoration': settings.legendHeaderDecoration,
+        '--map-legend-section-decoration': settings.legendSectionDecoration,
+        '--map-legend-item-decoration': settings.legendItemDecoration,
+
+        // Drawer & Controls
         '--map-drawer-title-size': `${ settings.drawerTitleFontSize }rem`,
         '--map-font-size-base': `${ settings.drawerBodyFontSize }rem`,
         '--map-controls-font-size': `${ settings.controlsFontSize }px`,
