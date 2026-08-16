@@ -17,12 +17,6 @@ class BWB_IMaps_REST_Spatial {
             'permission_callback' => '__return_true',
         ) );
 
-        register_rest_route( $namespace, '/map-locations', array(
-            'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'get_public_map_data' ),
-            'permission_callback' => '__return_true',
-        ) );
-
         register_rest_route( $namespace, '/update-spatial-meta', array(
             'methods'             => 'POST',
             'callback'            => array( __CLASS__, 'handle_update_spatial_meta' ),
@@ -34,27 +28,6 @@ class BWB_IMaps_REST_Spatial {
             'callback'            => array( __CLASS__, 'handle_delete_layer' ),
             'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
         ) );
-    }
-
-    public static function get_public_map_data() {
-        $settings = get_option( 'bwb_imaps_options_data' );
-
-        $default_category_config = array(
-            'groups'      => array(),
-            'categoryMap' => array(),
-        );
-
-        return array(
-            'locations'        => isset( $settings['locations'] ) ? $settings['locations'] : array(),
-            'mapType'          => isset( $settings['mapType'] ) ? $settings['mapType'] : 'hybrid',
-            'mapLogo'          => isset( $settings['mapLogo'] ) ? $settings['mapLogo'] : '',
-            'colorTheme'       => isset( $settings['colorTheme'] ) ? $settings['colorTheme'] : 'blue',
-            'navBackground'    => isset( $settings['navBackground'] ) ? $settings['navBackground'] : '',
-            'googleApiKey'     => isset( $settings['googleApiKey'] ) ? $settings['googleApiKey'] : '',
-            'googleMapId'      => isset( $settings['googleMapId'] ) ? $settings['googleMapId'] : '',
-            'attribute_schema' => isset( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array(),
-            'categoryConfig'   => isset( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : $default_category_config,
-        );
     }
 
     public static function handle_get_spatial_data() {
@@ -309,7 +282,7 @@ class BWB_IMaps_REST_Spatial {
         }
 
         if ( false === $result ) {
-            return new WP_Error( 'db_error', 'Could not delete layer.', array( 'status' => 500 ) );
+            return new WP_Error( 'db_error', 'Could not delete layer.', array( 'status' => 400 ) );
         }
 
         wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );

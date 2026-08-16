@@ -1,3 +1,6 @@
+/* --- CENTRAL DESIGN TOKENS --- */
+:root { --map-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; --map-font-size-base: 1.1rem; --map-line-height-base: 1.6; --map-legend-header-size: 10px; --map-legend-item-size: 11px; }
+
 /* --- THEME DEFINITIONS --- */
 .map-theme-blue { --map-primary: #2271b1; --map-accent: #f0f6fb; --map-header-bg: #f0f2f5; --map-text-dark: #1d2327; --map-border: #e0e0e0; }
 .map-theme-green { --map-primary: #2d5a27; --map-accent: #f1f8f0; --map-header-bg: #e8f0e7; --map-text-dark: #1a2e18; --map-border: #d8e6d7; }
@@ -68,45 +71,61 @@
 .nav-arrow.prev { left: 10px; }
 .nav-arrow.next { right: 10px; }
 
+/* --- SIDEBAR TYPOGRAPHY SINGLE SOURCE OF TRUTH --- */
+.loc-description, .loc-description p, .loc-description div:not(.sidebar-quote-block), .loc-description span { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; font-family: var(--map-font-family) !important; color: #3c434a !important; }
+.loc-description h1, .loc-description .sidebar-heading-1 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 8px 0 !important; font-family: var(--map-font-family) !important; }
+.loc-description h2, .loc-description .sidebar-heading-2 { font-size: 1.35rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 6px 0 !important; font-family: var(--map-font-family) !important; }
+.loc-description h3, .loc-description .sidebar-heading-3 { font-size: 1.2rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; font-family: var(--map-font-family) !important; }
+.loc-description h4, .loc-description .sidebar-heading-4, .loc-description h5, .loc-description .sidebar-heading-5, .loc-description h6, .loc-description .sidebar-heading-6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; font-family: var(--map-font-family) !important; }
+
+/* --- QUOTE BLOCK & CITATION UNIFORMITY --- */
+.loc-description blockquote, .loc-description .sidebar-quote-block { margin: 16px 0 16px 10px !important; padding: 6px 0 6px 16px !important; border-left: 3px solid var(--map-primary, #2271b1) !important; border-top: none !important; border-right: none !important; border-bottom: none !important; background: transparent !important; box-shadow: none !important; font-style: italic !important; }
+.loc-description blockquote > *:first-child, .loc-description .sidebar-quote-block > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+.loc-description blockquote p, .loc-description .sidebar-quote-block p { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; font-family: var(--map-font-family) !important; color: #3c434a !important; margin-bottom: 6px !important; }
+.loc-description blockquote cite, .loc-description .sidebar-quote-cite { display: block !important; font-size: 0.95rem !important; font-style: normal !important; font-weight: 600 !important; color: #646970 !important; margin-top: 6px !important; margin-bottom: 0 !important; font-family: var(--map-font-family) !important; }
+
+/* --- COMPACT SIDEBAR OVERRIDES --- */
+.map-sidebar.is-compact { --map-font-size-base: 0.95rem; }
+.map-sidebar.is-compact .loc-description h1, .map-sidebar.is-compact .loc-description .sidebar-heading-1 { font-size: 1.3rem !important; }
+.map-sidebar.is-compact .loc-description h2, .map-sidebar.is-compact .loc-description .sidebar-heading-2 { font-size: 1.15rem !important; }
+.map-sidebar.is-compact .loc-description h3, .map-sidebar.is-compact .loc-description .sidebar-heading-3 { font-size: 1.05rem !important; }
+
 /* --- THEMED TEXT & TYPOGRAPHY SINGLE SOURCE OF TRUTH --- */
-.loc-title { margin: 0; font-size: 2rem !important; font-weight: 800 !important; color: var(--map-text-dark) !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-subtitle { display: block; font-size: 1.2rem !important; color: #646970 !important; margin-top: 12px !important; font-weight: 600 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description { font-size: 1.1rem !important; line-height: 1.6 !important; color: #3c434a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.description-text { white-space: pre-wrap; font-size: 1.1rem !important; line-height: 1.6 !important; color: #3c434a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-title { margin: 0; font-size: 2rem !important; font-weight: 800 !important; color: var(--map-text-dark) !important; line-height: 1.4 !important; font-family: var(--map-font-family) !important; }
+.loc-subtitle { display: block; font-size: 1.2rem !important; color: #646970 !important; margin-top: 12px !important; font-weight: 600 !important; font-family: var(--map-font-family) !important; }
+.loc-description { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; color: #3c434a !important; font-family: var(--map-font-family) !important; }
+.description-text { white-space: pre-wrap; font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; color: #3c434a !important; font-family: var(--map-font-family) !important; }
 .wp-link-container { margin-top: 20px; border-top: 1px solid var(--map-border); padding-top: 15px; }
 
 /* --- UNIFORM HEADING STYLES INSIDE SIDEBAR --- */
-.loc-description h1, .loc-description .sidebar-heading-1 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 8px 0 !important; line-height: 1.3 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h2, .loc-description .sidebar-heading-2 { font-size: 1.35rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 6px 0 !important; line-height: 1.35 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h3, .loc-description .sidebar-heading-3 { font-size: 1.2rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
-.loc-description h4, .loc-description .sidebar-heading-4, .loc-description h5, .loc-description .sidebar-heading-5, .loc-description h6, .loc-description .sidebar-heading-6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; line-height: 1.4 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description h1, .loc-description .sidebar-heading-1 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 18px 0 8px 0 !important; line-height: 1.3 !important; font-family: var(--map-font-family) !important; }
+.loc-description h2, .loc-description .sidebar-heading-2 { font-size: 1.35rem !important; font-weight: 700 !important; color: var(--map-text-dark) !important; margin: 16px 0 6px 0 !important; line-height: 1.35 !important; font-family: var(--map-font-family) !important; }
+.loc-description h3, .loc-description .sidebar-heading-3 { font-size: 1.2rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 14px 0 6px 0 !important; line-height: 1.4 !important; font-family: var(--map-font-family) !important; }
+.loc-description h4, .loc-description .sidebar-heading-4, .loc-description h5, .loc-description .sidebar-heading-5, .loc-description h6, .loc-description .sidebar-heading-6 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--map-text-dark) !important; margin: 12px 0 4px 0 !important; line-height: 1.4 !important; font-family: var(--map-font-family) !important; }
 
 /* --- UNIFORM PARAGRAPH & BODY TEXT STYLES --- */
-.loc-description p, .loc-description span, .loc-description div:not(.sidebar-quote-block), .loc-description .wp-page-content-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 12px !important; }
+.loc-description p, .loc-description span, .loc-description div:not(.sidebar-quote-block), .loc-description .wp-page-content-block p { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; font-family: var(--map-font-family) !important; color: #3c434a !important; margin-bottom: 12px !important; }
 
 /* --- UNIFORM LIST & BULLET POINT STYLES --- */
-.loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: 1.1rem !important; }
-.loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
+.loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: var(--map-font-size-base) !important; }
+.loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; font-family: var(--map-font-family) !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
 
 /* --- UNIFORM QUOTE BLOCK / CITATION STYLES (WP ADMIN, SHORTCODE & GUTENBERG) --- */
 .loc-description blockquote, .loc-description .sidebar-quote-block { margin: 16px 0 16px 10px !important; padding: 6px 0 6px 16px !important; border-left: 3px solid var(--map-primary, #2271b1) !important; border-top: none !important; border-right: none !important; border-bottom: none !important; background: transparent !important; box-shadow: none !important; font-style: italic !important; }
 .loc-description blockquote > *:first-child, .loc-description .sidebar-quote-block > *:first-child, .loc-description blockquote p:first-child, .loc-description .sidebar-quote-block p:first-child { margin-top: 0 !important; padding-top: 0 !important; }
-.loc-description blockquote p, .loc-description .sidebar-quote-block p { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; color: #3c434a !important; margin-bottom: 6px !important; }
-.loc-description blockquote cite, .loc-description .sidebar-quote-cite, .loc-description .wp-block-quote__citation { display: block !important; font-size: 0.95rem !important; font-style: normal !important; font-weight: 600 !important; color: #646970 !important; margin-top: 6px !important; margin-bottom: 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; }
+.loc-description blockquote p, .loc-description .sidebar-quote-block p { font-size: var(--map-font-size-base) !important; line-height: var(--map-line-height-base) !important; font-family: var(--map-font-family) !important; color: #3c434a !important; margin-bottom: 6px !important; }
+.loc-description blockquote cite, .loc-description .sidebar-quote-cite, .loc-description .wp-block-quote__citation { display: block !important; font-size: 0.95rem !important; font-style: normal !important; font-weight: 600 !important; color: #646970 !important; margin-top: 6px !important; margin-bottom: 0 !important; font-family: var(--map-font-family) !important; }
 
 /* --- GUTENBERG BLOCK CONTENT OVERRIDES --- */
 .loc-description .wp-page-content-block { display: block !important; width: 100% !important; clear: both !important; overflow: hidden !important; }
 .loc-description .wp-page-content-block .alignfull { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; left: 0 !important; right: 0 !important; box-sizing: border-box !important; }
 .loc-description .wp-page-content-block [style*="margin-top:-"], .loc-description .wp-page-content-block [style*="margin-top: -"] { margin-top: 0 !important; }
-.loc-description .wp-page-content-block .wp-block-group, .loc-description .wp-page-content-block .wp-block-columns { position: relative !important; clear: both !important; float: none !important; height: auto !important; min-height: 0 !important; }
+.loc-description .wp-page-content-block .wp-block-group, .loc-description .wp-page-content-block .wp-block-columns { position: relative !important; clear: both !important; float: none !important; height: auto !important; min-height: 0 !important; border: none !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
 .loc-description .wp-page-content-block .wp-block-columns { flex-direction: column !important; }
 .loc-description .wp-page-content-block .wp-block-column { flex-basis: 100% !important; width: 100% !important; max-width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
-.loc-description ul, .loc-description ol, .loc-description .wp-block-list { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 5px !important; font-size: 1.1rem !important; }
-.loc-description li, .loc-description li p, .loc-description li span, .loc-description li div, .loc-description .wp-block-list li { font-size: 1.1rem !important; line-height: 1.6 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important; font-weight: 400 !important; color: #3c434a !important; margin-top: 0 !important; margin-bottom: 4px !important; }
-.map-sidebar.is-compact .loc-description ul, .map-sidebar.is-compact .loc-description ol, .map-sidebar.is-compact .loc-description .wp-block-list { font-size: 0.95rem !important; }
-.map-sidebar.is-compact .loc-description li, .map-sidebar.is-compact .loc-description li p, .map-sidebar.is-compact .loc-description li span, .map-sidebar.is-compact .loc-description li div, .map-sidebar.is-compact .loc-description .wp-block-list li { font-size: 0.95rem !important; }
 
 /* --- COMPACT SIDEBAR OVERRIDES (SMALL UI / MOBILE) --- */
+.map-sidebar.is-compact { --map-font-size-base: 0.95rem; }
 .map-sidebar.is-compact .sidebar-inner-padding { padding: 15px; }
 .map-sidebar.is-compact .sidebar-header { margin: -15px -15px 15px -15px; }
 .map-sidebar.is-compact .loc-title { font-size: 1.4rem !important; }
@@ -213,6 +232,23 @@
 .cb-wrapper.is-checked { background: #000; }
 .cb-tick { width: 100%; height: 100%; fill: white; display: none; }
 .cb-wrapper.is-checked .cb-tick { display: block; }
+
+/* --- MAP LEGEND COMPONENT --- */
+.map-legend-container { position: absolute; bottom: 20px; left: 20px; z-index: 400; background: rgba(255, 255, 255, 0.98); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; width: 40px; max-height: 40px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; transform-origin: bottom left; cursor: pointer; font-family: var(--map-font-family) !important; }
+.map-legend-container.is-open { width: max-content; max-height: 400px; cursor: default; }
+.map-legend-header { display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 0 11px; width: 100%; box-sizing: border-box; }
+.map-legend-icon-trigger { display: flex; align-items: center; justify-content: center; width: 100%; }
+.map-legend-title { color: #333; font-size: 13px !important; font-weight: 800 !important; margin-left: 5px; font-family: var(--map-font-family) !important; }
+.map-legend-close-btn { background: none; border: none; cursor: pointer; color: #666; padding: 4px; display: flex; }
+.map-legend-body { padding: 0 16px 16px 16px; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; overflow-y: auto; maxHeight: 440px; }
+.map-legend-container.is-open .map-legend-body { opacity: 1; pointer-events: auto; }
+.map-legend-sections-wrapper { marginTop: 4px; display: flex; flex-direction: column; gap: 14px; }
+.map-legend-section-title { font-size: var(--map-legend-header-size) !important; font-weight: 800 !important; text-transform: uppercase; color: var(--map-primary, #2271b1) !important; margin-bottom: 6px; letter-spacing: 0.5px; border-bottom: 1px solid var(--map-border, #e0e0e0); padding-bottom: 2px; font-family: var(--map-font-family) !important; }
+.map-legend-items-list { display: flex; flex-direction: column; gap: 6px; }
+.map-legend-item-row { display: flex; align-items: center; gap: 10px; }
+.map-legend-swatches-group { display: flex; gap: 2px; flex-shrink: 0; }
+.map-legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1); }
+.map-legend-item-label { font-size: var(--map-legend-item-size) !important; color: #333 !important; font-weight: 600 !important; white-space: nowrap; font-family: var(--map-font-family) !important; }
 
 /* MAP VIEW */
 [data-testid="map"] { height: 100% !important; width: 100% !important; }

@@ -30,6 +30,7 @@ class BWB_Federated_Imaps_API_Controller {
         require_once $api_dir . 'class-bwb-imaps-rest-navigation.php';
         require_once $api_dir . 'class-bwb-imaps-rest-proxy.php';
         require_once $api_dir . 'class-bwb-imaps-rest-exporter.php';
+        require_once $api_dir . 'class-bwb-imaps-rest-settings.php';
     }
 
     /**
@@ -57,6 +58,7 @@ class BWB_Federated_Imaps_API_Controller {
         BWB_IMaps_REST_Navigation::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Proxy::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Exporter::register_routes( self::NAMESPACE );
+        BWB_IMaps_REST_Settings::register_routes( self::NAMESPACE );
     }
 
     /**

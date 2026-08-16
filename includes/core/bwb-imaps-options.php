@@ -54,6 +54,45 @@ function bwb_imaps_sanitize_global_settings( $input ) {
         $input['locations'] = array();
     }
 
+    // Sanitize Typography Configuration
+    if ( isset( $input['typography'] ) && is_array( $input['typography'] ) ) {
+        $sanitized_typo = array();
+        $defaults       = array(
+            'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            'legendHeaderFontSize'  => 13,
+            'legendSectionFontSize' => 10,
+            'legendItemFontSize'    => 11,
+            'drawerTitleFontSize'   => 2.0,
+            'drawerBodyFontSize'    => 1.1,
+            'controlsFontSize'      => 13,
+        );
+
+        foreach ( $defaults as $key => $default_val ) {
+            if ( isset( $input['typography'][ $key ] ) ) {
+                if ( 'fontFamily' === $key ) {
+                    $sanitized_typo[ $key ] = sanitize_text_field( $input['typography'][ $key ] );
+                } elseif ( strpos( $key, 'drawer' ) !== false ) {
+                    $sanitized_typo[ $key ] = (float) $input['typography'][ $key ];
+                } else {
+                    $sanitized_typo[ $key ] = (int) $input['typography'][ $key ];
+                }
+            } else {
+                $sanitized_typo[ $key ] = $default_val;
+            }
+        }
+        $input['typography'] = $sanitized_typo;
+    } else {
+        $input['typography'] = array(
+            'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            'legendHeaderFontSize'  => 13,
+            'legendSectionFontSize' => 10,
+            'legendItemFontSize'    => 11,
+            'drawerTitleFontSize'   => 2.0,
+            'drawerBodyFontSize'    => 1.1,
+            'controlsFontSize'      => 13,
+        );
+    }
+
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_print_r
         error_log( '[BWB iMaps Options Sanitizer] Processed option payload: ' . print_r( $input, true ) );
@@ -102,6 +141,19 @@ function bwb_imaps_register_global_settings() {
                                 'additionalProperties' => true,
                             ),
                         ),
+                        'typography'       => array(
+                            'type'                 => 'object',
+                            'additionalProperties' => true,
+                            'properties'           => array(
+                                'fontFamily'            => array( 'type' => 'string' ),
+                                'legendHeaderFontSize'  => array( 'type' => 'integer' ),
+                                'legendSectionFontSize' => array( 'type' => 'integer' ),
+                                'legendItemFontSize'    => array( 'type' => 'integer' ),
+                                'drawerTitleFontSize'   => array( 'type' => 'number' ),
+                                'drawerBodyFontSize'    => array( 'type' => 'number' ),
+                                'controlsFontSize'      => array( 'type' => 'integer' ),
+                            ),
+                        ),
                     ),
                 ),
             ),
@@ -119,6 +171,15 @@ function bwb_imaps_register_global_settings() {
                 ),
                 'attribute_schema' => array(),
                 'locations'        => array(),
+                'typography'       => array(
+                    'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                    'legendHeaderFontSize'  => 13,
+                    'legendSectionFontSize' => 10,
+                    'legendItemFontSize'    => 11,
+                    'drawerTitleFontSize'   => 2.0,
+                    'drawerBodyFontSize'    => 1.1,
+                    'controlsFontSize'      => 13,
+                ),
             ),
         )
     );

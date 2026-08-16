@@ -89,36 +89,12 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/core/bwb-imaps-options.php'
 function bwb_imaps_render_admin_page() {
     echo '<div class="wrap"><div id="bwb-imaps-admin-app"></div></div>';
 }
+
 // Include the admin menu registration file
 require_once plugin_dir_path( __FILE__ ) . 'includes/core/bwb-imaps-admin-menu.php';
-
 
 // Load administrative asset bundles script loader
 require_once plugin_dir_path( __FILE__ ) . 'includes/core/bwb-imaps-hook-admin-assets.php';
 
-
-// ==========================================
-// FRONTEND SETTINGS & ASSETS REGISTRATION
-// ==========================================
-// Inside your root plugin file:
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/bwb-imaps-hook-global-assets.php' ) ) {
-    require_once plugin_dir_path( __FILE__ ) . 'includes/bwb-imaps-hook-global-assets.php';
-}
-
 // Load bundled frontend assets
 require_once plugin_dir_path( __FILE__ ) . 'includes/core/bwb-imaps-hook-block-assets.php';
-
-// ==========================================
-// DEBUGGING: CURRENT SCREEN ID DISPLAY
-// ==========================================
-
-// For debugging: Display the current screen ID or Admin hook in an admin notice
-//This helps ensure the plugin assets are loading on the correct admin page(s)
-// add_action( 'admin_notices', 'wp_easy_conversion_toolkit_display_current_screen_id' );
-// function wp_easy_conversion_toolkit_display_current_screen_id() {
-//     if ( current_user_can( 'manage_options' ) ) {
-//         $screen = get_current_screen();
-//         echo '<div class="notice notice-info"><p>Current Screen ID: <strong>' . esc_html( $screen->id ) . '</strong></p></div>';
-//     }
-// }
-

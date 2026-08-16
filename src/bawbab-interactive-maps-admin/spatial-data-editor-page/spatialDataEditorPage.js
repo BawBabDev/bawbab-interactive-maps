@@ -13,7 +13,6 @@ import {
     TextControl,
     Dashicon,
 } from '@wordpress/components';
-import apiFetch from '@wordpress/api-fetch';
 import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
@@ -32,6 +31,7 @@ import {
 } from '../category-editor-page/constants/defaultCategories';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
+const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
 
 const formatLabel = ( str ) => {
     if ( ! str ) return '';
@@ -55,7 +55,7 @@ const LAYER_OPTIONS = [
  */
 const SpatialDataEditorPage = () => {
     const [ features, setFeatures ] = useState( [] );
-    const [ selectedLayer, setSelectedLayer ] = useState( 'all' ); // Layer Selector Filter State
+    const [ selectedLayer, setSelectedLayer ] = useState( 'all' );
     const [ searchQuery, setSearchQuery ] = useState( '' );
     const [ isLoading, setIsLoading ] = useState( true );
     const [ isSaving, setIsSaving ] = useState( false );
@@ -63,10 +63,9 @@ const SpatialDataEditorPage = () => {
     const [ resetCounter, setResetCounter ] = useState( 0 );
     const [ drafts, setDrafts ] = useState( {} );
 
-    // Panel Tab Navigation State ('editor' vs 'schema')
     const [ activeTab, setActiveTab ] = useState( 'editor' );
 
-    // Category Manager Hook (1-to-1 Groups & Mappings)
+    // Category Manager Hook
     const { groups, categoryMap } = useCategoryManager();
 
     // Attribute Schema Hook
@@ -86,12 +85,10 @@ const SpatialDataEditorPage = () => {
     const [ navBackground, setNavBackground ] = useState( '' );
     const [ colorTheme, setColorTheme ] = useState( 'blue' );
 
-    // Accordion state
     const [ openedTopTab, setOpenedGroup ] = useState( null );
     const [ openedSubGroup, setOpenedSubGroup ] = useState( {} );
     const sidebarListRef = useRef( null );
 
-    // Filter Panel Deploy State
     const [ isFilterOpen, setIsFilterOpen ] = useState( false );
     const [ filterCategory, setFilterCategory ] = useState( 'all' );
     const [ dynamicFilters, setDynamicFilters ] = useState( {} );
@@ -319,11 +316,9 @@ const SpatialDataEditorPage = () => {
             const currentDraft = prev[ compositeKey ] || {};
             const currentDirty = new Set( currentDraft._dirtyKeys || [] );
 
-            // Only register dirty keys if not a system initialization
             if ( ! options.isSystemInit ) {
                 Object.keys( data ).forEach( ( key ) => {
                     if ( key === 'custom_attributes' ) {
-                        // Register ONLY the incoming modified attribute key(s), NOT the whole dictionary
                         Object.keys( data.custom_attributes || {} ).forEach( ( attrKey ) => {
                             currentDirty.add( `custom_attr::${ attrKey }` );
                         } );
@@ -352,13 +347,11 @@ const SpatialDataEditorPage = () => {
         } );
     };
 
-    // EXECUTE BATCH UPDATES IN DRAFTS STATE & RESET SYNCED DIRTY KEYS FOR ALL TARGET FEATURES
     const handleExecuteBatchUpdate = ({ fieldsToSync, filterPredicate }) => {
         const targetFeatures = features.filter(filterPredicate);
 
         if (targetFeatures.length === 0 || !fieldsToSync || fieldsToSync.length === 0) return;
 
-        // Build a Set of dirty key identifiers being synced
         const syncedDirtyKeyIdentifiers = new Set();
         fieldsToSync.forEach(({ key, isCustomAttr }) => {
             if (isCustomAttr) {
@@ -389,7 +382,6 @@ const SpatialDataEditorPage = () => {
                     }
                 });
 
-                // Clear synced keys from EVERY target feature's _dirtyKeys list
                 const updatedDirtyKeys = (currentDraft._dirtyKeys || []).filter(
                     dirtyKey => !syncedDirtyKeyIdentifiers.has(dirtyKey)
                 );
@@ -553,6 +545,7 @@ const SpatialDataEditorPage = () => {
         );
     };
 
+    // Load Settings from new endpoint
     useEffect( () => {
         const settings = window.bwbimapsSettings;
         if ( settings?.googleApiKey && settings?.googleMapId ) {
@@ -563,9 +556,9 @@ const SpatialDataEditorPage = () => {
             setNavBackground( settings.navBackground || '' );
             setColorTheme( settings.colorTheme || 'blue' );
         } else {
-            apiFetch( { path: '/wp/v2/settings' } )
-                .then( ( response ) => {
-                    const data = response.bwb_imaps_options_data;
+            fetch( ENDPOINT_GET_SETTINGS )
+                .then( ( res ) => res.ok ? res.json() : {} )
+                .then( ( data ) => {
                     if ( data ) {
                         const key = data.googleApiKey || '';
                         const id = data.googleMapId || '';
