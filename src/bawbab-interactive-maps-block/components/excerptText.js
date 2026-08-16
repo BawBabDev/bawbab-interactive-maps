@@ -125,10 +125,7 @@ export const ExcerptText = ( { selectedLoc, wpData } ) => {
 							fontWeight: '600',
 						} }
 					>
-						{ __(
-							'Read full details on website',
-							TEXT_DOMAIN
-						) }{ ' ' }
+						{ __( 'Read full details on website', TEXT_DOMAIN ) }{ ' ' }
 						<span>&rarr;</span>
 					</a>
 				</div>

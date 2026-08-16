@@ -164,7 +164,10 @@ export const useWpLinkedContent = (
 				setAllImages( uniqueMediaList );
 				setCurrentImage( featured || uniqueMediaList[ 0 ] || null );
 			} catch ( err ) {
-				console.warn( '⚠️ [useWpLinkedContent] REST fetch error:', err );
+				console.warn(
+					'⚠️ [useWpLinkedContent] REST fetch error:',
+					err
+				);
 			} finally {
 				setIsLoading( false );
 			}
