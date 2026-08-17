@@ -43,6 +43,71 @@ const createKeySlug = ( label ) => {
 };
 
 /**
+ * Helper: Normalizes primitive values (booleans, strings, numbers) for accurate comparisons
+ */
+const normalizeCompareValue = ( val ) => {
+    if ( val === null || val === undefined ) return '';
+    if ( val === true || val === 'true' || val === 1 || val === '1' ) return true;
+    if ( val === false || val === 'false' || val === 0 || val === '0' ) return false;
+    return String( val ).trim();
+};
+
+/**
+ * Deeply compares draft edits against current feature DB properties.
+ * Returns true ONLY if at least one property differs from the original DB value.
+ */
+const isFeatureDraftDirty = ( feature, draftData, globalSchema = [] ) => {
+    if ( ! feature || ! feature.properties || ! draftData ) return false;
+    const dbProps = feature.properties;
+
+    // Check top-level draft keys (excluding private _dirtyKeys flag)
+    const draftKeys = Object.keys( draftData ).filter( ( k ) => k !== '_dirtyKeys' );
+
+    for ( const key of draftKeys ) {
+        if ( key === 'custom_attributes' ) {
+            let dbCustom = dbProps.custom_attributes || {};
+            if ( typeof dbCustom === 'string' ) {
+                try {
+                    dbCustom = JSON.parse( dbCustom );
+                } catch ( e ) {
+                    dbCustom = {};
+                }
+            }
+
+            const draftCustom = draftData.custom_attributes || {};
+            for ( const attrKey of Object.keys( draftCustom ) ) {
+                const dbVal = normalizeCompareValue( dbCustom[ attrKey ] );
+                const draftVal = normalizeCompareValue( draftCustom[ attrKey ] );
+                if ( dbVal !== draftVal ) {
+                    return true;
+                }
+            }
+        } else if ( key === 'gallery' ) {
+            let dbGallery = dbProps.gallery || [];
+            if ( typeof dbGallery === 'string' ) {
+                try {
+                    dbGallery = JSON.parse( dbGallery );
+                } catch ( e ) {
+                    dbGallery = [];
+                }
+            }
+            const draftGallery = draftData.gallery || [];
+            if ( JSON.stringify( dbGallery ) !== JSON.stringify( draftGallery ) ) {
+                return true;
+            }
+        } else {
+            const dbVal = normalizeCompareValue( dbProps[ key ] );
+            const draftVal = normalizeCompareValue( draftData[ key ] );
+            if ( dbVal !== draftVal ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+};
+
+/**
  * PropertyInputControl Component
  */
 const PropertyInputControl = ( {
@@ -241,7 +306,6 @@ const DataEditor = ( {
     onUpdate,
     onCancel,
     onExecuteBatchUpdate,
-    hasChanges,
     isSaving,
 } ) => {
     if ( ! building || ! building.properties ) return null;
@@ -262,14 +326,24 @@ const DataEditor = ( {
     // Category Manager
     const { groups, categoryMap } = useCategoryManager();
 
+    // Dynamically calculate if active feature draft is strictly modified vs DB
+    const isCurrentDraftDirty = useMemo( () => {
+        return isFeatureDraftDirty( building, draft, globalSchema );
+    }, [ building, draft, globalSchema ] );
+
     // Check if the current active feature specifically has un-synced non-protected dirty keys
     const activeDirtyKeys = draft._dirtyKeys || [];
-    const hasActiveFeatureDirtyKeys = useMemo(() => {
-        return activeDirtyKeys.some((k) => {
-            const cleanKey = k.startsWith('custom_attr::') ? k.replace('custom_attr::', '') : k;
-            return !PROTECTED_FIELDS.includes(cleanKey);
-        });
-    }, [activeDirtyKeys]);
+    const hasActiveFeatureDirtyKeys = useMemo( () => {
+        return (
+            isCurrentDraftDirty &&
+            activeDirtyKeys.some( ( k ) => {
+                const cleanKey = k.startsWith( 'custom_attr::' )
+                    ? k.replace( 'custom_attr::', '' )
+                    : k;
+                return ! PROTECTED_FIELDS.includes( cleanKey );
+            } )
+        );
+    }, [ isCurrentDraftDirty, activeDirtyKeys ] );
 
     const getValue = ( key, dbValue ) => {
         if ( draft && draft.hasOwnProperty( key ) ) return draft[ key ];
@@ -367,7 +441,7 @@ const DataEditor = ( {
     ] );
 
     const updateCustomAttr = ( key, value, options = {} ) => {
-        updateDraft( 
+        updateDraft(
             {
                 custom_attributes: {
                     [ key ]: value,
@@ -407,8 +481,7 @@ const DataEditor = ( {
             if ( newAttributeConfig.type === 'boolean' ) {
                 initialValue = false;
             }
-            
-            // Pass isSystemInit: true so adding a new global field doesn't make the active feature dirty
+
             updateCustomAttr( keySlug, initialValue, { isSystemInit: true } );
 
             setShowAddPropModal( false );
@@ -1138,7 +1211,10 @@ const DataEditor = ( {
                                 padding: '6px 14px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                opacity: hasActiveFeatureDirtyKeys ? 1 : 0.4,
+                                cursor: hasActiveFeatureDirtyKeys ? 'pointer' : 'default',
+                                pointerEvents: hasActiveFeatureDirtyKeys ? 'auto' : 'none',
                             }}
                         >
                             { __('Apply Changes to Other Features', TEXT_DOMAIN) }
@@ -1147,6 +1223,7 @@ const DataEditor = ( {
                 </Flex>
             </div>
 
+            {/* GLOBAL ACTIONS FOOTER WITH UNIFORM FADED / DISABLED DIRTY STATES */}
             <Flex
                 justify="flex-start"
                 style={ { marginTop: '15px', gap: '15px' } }
@@ -1154,11 +1231,14 @@ const DataEditor = ( {
                 <Button
                     variant="secondary"
                     onClick={ () => setShowCancelModal( true ) }
-                    disabled={ isSaving || ! hasChanges }
+                    disabled={ isSaving || ! isCurrentDraftDirty }
                     style={ {
                         height: '40px',
                         flex: '1',
                         justifyContent: 'center',
+                        opacity: isCurrentDraftDirty ? 1 : 0.4,
+                        cursor: isCurrentDraftDirty ? 'pointer' : 'default',
+                        pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
                     } }
                 >
                     { __( 'Discard All Changes', TEXT_DOMAIN ) }
@@ -1166,12 +1246,15 @@ const DataEditor = ( {
                 <Button
                     variant="primary"
                     isBusy={ isSaving }
-                    disabled={ ! hasChanges }
+                    disabled={ ! isCurrentDraftDirty || isSaving }
                     onClick={ () => setShowSaveModal( true ) }
                     style={ {
                         height: '40px',
                         flex: '1',
                         justifyContent: 'center',
+                        opacity: isCurrentDraftDirty ? 1 : 0.4,
+                        cursor: isCurrentDraftDirty ? 'pointer' : 'default',
+                        pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
                     } }
                 >
                     { __( 'Save All Changes', TEXT_DOMAIN ) }
