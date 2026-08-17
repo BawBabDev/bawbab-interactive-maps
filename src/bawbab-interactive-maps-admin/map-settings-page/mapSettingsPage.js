@@ -10,11 +10,15 @@ import {
 import { __ } from '@wordpress/i18n';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
+
 import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
 import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 import { useMapSettings } from './hooks/useMapSettings';
 import { useTypographySettings } from './hooks/useTypographySettings';
+import { ConfirmModal, CancelModal } from '../confirmModal';
+
+const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
 /**
  * MapSettingsPage Component
@@ -22,6 +26,10 @@ import { useTypographySettings } from './hooks/useTypographySettings';
 const MapSettingsPage = () => {
     const [ refreshTrigger, setRefreshTrigger ] = useState( 0 );
     const triggerMapRefresh = () => setRefreshTrigger( ( prev ) => prev + 1 );
+
+    // Modals trigger state
+    const [ showConfirmModal, setShowConfirmModal ] = useState( false );
+    const [ showCancelModal, setShowCancelModal ] = useState( false );
 
     // Custom Map Settings Hook
     const {
@@ -90,8 +98,9 @@ const MapSettingsPage = () => {
 
     useMapCredentialsCheck( isLoaded, googleApiKey, googleMapId );
 
-    // Save action handler
-    const handleSave = async () => {
+    // Confirmed Save Execution Handler
+    const handleConfirmSave = async () => {
+        setShowConfirmModal( false );
         const result = await saveSettings();
 
         if ( result.success ) {
@@ -99,7 +108,7 @@ const MapSettingsPage = () => {
                 createSuccessNotice(
                     __(
                         'Google Maps API credentials updated! Reloading page...',
-                        'bawbab-interactive-maps'
+                        TEXT_DOMAIN
                     ),
                     { type: 'snackbar' }
                 );
@@ -109,19 +118,22 @@ const MapSettingsPage = () => {
             } else {
                 triggerMapRefresh();
                 createSuccessNotice(
-                    __(
-                        'Settings saved successfully!',
-                        'bawbab-interactive-maps'
-                    ),
+                    __( 'Settings saved successfully!', TEXT_DOMAIN ),
                     { type: 'snackbar' }
                 );
             }
         } else {
             createErrorNotice(
-                __( 'Error saving settings: ', 'bawbab-interactive-maps' ) +
+                __( 'Error saving settings: ', TEXT_DOMAIN ) +
                     ( result.error?.message || '' )
             );
         }
+    };
+
+    // Revert / Discard Changes Handler
+    const handleConfirmCancel = () => {
+        setShowCancelModal( false );
+        window.location.reload();
     };
 
     return (
@@ -136,10 +148,7 @@ const MapSettingsPage = () => {
                 className="wp-heading-inline"
                 style={ { marginBottom: '20px' } }
             >
-                { __(
-                    'Bawbab Interactive Map Settings',
-                    'bawbab-interactive-maps'
-                ) }
+                { __( 'Bawbab Interactive Map Settings', TEXT_DOMAIN ) }
             </h1>
             <hr className="wp-header-end" />
 
@@ -200,36 +209,40 @@ const MapSettingsPage = () => {
                                     resetTypography={ handleResetTypography }
                                 />
                             </div>
+
+                            { /* ACTION FOOTER WITH SAVE & DISCARD BUTTONS */ }
                             <div
                                 style={ {
-                                    padding: '24px',
+                                    padding: '20px 24px',
                                     borderTop: '1px solid #e0e0e0',
                                     background: '#fcfcfc',
                                 } }
                             >
-                                <div style={ { textAlign: 'center' } }>
+                                <Flex justify="space-between" align="center" gap={ 3 }>
+                                    <Button
+                                        variant="tertiary"
+                                        isDestructive
+                                        onClick={ () => setShowCancelModal( true ) }
+                                        disabled={ isSaving }
+                                    >
+                                        { __( 'Discard Changes', TEXT_DOMAIN ) }
+                                    </Button>
+
                                     <Button
                                         variant="primary"
-                                        onClick={ handleSave }
+                                        onClick={ () => setShowConfirmModal( true ) }
                                         isBusy={ isSaving }
                                         disabled={ isSaving }
                                         style={ {
-                                            width: '100%',
-                                            height: '45px',
-                                            justifyContent: 'center',
+                                            height: '40px',
+                                            padding: '0 24px',
                                         } }
                                     >
                                         { isSaving
-                                            ? __(
-                                                  'Saving...',
-                                                  'bawbab-interactive-maps'
-                                              )
-                                            : __(
-                                                  'Save All Changes',
-                                                  'bawbab-interactive-maps'
-                                              ) }
+                                            ? __( 'Saving...', TEXT_DOMAIN )
+                                            : __( 'Save All Changes', TEXT_DOMAIN ) }
                                     </Button>
-                                </div>
+                                </Flex>
                             </div>
                         </div>
                     </FlexItem>
@@ -267,6 +280,33 @@ const MapSettingsPage = () => {
                     </FlexItem>
                 </Flex>
             </Panel>
+
+            { /* GENERIC CONFIRMATION MODAL */ }
+            <ConfirmModal
+                isOpen={ showConfirmModal }
+                title={ __( 'Save Map Settings', TEXT_DOMAIN ) }
+                message={ __(
+                    'Are you sure you want to save and apply all map settings and typography changes?',
+                    TEXT_DOMAIN
+                ) }
+                confirmLabel={ __( 'Save Changes', TEXT_DOMAIN ) }
+                onConfirm={ handleConfirmSave }
+                onCancel={ () => setShowConfirmModal( false ) }
+                isBusy={ isSaving }
+            />
+
+            { /* GENERIC CANCELLATION MODAL */ }
+            <CancelModal
+                isOpen={ showCancelModal }
+                title={ __( 'Discard Map Changes', TEXT_DOMAIN ) }
+                message={ __(
+                    'Are you sure you want to discard your unsaved modifications? The page will reload to restore your last saved configuration.',
+                    TEXT_DOMAIN
+                ) }
+                confirmLabel={ __( 'Discard & Reload', TEXT_DOMAIN ) }
+                onConfirm={ handleConfirmCancel }
+                onCancel={ () => setShowCancelModal( false ) }
+            />
         </div>
     );
 };
