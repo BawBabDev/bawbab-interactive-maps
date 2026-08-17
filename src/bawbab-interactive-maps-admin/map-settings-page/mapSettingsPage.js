@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import {
     Panel,
     Button,
@@ -71,6 +71,41 @@ const MapSettingsPage = () => {
         resetTypography,
     } = useTypographySettings( typography || {} );
 
+    // Baseline snapshot for dirty-state detection
+    const initialSnapshotRef = useRef( null );
+    const [ isDirty, setIsDirty ] = useState( false );
+
+    // Generates a clean, normalized string representation of editable settings
+    const getSettingsSnapshot = ( data ) => {
+        if ( ! data ) return '';
+        return JSON.stringify( {
+            mapDescription: data.mapDescription || '',
+            mapType: data.mapType || 'hybrid',
+            mapLogo: data.mapLogo || '',
+            colorTheme: data.colorTheme || 'blue',
+            navBackground: data.navBackground || '',
+            googleApiKey: data.googleApiKey || '',
+            googleMapId: data.googleMapId || '',
+            locations: data.locations || [],
+            typography: data.typography || {},
+        } );
+    };
+
+    // Capture initial baseline snapshot ONLY ONCE after REST API data is fully loaded
+    useEffect( () => {
+        if ( isLoaded && initialSnapshotRef.current === null ) {
+            initialSnapshotRef.current = getSettingsSnapshot( settings );
+        }
+    }, [ isLoaded, settings ] );
+
+    // Evaluate dirty state whenever settings change compared to baseline snapshot
+    useEffect( () => {
+        if ( initialSnapshotRef.current !== null ) {
+            const currentSnapshot = getSettingsSnapshot( settings );
+            setIsDirty( currentSnapshot !== initialSnapshotRef.current );
+        }
+    }, [ settings ] );
+
     const handleTypographyChange = ( key, value ) => {
         updateTypography( key, value );
         if ( setTypography ) {
@@ -104,6 +139,10 @@ const MapSettingsPage = () => {
         const result = await saveSettings();
 
         if ( result.success ) {
+            // Reset dirty snapshot to current state
+            initialSnapshotRef.current = getSettingsSnapshot( settings );
+            setIsDirty( false );
+
             if ( result.credentialsChanged ) {
                 createSuccessNotice(
                     __(
@@ -210,39 +249,66 @@ const MapSettingsPage = () => {
                                 />
                             </div>
 
-                            { /* ACTION FOOTER WITH SAVE & DISCARD BUTTONS */ }
+                            { /* ACTION FOOTER WITH DISCARD (LEFT) & SAVE (RIGHT) BUTTONS */ }
                             <div
                                 style={ {
-                                    padding: '20px 24px',
+                                    padding: '16px 24px',
                                     borderTop: '1px solid #e0e0e0',
                                     background: '#fcfcfc',
                                 } }
                             >
-                                <Flex justify="space-between" align="center" gap={ 3 }>
+                                <div
+                                    style={ {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                    } }
+                                >
+                                    { /* LEFT: DISCARD CHANGES */ }
                                     <Button
-                                        variant="tertiary"
-                                        isDestructive
+                                        variant="secondary"
                                         onClick={ () => setShowCancelModal( true ) }
-                                        disabled={ isSaving }
+                                        disabled={ ! isDirty || isSaving }
+                                        style={ {
+                                            height: '40px',
+                                            padding: '0 20px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap',
+                                            opacity: isDirty ? 1 : 0.4,
+                                            cursor: isDirty ? 'pointer' : 'default',
+                                            pointerEvents: isDirty ? 'auto' : 'none',
+                                        } }
                                     >
                                         { __( 'Discard Changes', TEXT_DOMAIN ) }
                                     </Button>
 
+                                    { /* RIGHT: SAVE ALL CHANGES */ }
                                     <Button
                                         variant="primary"
                                         onClick={ () => setShowConfirmModal( true ) }
                                         isBusy={ isSaving }
-                                        disabled={ isSaving }
+                                        disabled={ ! isDirty || isSaving }
                                         style={ {
                                             height: '40px',
                                             padding: '0 24px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap',
+                                            opacity: isDirty ? 1 : 0.4,
+                                            cursor: isDirty ? 'pointer' : 'default',
+                                            pointerEvents: isDirty ? 'auto' : 'none',
                                         } }
                                     >
                                         { isSaving
                                             ? __( 'Saving...', TEXT_DOMAIN )
                                             : __( 'Save All Changes', TEXT_DOMAIN ) }
                                     </Button>
-                                </Flex>
+                                </div>
                             </div>
                         </div>
                     </FlexItem>
