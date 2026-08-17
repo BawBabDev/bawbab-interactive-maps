@@ -9,7 +9,7 @@ import AdminSidebar from './components/adminSidebar';
 import { useMapCredentialsCheck } from './hooks/useMapCredentialsCheck';
 import { useMapSettings } from './hooks/useMapSettings';
 import { useTypographySettings } from './hooks/useTypographySettings';
-import { ConfirmModal, CancelModal } from '../confirmModal';
+import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 

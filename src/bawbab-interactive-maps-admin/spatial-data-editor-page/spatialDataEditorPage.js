@@ -17,7 +17,7 @@ import {
     DEFAULT_GROUPS,
     DEFAULT_CATEGORY_MAPPINGS,
 } from '../category-editor-page/constants/defaultCategories';
-import { ConfirmModal, CancelModal } from '../confirmModal';
+import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 import { BatchUpdateModal } from './components/batchUpdateModal';
 import { UnitSidebarList } from './components/unitSidebarList';
 

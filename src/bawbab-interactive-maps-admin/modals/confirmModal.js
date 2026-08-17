@@ -2,7 +2,7 @@
  * Generic Confirmation and Cancellation Modals
  * Reusable dialog components for confirming changes or discarding edits.
  *
- * File: src/bawbab-interactive-maps-admin/confirmModal.js
+ * File: src/bawbab-interactive-maps-admin/modals/confirmModal.js
  */
 
 import { Modal, Button, Flex } from '@wordpress/components';

@@ -16,7 +16,7 @@ import { useCategoryManager } from './hooks/useCategoryManager';
 import { CategoryGroupManager } from './components/categoryGroupManager';
 import { CategoryMappingTable } from './components/categoryMappingTable';
 import { MapLegendManager } from './components/mapLegendManager';
-import { ConfirmModal, CancelModal } from '../confirmModal';
+import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
