@@ -6,6 +6,7 @@ import {
 import { __, sprintf } from '@wordpress/i18n';
 import { IconPickerModal } from './iconPickerModal';
 import { AttributeConfigModal } from './attributeConfigModal';
+import { ConfirmModal } from '../../confirmModal';
 import { renderIconBySlug, LEGACY_ICON_NAMES } from '../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
 import { useAttributeSchema } from '../hooks/useAttributeSchema';
@@ -116,6 +117,10 @@ export const AttributeSchemaManager = ({
     // Configuration Modal state
     const [editingAttribute, setEditingAttribute] = useState(null);
 
+    // Delete Confirmation Modal state
+    const [deletingKey, setDeletingKey] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // Icon Picker Modal state
     const [isIconModalOpen, setIsIconModalOpen] = useState(false);
     const [editingItemKey, setEditingItemKey] = useState(null);
@@ -217,10 +222,20 @@ export const AttributeSchemaManager = ({
         }
     };
 
-    const handleDeleteKey = async (key) => {
-        const res = await onDeleteKey(key);
-        if (res.success && onRefreshFeatures) {
-            onRefreshFeatures();
+    const handleConfirmDelete = async () => {
+        if (!deletingKey) return;
+        setIsDeleting(true);
+
+        try {
+            const res = await onDeleteKey(deletingKey);
+            if (res && res.success && onRefreshFeatures) {
+                onRefreshFeatures();
+            }
+        } catch (err) {
+            console.error('Error deleting attribute field:', err);
+        } finally {
+            setIsDeleting(false);
+            setDeletingKey(null);
         }
     };
 
@@ -564,7 +579,7 @@ export const AttributeSchemaManager = ({
                                         isDestructive
                                         icon="trash"
                                         isSmall
-                                        onClick={() => handleDeleteKey(item.key)}
+                                        onClick={() => setDeletingKey(item.key)}
                                         label={__('Delete Field Globally', TEXT_DOMAIN)}
                                         showTooltip
                                     />
@@ -604,6 +619,20 @@ export const AttributeSchemaManager = ({
                         })()
                         : (editingTargetSlot === 'secondary' ? newIconSecondary : newIconPrimary)
                 }
+            />
+
+            {/* CUSTOM DELETE CONFIRMATION MODAL */}
+            <ConfirmModal
+                isOpen={Boolean(deletingKey)}
+                title={__('Delete Field Globally', TEXT_DOMAIN)}
+                message={sprintf(
+                    __('Are you sure you want to delete the field "%s"? This action will permanently remove it from all features and cannot be undone.', TEXT_DOMAIN),
+                    deletingKey || ''
+                )}
+                confirmLabel={__('Delete Field', TEXT_DOMAIN)}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setDeletingKey(null)}
+                isBusy={isDeleting}
             />
         </div>
     );
