@@ -297,6 +297,7 @@ const DataEditor = ( {
     globalSchema = [],
     updateSchemaKey,
     updateDraft,
+    onOpenSchema,
 } ) => {
     if ( ! building || ! building.properties ) return null;
 
@@ -533,7 +534,7 @@ const DataEditor = ( {
     return (
         <div
             className="building-editor-container"
-            style={ { maxWidth: '650px', margin: '0 auto' } }
+            style={ { maxWidth: '650px', width: '100%', margin: '0 auto', boxSizing: 'border-box' } }
         >
             <div
                 style={ {
@@ -556,6 +557,8 @@ const DataEditor = ( {
                     borderLeft: '4px solid #2271b1',
                     borderRadius: '4px',
                     marginBottom: '20px',
+                    boxSizing: 'border-box',
+                    width: '100%',
                 } }
             >
                 <Text
@@ -686,6 +689,8 @@ const DataEditor = ( {
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                     marginBottom: '20px',
+                    boxSizing: 'border-box',
+                    width: '100%',
                 } }
             >
                 <Text
@@ -794,6 +799,8 @@ const DataEditor = ( {
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                     marginBottom: '20px',
+                    boxSizing: 'border-box',
+                    width: '100%',
                 } }
             >
                 <Text
@@ -931,29 +938,56 @@ const DataEditor = ( {
                     background: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
+                    boxSizing: 'border-box',
+                    width: '100%',
                 } }
             >
-                <Flex
-                    align="center"
-                    justify="space-between"
-                    style={ { marginBottom: '12px' } }
+                {/* CONTAINER HEADER FLEX GROUP */}
+                <div
+                    style={ {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        marginBottom: '12px',
+                    } }
                 >
                     <Text
                         variant="label"
-                        display="block"
-                        style={ { fontWeight: '600' } }
+                        style={ { fontWeight: '600', margin: 0 } }
                     >
                         { __( 'Custom Feature Properties', TEXT_DOMAIN ) }
                     </Text>
-                    <Button
-                        variant="secondary"
-                        isSmall
-                        icon="plus-alt"
-                        onClick={ () => setShowAddPropModal( true ) }
+                    
+                    {/* BUTTON GROUP PINNED TO THE TOP RIGHT */}
+                    <div
+                        style={ {
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginLeft: 'auto',
+                        } }
                     >
-                        { __( 'Add Property', TEXT_DOMAIN ) }
-                    </Button>
-                </Flex>
+                        <Button
+                            variant="secondary"
+                            isSmall
+                            icon="admin-generic"
+                            onClick={ onOpenSchema }
+                            style={ { margin: 0, flexShrink: 0 } }
+                        >
+                            { __( 'Configure', TEXT_DOMAIN ) }
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            isSmall
+                            icon="plus-alt"
+                            onClick={ () => setShowAddPropModal( true ) }
+                            style={ { margin: 0, flexShrink: 0 } }
+                        >
+                            { __( 'Add Property', TEXT_DOMAIN ) }
+                        </Button>
+                    </div>
+                </div>
 
                 { customAttrKeys.length === 0 ? (
                     <Text
@@ -1017,6 +1051,8 @@ const DataEditor = ( {
                     background: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
+                    boxSizing: 'border-box',
+                    width: '100%',
                 } }
             >
                 <Text
@@ -1057,7 +1093,7 @@ const DataEditor = ( {
             </div>
 
             {/* 6. CUSTOM GALLERY */}
-            <div style={ { margin: '20px 0' } }>
+            <div style={ { margin: '20px 0', width: '100%', boxSizing: 'border-box' } }>
                 <Text
                     variant="label"
                     display="block"
@@ -1065,63 +1101,70 @@ const DataEditor = ( {
                 >
                     { __( 'Custom Gallery', TEXT_DOMAIN ) }
                 </Text>
-                <Flex
-                    wrap="wrap"
-                    gap={ 2 }
-                    style={ {
-                        marginBottom: '15px',
-                        background: '#fafafa',
-                        padding: '10px',
-                        borderRadius: '4px',
-                        border: '1px solid #e0e0e0',
-                        justifyContent: 'flex-start',
-                    } }
-                >
-                    { currentGallery.map( ( img ) => (
-                        <div
-                            key={ img.id }
-                            style={ {
-                                position: 'relative',
-                                width: '80px',
-                                height: '80px',
-                            } }
-                        >
-                            <img
-                                src={ img.url }
+
+                { currentGallery.length > 0 && (
+                    <div
+                        style={ {
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '8px',
+                            marginBottom: '15px',
+                            background: '#fafafa',
+                            padding: '10px',
+                            borderRadius: '4px',
+                            border: '1px solid #e0e0e0',
+                            justifyContent: 'flex-start',
+                            boxSizing: 'border-box',
+                            width: '100%',
+                        } }
+                    >
+                        { currentGallery.map( ( img ) => (
+                            <div
+                                key={ img.id }
                                 style={ {
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    borderRadius: '4px',
-                                } }
-                                alt=""
-                            />
-                            <Button
-                                isDestructive
-                                onClick={ () =>
-                                    updateDraft( {
-                                        gallery: currentGallery.filter(
-                                            ( g ) => g.id !== img.id
-                                        ),
-                                    } )
-                                }
-                                style={ {
-                                    position: 'absolute',
-                                    top: '-5px',
-                                    right: '-5px',
-                                    padding: '0',
-                                    background: '#fff',
-                                    borderRadius: '50%',
-                                    minWidth: '18px',
-                                    height: '18px',
-                                    border: '1px solid #ccc',
+                                    position: 'relative',
+                                    width: '80px',
+                                    height: '80px',
                                 } }
                             >
-                                <Dashicon icon="no-alt" size={ 14 } />
-                            </Button>
-                        </div>
-                    ) ) }
-                </Flex>
+                                <img
+                                    src={ img.url }
+                                    style={ {
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        borderRadius: '4px',
+                                    } }
+                                    alt=""
+                                />
+                                <Button
+                                    isDestructive
+                                    onClick={ () =>
+                                        updateDraft( {
+                                            gallery: currentGallery.filter(
+                                                ( g ) => g.id !== img.id
+                                            ),
+                                        } )
+                                    }
+                                    style={ {
+                                        position: 'absolute',
+                                        top: '-5px',
+                                        right: '-5px',
+                                        padding: '0',
+                                        background: '#fff',
+                                        borderRadius: '50%',
+                                        minWidth: '18px',
+                                        height: '18px',
+                                        border: '1px solid #ccc',
+                                    } }
+                                >
+                                    <Dashicon icon="no-alt" size={ 14 } />
+                                </Button>
+                            </div>
+                        ) ) }
+                    </div>
+                ) }
+
                 <Button
                     variant="secondary"
                     icon="upload"
