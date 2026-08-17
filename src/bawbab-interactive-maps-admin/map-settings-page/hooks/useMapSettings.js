@@ -18,6 +18,7 @@ export const useMapSettings = () => {
     const [ mapLogo, setMapLogo ] = useState( initialWindow.mapLogo || '' );
     const [ colorTheme, setColorTheme ] = useState( initialWindow.colorTheme || 'blue' );
     const [ navBackground, setNavBackground ] = useState( initialWindow.navBackground || '' );
+    const [ typography, setTypography ] = useState( initialWindow.typography || {} );
 
     // Instantly available credentials on render frame 1
     const [ googleApiKey, setGoogleApiKey ] = useState( initialWindow.googleApiKey || '' );
@@ -51,6 +52,7 @@ export const useMapSettings = () => {
                     setNavBackground( data.navBackground || '' );
                     setGoogleApiKey( data.googleApiKey || '' );
                     setGoogleMapId( data.googleMapId || '' );
+                    setTypography( data.typography || {} );
 
                     initialCredentialsRef.current = {
                         apiKey: data.googleApiKey || '',
@@ -89,6 +91,7 @@ export const useMapSettings = () => {
                 colorTheme: safeString( colorTheme ),
                 googleApiKey: cleanApiKey,
                 googleMapId: cleanMapId,
+                typography: typography || {},
             };
 
             const response = await fetch( ENDPOINT_UPDATE, {
@@ -116,6 +119,7 @@ export const useMapSettings = () => {
                 googleApiKey: cleanApiKey,
                 googleMapId: cleanMapId,
                 navBackground: safeString( navBackground ),
+                typography: typography || {},
             };
 
             const credentialsChanged =
@@ -191,6 +195,7 @@ export const useMapSettings = () => {
             navBackground,
             googleApiKey,
             googleMapId,
+            typography,
         },
         setters: {
             setMapDescription,
@@ -201,6 +206,7 @@ export const useMapSettings = () => {
             setNavBackground,
             setGoogleApiKey,
             setGoogleMapId,
+            setTypography,
         },
         repeater: {
             addLocation,

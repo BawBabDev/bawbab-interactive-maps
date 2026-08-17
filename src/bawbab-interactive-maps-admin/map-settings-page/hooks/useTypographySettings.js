@@ -116,55 +116,20 @@ const DEFAULT_TYPOGRAPHY = {
 export const useTypographySettings = ( initialSettings = {} ) => {
     const [ settings, setSettings ] = useState( () => ( {
         ...DEFAULT_TYPOGRAPHY,
-        ...initialSettings,
+        ...( initialSettings || {} ),
     } ) );
+
     const [ isLoading, setIsLoading ] = useState( false );
     const [ isSaving, setIsSaving ] = useState( false );
 
-    // Keep state synchronized whenever initialSettings prop changes
+    // Keep internal hook state strictly synced when initialSettings prop changes
     useEffect( () => {
-        if ( Object.keys( initialSettings ).length > 0 ) {
-            setSettings( ( prev ) => ( {
-                ...prev,
-                ...initialSettings,
-            } ) );
-        }
+        setSettings( ( prev ) => ( {
+            ...DEFAULT_TYPOGRAPHY,
+            ...prev,
+            ...( initialSettings || {} ),
+        } ) );
     }, [ JSON.stringify( initialSettings ) ] );
-
-    // Fetch typography settings from GET route if no initialSettings are provided
-    useEffect( () => {
-        const fetchSettings = async () => {
-            setIsLoading( true );
-            try {
-                const response = await fetch(
-                    '/wp-json/bwb-imaps-federated-api/v1/get-map-settings'
-                );
-                if ( response.ok ) {
-                    const data = await response.json();
-                    const fetchedTypography =
-                        data?.categoryConfig?.legendConfig?.typography ||
-                        data?.typography;
-                    if ( fetchedTypography ) {
-                        setSettings( ( prev ) => ( {
-                            ...prev,
-                            ...fetchedTypography,
-                        } ) );
-                    }
-                }
-            } catch ( err ) {
-                console.warn(
-                    '⚠️ [useTypographySettings] Failed to fetch settings:',
-                    err
-                );
-            } finally {
-                setIsLoading( false );
-            }
-        };
-
-        if ( Object.keys( initialSettings ).length === 0 ) {
-            fetchSettings();
-        }
-    }, [] );
 
     const updateTypography = ( keyOrObject, value ) => {
         setSettings( ( prev ) => {
@@ -177,33 +142,6 @@ export const useTypographySettings = ( initialSettings = {} ) => {
 
     const resetTypography = () => {
         setSettings( DEFAULT_TYPOGRAPHY );
-    };
-
-    const saveTypographySettings = async () => {
-        setIsSaving( true );
-        try {
-            const nonce = window.wpApiSettings?.nonce || '';
-            const response = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/update-map-settings',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': nonce,
-                    },
-                    body: JSON.stringify( {
-                        typography: settings,
-                    } ),
-                }
-            );
-            const data = await response.json();
-            return { success: response.ok, data };
-        } catch ( err ) {
-            console.error( 'Typography Save Error:', err );
-            return { success: false, error: err };
-        } finally {
-            setIsSaving( false );
-        }
     };
 
     // Compute dynamic CSS variables for the root map container (.map-container)
@@ -346,7 +284,6 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         typographySettings: settings,
         updateTypography,
         resetTypography,
-        saveTypographySettings,
         cssVariables,
         isLoading,
         isSaving,

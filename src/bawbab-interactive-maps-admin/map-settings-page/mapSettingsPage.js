@@ -24,7 +24,7 @@ const MapSettingsPage = () => {
     const [ showConfirmModal, setShowConfirmModal ] = useState( false );
     const [ showCancelModal, setShowCancelModal ] = useState( false );
 
-    // Custom Map Settings Hook
+    // Custom Map Settings Hook (Primary Data Owner)
     const {
         settings,
         setters,
@@ -57,7 +57,7 @@ const MapSettingsPage = () => {
         setTypography,
     } = setters;
 
-    // Dedicated typography hook
+    // Dedicated typography hook (State synced with settings.typography)
     const {
         typographySettings,
         updateTypography,
@@ -68,8 +68,17 @@ const MapSettingsPage = () => {
     const initialSnapshotRef = useRef( null );
     const [ isDirty, setIsDirty ] = useState( false );
 
+    // Clean, normalized snapshot string function
     const getSettingsSnapshot = ( data ) => {
         if ( ! data ) return '';
+
+        const cleanFonts = data.typography || {};
+        const sortedFontKeys = Object.keys( cleanFonts ).sort();
+        const normalizedFonts = {};
+        sortedFontKeys.forEach( ( k ) => {
+            normalizedFonts[ k ] = cleanFonts[ k ];
+        } );
+
         return JSON.stringify( {
             mapDescription: data.mapDescription || '',
             mapType: data.mapType || 'hybrid',
@@ -79,7 +88,7 @@ const MapSettingsPage = () => {
             googleApiKey: data.googleApiKey || '',
             googleMapId: data.googleMapId || '',
             locations: data.locations || [],
-            typography: data.typography || {},
+            typography: normalizedFonts,
         } );
     };
 
@@ -90,7 +99,7 @@ const MapSettingsPage = () => {
         }
     }, [ isLoaded, settings ] );
 
-    // Evaluate dirty state whenever settings change compared to baseline snapshot
+    // Evaluate dirty state whenever settings change
     useEffect( () => {
         if ( initialSnapshotRef.current !== null ) {
             const currentSnapshot = getSettingsSnapshot( settings );
@@ -98,13 +107,17 @@ const MapSettingsPage = () => {
         }
     }, [ settings ] );
 
-    const handleTypographyChange = ( key, value ) => {
-        updateTypography( key, value );
+    // Synchronize font edits into both local hook state AND parent settings state
+    const handleTypographyChange = ( keyOrObject, value ) => {
+        updateTypography( keyOrObject, value );
+
         if ( setTypography ) {
-            setTypography( ( prev ) => ( {
-                ...( prev || {} ),
-                [ key ]: value,
-            } ) );
+            setTypography( ( prev ) => {
+                if ( typeof keyOrObject === 'object' ) {
+                    return { ...( prev || {} ), ...keyOrObject };
+                }
+                return { ...( prev || {} ), [ keyOrObject ]: value };
+            } );
         }
     };
 
@@ -173,8 +186,8 @@ const MapSettingsPage = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 boxSizing: 'border-box',
-                marginLeft: '15px',
                 marginRight: '15px',
+                marginLeft: '15px',
                 marginBottom: '15px',
                 overflow: 'hidden',
             } }
@@ -192,7 +205,7 @@ const MapSettingsPage = () => {
                 style={ { marginBottom: '8px', flexShrink: 0 } }
             />
 
-            { /* PAGE TITLE HEADER (UNTOUCHED AT TOP) */ }
+            { /* PAGE TITLE HEADER */ }
             <div style={ { flexShrink: 0 } }>
                 <h1
                     className="wp-heading-inline"
@@ -328,7 +341,7 @@ const MapSettingsPage = () => {
                     </div>
                 </div>
 
-                { /* RIGHT MAP PREVIEW CONTAINER (STATIC FULL HEIGHT) */ }
+                { /* RIGHT MAP PREVIEW CONTAINER */ }
                 <div style={ { flex: 1, height: '100%', minHeight: 0, overflow: 'hidden' } }>
                     { isLoaded ? (
                         <BawBabIMaps
