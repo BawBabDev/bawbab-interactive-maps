@@ -1,20 +1,9 @@
 import { __ } from '@wordpress/i18n';
-import {
-    Flex,
-    FlexItem,
-    NoticeList,
-    Button,
-    Spinner,
-    SearchControl,
-    SelectControl,
-    PanelBody,
-    CheckboxControl,
-    TextControl,
-    Dashicon,
-} from '@wordpress/components';
+import { NoticeList, Button, Dashicon } from '@wordpress/components';
 import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
+
 import DataEditor, { isFeatureDraftDirty } from './components/dataEditor';
 import { AttributeSchemaManager } from './components/attributeSchemaManager';
 import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
@@ -30,6 +19,7 @@ import {
 } from '../category-editor-page/constants/defaultCategories';
 import { ConfirmModal, CancelModal } from '../confirmModal';
 import { BatchUpdateModal } from './components/batchUpdateModal';
+import { UnitSidebarList } from './components/unitSidebarList';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
@@ -42,15 +32,6 @@ const formatLabel = ( str ) => {
         .map( ( word ) => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) )
         .join( ' ' );
 };
-
-const LAYER_OPTIONS = [
-    { label: __( 'All Map Layers', TEXT_DOMAIN ), value: 'all' },
-    { label: __( 'Buildings Layer', TEXT_DOMAIN ), value: 'buildings' },
-    { label: __( 'Land Use Layer', TEXT_DOMAIN ), value: 'land_use' },
-    { label: __( 'Pathways Layer', TEXT_DOMAIN ), value: 'paths' },
-    { label: __( 'Parcels Layer', TEXT_DOMAIN ), value: 'parcels' },
-    { label: __( 'Entries Layer', TEXT_DOMAIN ), value: 'entries' },
-];
 
 /**
  * SpatialDataEditorPage Component
@@ -525,66 +506,6 @@ const SpatialDataEditorPage = () => {
         }
     };
 
-    const renderFeatureItem = ( f ) => {
-        const isActive =
-            activeFeature?.properties.fid === f.properties.fid &&
-            activeFeature?.properties.layer_type === f.properties.layer_type;
-        let itemLabel = f.properties.code
-            ? `${ __( 'Unit', TEXT_DOMAIN ) } ${ f.properties.code }`
-            : f.properties.name;
-        if ( ! itemLabel )
-            itemLabel = `${ f.properties.layer_type } #${ f.properties.fid }`;
-
-        return (
-            <div
-                id={ `item-${ f.properties.layer_type }-${ f.properties.fid }` }
-                key={ `${ f.properties.layer_type }-${ f.properties.fid }` }
-                onClick={ () => {
-                    setActiveFeature( f );
-                    setActiveNavTab( 'editor' );
-                } }
-                style={ {
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    marginBottom: '4px',
-                    background: isActive ? '#f0f6fb' : '#fff',
-                    borderTop: '1px solid',
-                    borderRight: '1px solid',
-                    borderBottom: '1px solid',
-                    borderColor: isActive ? '#2271b1' : '#e0e0e0',
-                    borderLeft: `4px solid ${
-                        isActive ? '#2271b1' : '#f0f0f0'
-                    }`,
-                    transition: 'all 0.2s ease',
-                } }
-            >
-                <div
-                    style={ {
-                        fontWeight: isActive ? '600' : '400',
-                        fontSize: '13px',
-                        color: '#1d2327',
-                    } }
-                >
-                    { itemLabel }
-                </div>
-                { ( ! f.properties.code || ! f.properties.name ) && (
-                    <div
-                        style={ {
-                            fontSize: '10px',
-                            color: '#666',
-                            marginTop: '2px',
-                        } }
-                    >
-                        { formatLabel(
-                            f.properties.category || f.properties.layer_type
-                        ) }
-                    </div>
-                ) }
-            </div>
-        );
-    };
-
     // Load Settings
     useEffect( () => {
         const settings = window.bwbimapsSettings;
@@ -788,517 +709,39 @@ const SpatialDataEditorPage = () => {
                             overflow: 'hidden',
                         } }
                     >
-                        { /* UNIT SEARCH LIST SIDEBAR (FIXED 350PX WIDTH) */ }
-                        <div
-                            style={ {
-                                flex: '0 0 350px',
-                                width: '350px',
-                                borderRight: '1px solid #e0e0e0',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                height: '100%',
-                                overflow: 'hidden',
-                            } }
-                        >
-                            <div
-                                style={ {
-                                    padding: '15px',
-                                    borderBottom: '1px solid #f0f0f0',
-                                    background: '#f9f9f9',
-                                    flexShrink: 0,
-                                } }
-                            >
-                                <div style={ { marginBottom: '10px' } }>
-                                    <SelectControl
-                                        label={ __( 'Target Map Layer', TEXT_DOMAIN ) }
-                                        value={ selectedLayer }
-                                        options={ LAYER_OPTIONS }
-                                        onChange={ ( val ) => setSelectedLayer( val ) }
-                                        __nextHasNoMarginBottom
-                                    />
-                                </div>
-
-                                <Flex align="center" gap={ 2 }>
-                                    <FlexItem style={ { flex: 1 } }>
-                                        <SearchControl
-                                            value={ searchQuery }
-                                            onChange={ setSearchQuery }
-                                            placeholder={ __(
-                                                'Search units...',
-                                                TEXT_DOMAIN
-                                            ) }
-                                            __nextHasNoMarginBottom
-                                        />
-                                    </FlexItem>
-
-                                    <FlexItem>
-                                        <Button
-                                            onClick={ () =>
-                                                setIsFilterOpen( ( prev ) => ! prev )
-                                            }
-                                            label={ __(
-                                                'Toggle Filters',
-                                                TEXT_DOMAIN
-                                            ) }
-                                            showTooltip
-                                            style={ {
-                                                height: '40px',
-                                                minWidth: '40px',
-                                                padding: '0 8px',
-                                                background: '#f0f0f0',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '3px',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            } }
-                                        >
-                                            <Dashicon
-                                                icon="filter"
-                                                style={ {
-                                                    color: isFilterOpen
-                                                        ? '#2271b1'
-                                                        : '#666',
-                                                    transition: 'color 0.2s ease',
-                                                } }
-                                            />
-                                        </Button>
-                                    </FlexItem>
-
-                                    { /* SHORTCUT TO CUSTOM ATTRIBUTES SCHEMA MANAGER */ }
-                                    <FlexItem>
-                                        <Button
-                                            onClick={ () => setActiveNavTab( 'schema' ) }
-                                            label={ __(
-                                                'Custom Attributes Tool',
-                                                TEXT_DOMAIN
-                                            ) }
-                                            showTooltip
-                                            style={ {
-                                                height: '40px',
-                                                minWidth: '40px',
-                                                padding: '0 8px',
-                                                background: '#f0f0f0',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '3px',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            } }
-                                        >
-                                            <Dashicon icon="category" style={ { color: '#666' } } />
-                                        </Button>
-                                    </FlexItem>
-                                </Flex>
-
-                                { isFilterOpen && (
-                                    <div
-                                        className="no-scrollbar"
-                                        style={ {
-                                            marginTop: '12px',
-                                            paddingTop: '10px',
-                                            borderTop: '1px solid #e0e0e0',
-                                            maxHeight: '200px',
-                                            overflowY: 'auto',
-                                            scrollbarWidth: 'none',
-                                            msOverflowStyle: 'none',
-                                        } }
-                                    >
-                                        <SelectControl
-                                            label={ __( 'Category Slug', TEXT_DOMAIN ) }
-                                            value={ filterCategory }
-                                            options={ categories }
-                                            onChange={ ( val ) =>
-                                                setFilterCategory( val )
-                                            }
-                                            __nextHasNoMarginBottom
-                                        />
-
-                                        { ( discoveredAttributes.booleans.length > 0 ||
-                                            discoveredAttributes.numbers.length >
-                                                0 ) && (
-                                            <div
-                                                style={ {
-                                                    marginTop: '12px',
-                                                    paddingTop: '10px',
-                                                    borderTop: '1px dashed #ddd',
-                                                } }
-                                            >
-                                                <strong
-                                                    style={ {
-                                                        fontSize: '11px',
-                                                        textTransform: 'uppercase',
-                                                        color: '#666',
-                                                        display: 'block',
-                                                        marginBottom: '8px',
-                                                    } }
-                                                >
-                                                    { __(
-                                                        'Dynamic Custom Filters',
-                                                        TEXT_DOMAIN
-                                                    ) }
-                                                </strong>
-
-                                                <div
-                                                    style={ {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        gap: '6px',
-                                                    } }
-                                                >
-                                                    { discoveredAttributes.booleans.map(
-                                                        ( key ) => (
-                                                            <CheckboxControl
-                                                                key={ `filter-bool-${ key }` }
-                                                                label={ formatLabel(
-                                                                    key
-                                                                ) }
-                                                                checked={ Boolean(
-                                                                    dynamicFilters[
-                                                                        key
-                                                                    ]
-                                                                ) }
-                                                                onChange={ ( val ) =>
-                                                                    handleDynamicFilterChange(
-                                                                        key,
-                                                                        val
-                                                                    )
-                                                                }
-                                                                __nextHasNoMarginBottom
-                                                            />
-                                                        )
-                                                    ) }
-                                                </div>
-
-                                                { discoveredAttributes.numbers.map(
-                                                    ( key ) => {
-                                                        const currentVal =
-                                                            dynamicFilters[ key ] || {};
-                                                        return (
-                                                            <div
-                                                                key={ `filter-num-${ key }` }
-                                                                style={ {
-                                                                    marginTop: '8px',
-                                                                } }
-                                                            >
-                                                                <span
-                                                                    style={ {
-                                                                        fontSize:
-                                                                            '11px',
-                                                                        fontWeight:
-                                                                            '500',
-                                                                    } }
-                                                                >
-                                                                    { formatLabel(
-                                                                        key
-                                                                    ) }
-                                                                </span>
-                                                                <Flex
-                                                                    gap={ 2 }
-                                                                    style={ {
-                                                                        marginTop:
-                                                                            '2px',
-                                                                    } }
-                                                                >
-                                                                    <FlexItem
-                                                                        style={ {
-                                                                            flex: 1,
-                                                                        } }
-                                                                    >
-                                                                        <TextControl
-                                                                            type="number"
-                                                                            step="0.5"
-                                                                            placeholder={ __(
-                                                                                'Min',
-                                                                                TEXT_DOMAIN
-                                                                            ) }
-                                                                            value={
-                                                                                currentVal.min ||
-                                                                                ''
-                                                                            }
-                                                                            onChange={ (
-                                                                                val
-                                                                            ) =>
-                                                                                handleDynamicFilterChange(
-                                                                                    key,
-                                                                                    {
-                                                                                        ...currentVal,
-                                                                                        min: val,
-                                                                                    }
-                                                                                )
-                                                                            }
-                                                                            style={ {
-                                                                                height: '28px',
-                                                                                fontSize:
-                                                                                    '11px',
-                                                                            } }
-                                                                            __nextHasNoMarginBottom
-                                                                        />
-                                                                    </FlexItem>
-                                                                    <FlexItem
-                                                                        style={ {
-                                                                            flex: 1,
-                                                                        } }
-                                                                    >
-                                                                        <TextControl
-                                                                            type="number"
-                                                                            step="0.5"
-                                                                            placeholder={ __(
-                                                                                'Max',
-                                                                                TEXT_DOMAIN
-                                                                            ) }
-                                                                            value={
-                                                                                currentVal.max ||
-                                                                                ''
-                                                                            }
-                                                                            onChange={ (
-                                                                                val
-                                                                            ) =>
-                                                                                handleDynamicFilterChange(
-                                                                                    key,
-                                                                                    {
-                                                                                        ...currentVal,
-                                                                                        max: val,
-                                                                                    }
-                                                                                )
-                                                                            }
-                                                                            style={ {
-                                                                                height: '28px',
-                                                                                fontSize:
-                                                                                    '11px',
-                                                                            } }
-                                                                            __nextHasNoMarginBottom
-                                                                        />
-                                                                    </FlexItem>
-                                                                </Flex>
-                                                            </div>
-                                                        );
-                                                    }
-                                                ) }
-                                            </div>
-                                        ) }
-                                    </div>
-                                ) }
-                            </div>
-
-                            <div
-                                ref={ sidebarListRef }
-                                style={ {
-                                    flex: 1,
-                                    overflowY: 'auto',
-                                    padding: '10px',
-                                } }
-                            >
-                                { isLoading ? (
-                                    <Flex
-                                        justify="center"
-                                        style={ { padding: '20px' } }
-                                    >
-                                        <Spinner />
-                                    </Flex>
-                                ) : displayStructure.length === 0 ? (
-                                    <div
-                                        style={ {
-                                            textAlign: 'center',
-                                            padding: '30px 15px',
-                                            color: '#666',
-                                        } }
-                                    >
-                                        <Dashicon
-                                            icon="search"
-                                            size={ 32 }
-                                            style={ {
-                                                marginBottom: '10px',
-                                                color: '#999',
-                                            } }
-                                        />
-                                        <p
-                                            style={ {
-                                                fontStyle: 'italic',
-                                                margin: 0,
-                                                fontSize: '13px',
-                                            } }
-                                        >
-                                            { __(
-                                                'No units found matching your search or active filters.',
-                                                TEXT_DOMAIN
-                                            ) }
-                                        </p>
-                                    </div>
-                                ) : (
-                                    displayStructure.map( ( topTab ) => (
-                                        <PanelBody
-                                            key={ topTab.id }
-                                            title={ `${ topTab.title } (${ topTab.totalCount })` }
-                                            opened={ openedTopTab === topTab.id }
-                                            onToggle={ () =>
-                                                setOpenedGroup( ( prev ) =>
-                                                    prev === topTab.id
-                                                        ? null
-                                                        : topTab.id
-                                                )
-                                            }
-                                        >
-                                            { topTab.subGroups.map( ( subGroup ) => (
-                                                <div
-                                                    key={ subGroup.id }
-                                                    style={ {
-                                                        marginLeft: '10px',
-                                                        marginBottom: '8px',
-                                                        borderLeft: '2px solid #2271b1',
-                                                        paddingLeft: '8px',
-                                                    } }
-                                                >
-                                                    <div
-                                                        onClick={ () =>
-                                                            setOpenedSubGroup(
-                                                                ( prev ) => ( {
-                                                                    ...prev,
-                                                                    [ subGroup.id ]:
-                                                                        ! prev[
-                                                                            subGroup.id
-                                                                        ],
-                                                                } )
-                                                            )
-                                                        }
-                                                        style={ {
-                                                            fontWeight: '600',
-                                                            fontSize: '12px',
-                                                            cursor: 'pointer',
-                                                            padding: '6px 0',
-                                                            color: '#2271b1',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent:
-                                                                'space-between',
-                                                        } }
-                                                    >
-                                                        <span>
-                                                            { subGroup.title } (
-                                                            { subGroup.items.length })
-                                                        </span>
-                                                        <Dashicon
-                                                            icon={
-                                                                openedSubGroup[
-                                                                    subGroup.id
-                                                                ] === true
-                                                                    ? 'arrow-up-alt2'
-                                                                    : 'arrow-down-alt2'
-                                                            }
-                                                            size={ 14 }
-                                                        />
-                                                    </div>
-
-                                                    { openedSubGroup[ subGroup.id ] ===
-                                                        true && (
-                                                        <div
-                                                            style={ {
-                                                                marginTop: '4px',
-                                                            } }
-                                                        >
-                                                            { subGroup.items.map(
-                                                                ( f ) =>
-                                                                    renderFeatureItem(
-                                                                        f
-                                                                    )
-                                                            ) }
-                                                        </div>
-                                                    ) }
-                                                </div>
-                                            ) ) }
-
-                                            { topTab.flatItems.map( ( f ) =>
-                                                renderFeatureItem( f )
-                                            ) }
-                                        </PanelBody>
-                                    ) )
-                                ) }
-                            </div>
-
-                            { /* STATIC ACTION FOOTER PINNED AT BOTTOM LEFT OF UNIT SIDEBAR */ }
-                            <div
-                                style={ {
-                                    padding: '12px 10px',
-                                    borderTop: '1px solid #e0e0e0',
-                                    background: '#fcfcfc',
-                                    flexShrink: 0,
-                                    zIndex: 10,
-                                } }
-                            >
-                                <Flex align="center" justify="space-between" gap={ 1.5 }>
-                                    { /* DISCARD CHANGES BUTTON */ }
-                                    <Button
-                                        variant="secondary"
-                                        onClick={ () => setShowCancelModal( true ) }
-                                        disabled={ ! isCurrentDraftDirty || isSaving }
-                                        style={ {
-                                            height: '38px',
-                                            flex: '1 1 0%',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap',
-                                            opacity: isCurrentDraftDirty ? 1 : 0.4,
-                                            cursor: isCurrentDraftDirty ? 'pointer' : 'default',
-                                            pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
-                                            padding: '0 4px',
-                                        } }
-                                    >
-                                        { __( 'Discard', TEXT_DOMAIN ) }
-                                    </Button>
-
-                                    { /* SAVE ALL CHANGES BUTTON */ }
-                                    <Button
-                                        variant="primary"
-                                        onClick={ () => setShowConfirmModal( true ) }
-                                        isBusy={ isSaving }
-                                        disabled={ ! isCurrentDraftDirty || isSaving }
-                                        style={ {
-                                            height: '38px',
-                                            flex: '1 1 0%',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap',
-                                            opacity: isCurrentDraftDirty ? 1 : 0.4,
-                                            cursor: isCurrentDraftDirty ? 'pointer' : 'default',
-                                            pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
-                                            padding: '0 4px',
-                                        } }
-                                    >
-                                        { isSaving
-                                            ? __( 'Saving...', TEXT_DOMAIN )
-                                            : __( 'Save All', TEXT_DOMAIN ) }
-                                    </Button>
-
-                                    { /* BATCH SYNC BUTTON (NO ICON, MULTI-LINE TEXT JUMP TO PREVENT OVERFLOW) */ }
-                                    <Button
-                                        variant="primary"
-                                        onClick={ () => setShowBatchModal( true ) }
-                                        disabled={ ! hasActiveFeatureDirtyKeys }
-                                        style={ {
-                                            height: '38px',
-                                            flex: '1.2 1 0%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            textAlign: 'center',
-                                            whiteSpace: 'normal',
-                                            lineHeight: '1.15',
-                                            fontSize: '11px',
-                                            padding: '2px 4px',
-                                            opacity: hasActiveFeatureDirtyKeys ? 1 : 0.4,
-                                            cursor: hasActiveFeatureDirtyKeys ? 'pointer' : 'default',
-                                            pointerEvents: hasActiveFeatureDirtyKeys ? 'auto' : 'none',
-                                        } }
-                                    >
-                                        { __( 'Apply to Other Features', TEXT_DOMAIN ) }
-                                    </Button>
-                                </Flex>
-                            </div>
-                        </div>
+                        { /* UNIT SEARCH LIST SIDEBAR SUBCOMPONENT (FIXED 350PX WIDTH) */ }
+                        <UnitSidebarList
+                            selectedLayer={ selectedLayer }
+                            setSelectedLayer={ setSelectedLayer }
+                            searchQuery={ searchQuery }
+                            setSearchQuery={ setSearchQuery }
+                            isFilterOpen={ isFilterOpen }
+                            setIsFilterOpen={ setIsFilterOpen }
+                            filterCategory={ filterCategory }
+                            setFilterCategory={ setFilterCategory }
+                            categories={ categories }
+                            discoveredAttributes={ discoveredAttributes }
+                            dynamicFilters={ dynamicFilters }
+                            handleDynamicFilterChange={ handleDynamicFilterChange }
+                            formatLabel={ formatLabel }
+                            onOpenSchema={ () => setActiveNavTab( 'schema' ) }
+                            sidebarListRef={ sidebarListRef }
+                            isLoading={ isLoading }
+                            displayStructure={ displayStructure }
+                            openedTopTab={ openedTopTab }
+                            setOpenedGroup={ setOpenedGroup }
+                            openedSubGroup={ openedSubGroup }
+                            setOpenedSubGroup={ setOpenedSubGroup }
+                            activeFeature={ activeFeature }
+                            setActiveFeature={ setActiveFeature }
+                            setActiveNavTab={ setActiveNavTab }
+                            isCurrentDraftDirty={ isCurrentDraftDirty }
+                            isSaving={ isSaving }
+                            hasActiveFeatureDirtyKeys={ hasActiveFeatureDirtyKeys }
+                            onOpenCancelModal={ () => setShowCancelModal( true ) }
+                            onOpenConfirmModal={ () => setShowConfirmModal( true ) }
+                            onOpenBatchModal={ () => setShowBatchModal( true ) }
+                        />
 
                         { /* DATA EDITOR & PREVIEW CONTAINER */ }
                         <div
@@ -1344,8 +787,8 @@ const SpatialDataEditorPage = () => {
 
                                     <div
                                         style={ {
-                                            marginTop: '40px',
-                                            paddingTop: '30px',
+                                            marginTop: '20px',
+                                            paddingTop: '20px',
                                             marginLeft: '-20px',
                                             marginRight: '-20px',
                                             paddingLeft: '20px',
