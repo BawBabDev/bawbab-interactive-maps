@@ -34,8 +34,8 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
         cleanupUnusedCategories,
     } = useCategoryManager();
 
-    // Active Navigation Tab ('groups', 'categories', or 'legend')
-    const [ activeNavTab, setActiveNavTab ] = useState( 'groups' );
+    // Active Navigation Tab ('categories', 'legend', or 'groups')
+    const [ activeNavTab, setActiveNavTab ] = useState( 'categories' );
 
     // Baseline snapshot for dirty-state detection
     const initialSnapshotRef = useRef( null );
@@ -135,11 +135,6 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
 
     const navTabs = [
         {
-            id: 'groups',
-            label: __( 'Group Editor', TEXT_DOMAIN ),
-            icon: 'category',
-        },
-        {
             id: 'categories',
             label: __( 'Category Editor', TEXT_DOMAIN ),
             icon: 'filter',
@@ -148,6 +143,11 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
             id: 'legend',
             label: __( 'Legend Editor', TEXT_DOMAIN ),
             icon: 'list-view',
+        },
+        {
+            id: 'groups',
+            label: __( 'Group Editor', TEXT_DOMAIN ),
+            icon: 'category',
         },
     ];
 
@@ -280,15 +280,6 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                             padding: '24px 30px',
                         } }
                     >
-                        { activeNavTab === 'groups' && (
-                            <CategoryGroupManager
-                                groups={ groups }
-                                setGroups={ setGroups }
-                                categoryMap={ categoryMap }
-                                setCategoryMap={ setCategoryMap }
-                            />
-                        ) }
-
                         { activeNavTab === 'categories' && (
                             <CategoryMappingTable
                                 groups={ groups }
@@ -302,6 +293,15 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                                 categoryMap={ categoryMap }
                                 legendConfig={ legendConfig }
                                 setLegendConfig={ setLegendConfig }
+                            />
+                        ) }
+
+                        { activeNavTab === 'groups' && (
+                            <CategoryGroupManager
+                                groups={ groups }
+                                setGroups={ setGroups }
+                                categoryMap={ categoryMap }
+                                setCategoryMap={ setCategoryMap }
                             />
                         ) }
                     </div>

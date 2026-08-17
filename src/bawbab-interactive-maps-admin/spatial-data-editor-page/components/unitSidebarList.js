@@ -47,11 +47,14 @@ export const UnitSidebarList = ( {
             activeFeature?.properties.fid === f.properties.fid &&
             activeFeature?.properties.layer_type === f.properties.layer_type;
 
+        // Prioritize code as primary identifier, falling back to name
         let itemLabel = f.properties.code
             ? `${ __( 'Unit', TEXT_DOMAIN ) } ${ f.properties.code }`
             : f.properties.name;
-        if ( ! itemLabel )
+            
+        if ( ! itemLabel ) {
             itemLabel = `${ f.properties.layer_type } #${ f.properties.fid }`;
+        }
 
         return (
             <div

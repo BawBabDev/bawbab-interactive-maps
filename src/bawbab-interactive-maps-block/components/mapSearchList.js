@@ -256,7 +256,7 @@ const SearchList = ( {
                                     setActiveTab( null );
                                 } }
                             >
-                                { item.name || item.title }
+                                { item.code || item.name || item.title }
                             </div>
                         ) ) }
                 </div>
