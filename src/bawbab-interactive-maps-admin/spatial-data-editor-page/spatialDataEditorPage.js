@@ -15,7 +15,7 @@ import {
 import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
-import DataEditor from './components/dataEditor';
+import DataEditor, { isFeatureDraftDirty } from './components/dataEditor';
 import { AttributeSchemaManager } from './components/attributeSchemaManager';
 import BawBabIMaps from '../../bawbab-interactive-maps-block/components/maps';
 import {
@@ -28,9 +28,12 @@ import {
     DEFAULT_GROUPS,
     DEFAULT_CATEGORY_MAPPINGS,
 } from '../category-editor-page/constants/defaultCategories';
+import { ConfirmModal, CancelModal } from '../confirmModal';
+import { BatchUpdateModal } from './components/batchUpdateModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
+const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
 
 const formatLabel = ( str ) => {
     if ( ! str ) return '';
@@ -62,6 +65,11 @@ const SpatialDataEditorPage = () => {
     const [ resetCounter, setResetCounter ] = useState( 0 );
     const [ drafts, setDrafts ] = useState( {} );
 
+    // Modals trigger state
+    const [ showConfirmModal, setShowConfirmModal ] = useState( false );
+    const [ showCancelModal, setShowCancelModal ] = useState( false );
+    const [ showBatchModal, setShowBatchModal ] = useState( false );
+
     // Active Navigation Tab ('editor' or 'schema')
     const [ activeNavTab, setActiveNavTab ] = useState( 'editor' );
 
@@ -92,7 +100,8 @@ const SpatialDataEditorPage = () => {
     const [ filterCategory, setFilterCategory ] = useState( 'all' );
     const [ dynamicFilters, setDynamicFilters ] = useState( {} );
 
-    const { removeNotice } = useDispatch( noticesStore );
+    const { removeNotice, createSuccessNotice, createErrorNotice } =
+        useDispatch( noticesStore );
     const notices = useSelect(
         ( select ) => select( noticesStore ).getNotices(),
         []
@@ -136,6 +145,29 @@ const SpatialDataEditorPage = () => {
     const handleDynamicFilterChange = ( key, value ) => {
         setDynamicFilters( ( prev ) => ( { ...prev, [ key ]: value } ) );
     };
+
+    // Active Feature Composite Key & Dirty States
+    const activeCompositeKey = activeFeature
+        ? `${ activeFeature.properties.layer_type }::${ activeFeature.properties.fid }`
+        : '';
+    const activeDraft = drafts[ activeCompositeKey ] || {};
+
+    const isCurrentDraftDirty = useMemo( () => {
+        return isFeatureDraftDirty( activeFeature, activeDraft, schema );
+    }, [ activeFeature, activeDraft, schema ] );
+
+    const activeDirtyKeys = activeDraft._dirtyKeys || [];
+    const hasActiveFeatureDirtyKeys = useMemo( () => {
+        return (
+            isCurrentDraftDirty &&
+            activeDirtyKeys.some( ( k ) => {
+                const cleanKey = k.startsWith( 'custom_attr::' )
+                    ? k.replace( 'custom_attr::', '' )
+                    : k;
+                return ! PROTECTED_FIELDS.includes( cleanKey );
+            } )
+        );
+    }, [ isCurrentDraftDirty, activeDirtyKeys ] );
 
     // 3. Process Two-Level Category Accordion Structure
     const displayStructure = useMemo( () => {
@@ -346,63 +378,67 @@ const SpatialDataEditorPage = () => {
         } );
     };
 
-    const handleExecuteBatchUpdate = ({ fieldsToSync, filterPredicate }) => {
-        const targetFeatures = features.filter(filterPredicate);
+    const handleExecuteBatchUpdate = ( { fieldsToSync, filterPredicate } ) => {
+        const targetFeatures = features.filter( filterPredicate );
 
-        if (targetFeatures.length === 0 || !fieldsToSync || fieldsToSync.length === 0) return;
+        if ( targetFeatures.length === 0 || ! fieldsToSync || fieldsToSync.length === 0 ) return;
 
         const syncedDirtyKeyIdentifiers = new Set();
-        fieldsToSync.forEach(({ key, isCustomAttr }) => {
-            if (isCustomAttr) {
-                syncedDirtyKeyIdentifiers.add(`custom_attr::${key}`);
+        fieldsToSync.forEach( ( { key, isCustomAttr } ) => {
+            if ( isCustomAttr ) {
+                syncedDirtyKeyIdentifiers.add( `custom_attr::${ key }` );
             } else {
-                syncedDirtyKeyIdentifiers.add(key);
+                syncedDirtyKeyIdentifiers.add( key );
             }
-        });
+        } );
 
-        setDrafts((prev) => {
+        setDrafts( ( prev ) => {
             const updatedDrafts = { ...prev };
 
-            targetFeatures.forEach((f) => {
-                const compositeKey = `${f.properties.layer_type}::${f.properties.fid}`;
-                const currentDraft = updatedDrafts[compositeKey] || {};
+            targetFeatures.forEach( ( f ) => {
+                const compositeKey = `${ f.properties.layer_type }::${ f.properties.fid }`;
+                const currentDraft = updatedDrafts[ compositeKey ] || {};
                 let currentCustomAttrs = {
-                    ...(f.properties.custom_attributes || {}),
-                    ...(currentDraft.custom_attributes || {}),
+                    ...( f.properties.custom_attributes || {} ),
+                    ...( currentDraft.custom_attributes || {} ),
                 };
 
                 const directCoreUpdates = {};
 
-                fieldsToSync.forEach(({ key, isCustomAttr, value }) => {
-                    if (isCustomAttr) {
-                        currentCustomAttrs[key] = value;
+                fieldsToSync.forEach( ( { key, isCustomAttr, value } ) => {
+                    if ( isCustomAttr ) {
+                        currentCustomAttrs[ key ] = value;
                     } else {
-                        directCoreUpdates[key] = value;
+                        directCoreUpdates[ key ] = value;
                     }
-                });
+                } );
 
-                const updatedDirtyKeys = (currentDraft._dirtyKeys || []).filter(
-                    dirtyKey => !syncedDirtyKeyIdentifiers.has(dirtyKey)
+                const updatedDirtyKeys = ( currentDraft._dirtyKeys || [] ).filter(
+                    ( dirtyKey ) => ! syncedDirtyKeyIdentifiers.has( dirtyKey )
                 );
 
-                updatedDrafts[compositeKey] = {
+                updatedDrafts[ compositeKey ] = {
                     ...currentDraft,
                     ...directCoreUpdates,
                     _dirtyKeys: updatedDirtyKeys,
-                    ...(Object.keys(currentCustomAttrs).length > 0 ? { custom_attributes: currentCustomAttrs } : {}),
+                    ...( Object.keys( currentCustomAttrs ).length > 0
+                        ? { custom_attributes: currentCustomAttrs }
+                        : {} ),
                 };
-            });
+            } );
 
             return updatedDrafts;
-        });
+        } );
     };
 
     const handleCancel = () => {
+        setShowCancelModal( false );
         setDrafts( {} );
         setResetCounter( ( prev ) => prev + 1 );
     };
 
-    const saveAllDrafts = async () => {
+    const handleConfirmSave = async () => {
+        setShowConfirmModal( false );
         const draftKeys = Object.keys( drafts );
         if ( draftKeys.length === 0 ) return;
 
@@ -477,8 +513,13 @@ const SpatialDataEditorPage = () => {
             setDrafts( {} );
             setResetCounter( ( prev ) => prev + 1 );
             await fetchFeatures();
+            createSuccessNotice(
+                __( 'Feature changes saved successfully!', TEXT_DOMAIN ),
+                { type: 'snackbar' }
+            );
         } catch ( err ) {
             console.error( 'Global Save Exception:', err );
+            createErrorNotice( __( 'Error saving feature changes.', TEXT_DOMAIN ) );
         } finally {
             setIsSaving( false );
         }
@@ -612,10 +653,6 @@ const SpatialDataEditorPage = () => {
             } ) ),
         ];
     }, [ features ] );
-
-    const activeCompositeKey = activeFeature
-        ? `${ activeFeature.properties.layer_type }::${ activeFeature.properties.fid }`
-        : '';
 
     const navTabs = [
         {
@@ -1179,9 +1216,91 @@ const SpatialDataEditorPage = () => {
                                     ) )
                                 ) }
                             </div>
+
+                            { /* STATIC ACTION FOOTER PINNED AT BOTTOM LEFT OF UNIT SIDEBAR */ }
+                            <div
+                                style={ {
+                                    padding: '12px 10px',
+                                    borderTop: '1px solid #e0e0e0',
+                                    background: '#fcfcfc',
+                                    flexShrink: 0,
+                                    zIndex: 10,
+                                } }
+                            >
+                                <Flex align="center" justify="space-between" gap={ 1.5 }>
+                                    { /* DISCARD CHANGES BUTTON */ }
+                                    <Button
+                                        variant="secondary"
+                                        onClick={ () => setShowCancelModal( true ) }
+                                        disabled={ ! isCurrentDraftDirty || isSaving }
+                                        style={ {
+                                            height: '38px',
+                                            flex: '1 1 0%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap',
+                                            opacity: isCurrentDraftDirty ? 1 : 0.4,
+                                            cursor: isCurrentDraftDirty ? 'pointer' : 'default',
+                                            pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
+                                            padding: '0 4px',
+                                        } }
+                                    >
+                                        { __( 'Discard', TEXT_DOMAIN ) }
+                                    </Button>
+
+                                    { /* SAVE ALL CHANGES BUTTON */ }
+                                    <Button
+                                        variant="primary"
+                                        onClick={ () => setShowConfirmModal( true ) }
+                                        isBusy={ isSaving }
+                                        disabled={ ! isCurrentDraftDirty || isSaving }
+                                        style={ {
+                                            height: '38px',
+                                            flex: '1 1 0%',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            whiteSpace: 'nowrap',
+                                            opacity: isCurrentDraftDirty ? 1 : 0.4,
+                                            cursor: isCurrentDraftDirty ? 'pointer' : 'default',
+                                            pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
+                                            padding: '0 4px',
+                                        } }
+                                    >
+                                        { isSaving
+                                            ? __( 'Saving...', TEXT_DOMAIN )
+                                            : __( 'Save All', TEXT_DOMAIN ) }
+                                    </Button>
+
+                                    { /* BATCH SYNC BUTTON (NO ICON, MULTI-LINE TEXT JUMP TO PREVENT OVERFLOW) */ }
+                                    <Button
+                                        variant="primary"
+                                        onClick={ () => setShowBatchModal( true ) }
+                                        disabled={ ! hasActiveFeatureDirtyKeys }
+                                        style={ {
+                                            height: '38px',
+                                            flex: '1.2 1 0%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            textAlign: 'center',
+                                            whiteSpace: 'normal',
+                                            lineHeight: '1.15',
+                                            fontSize: '11px',
+                                            padding: '2px 4px',
+                                            opacity: hasActiveFeatureDirtyKeys ? 1 : 0.4,
+                                            cursor: hasActiveFeatureDirtyKeys ? 'pointer' : 'default',
+                                            pointerEvents: hasActiveFeatureDirtyKeys ? 'auto' : 'none',
+                                        } }
+                                    >
+                                        { __( 'Apply to Other Features', TEXT_DOMAIN ) }
+                                    </Button>
+                                </Flex>
+                            </div>
                         </div>
 
-                        { /* DATA EDITOR & PREVIEW CONTAINER (CENTERED & CONSTRAINED HORIZONTALLY) */ }
+                        { /* DATA EDITOR & PREVIEW CONTAINER */ }
                         <div
                             style={ {
                                 flex: 1,
@@ -1208,9 +1327,7 @@ const SpatialDataEditorPage = () => {
                                     <DataEditor
                                         key={ `${ activeFeature.properties.layer_type }-${ activeFeature.properties.fid }` }
                                         building={ activeFeature }
-                                        draft={
-                                            drafts[ activeCompositeKey ] || {}
-                                        }
+                                        draft={ activeDraft }
                                         globalSchema={ schema }
                                         allFeatures={ features }
                                         updateSchemaKey={ updateSchemaKey }
@@ -1223,19 +1340,11 @@ const SpatialDataEditorPage = () => {
                                                 options
                                             )
                                         }
-                                        onUpdate={ saveAllDrafts }
-                                        onCancel={ handleCancel }
-                                        onExecuteBatchUpdate={ handleExecuteBatchUpdate }
-                                        isSaving={ isSaving }
-                                        hasChanges={
-                                            Object.keys( drafts ).length > 0
-                                        }
                                     />
 
                                     <div
                                         style={ {
                                             marginTop: '40px',
-                                            borderTop: '20px solid #f0f0f0',
                                             paddingTop: '30px',
                                             marginLeft: '-20px',
                                             marginRight: '-20px',
@@ -1372,6 +1481,46 @@ const SpatialDataEditorPage = () => {
                     </div>
                 ) }
             </div>
+
+            { /* BATCH UPDATE SELECTION MODAL */ }
+            <BatchUpdateModal
+                isOpen={ showBatchModal }
+                activeFeature={ activeFeature }
+                draftData={ activeDraft }
+                globalSchema={ schema }
+                groups={ groups }
+                categoryMap={ categoryMap }
+                allFeatures={ features }
+                onClose={ () => setShowBatchModal( false ) }
+                onConfirmBatch={ handleExecuteBatchUpdate }
+            />
+
+            { /* GENERIC CONFIRMATION MODAL */ }
+            <ConfirmModal
+                isOpen={ showConfirmModal }
+                title={ __( 'Save Feature Changes', TEXT_DOMAIN ) }
+                message={ __(
+                    'Are you sure you want to save all modified feature details to the database?',
+                    TEXT_DOMAIN
+                ) }
+                confirmLabel={ __( 'Save Changes', TEXT_DOMAIN ) }
+                onConfirm={ handleConfirmSave }
+                onCancel={ () => setShowConfirmModal( false ) }
+                isBusy={ isSaving }
+            />
+
+            { /* GENERIC CANCELLATION MODAL */ }
+            <CancelModal
+                isOpen={ showCancelModal }
+                title={ __( 'Discard Draft Modifications', TEXT_DOMAIN ) }
+                message={ __(
+                    'Are you sure you want to discard your unsaved modifications? All pending edits for this feature will be reset.',
+                    TEXT_DOMAIN
+                ) }
+                confirmLabel={ __( 'Discard Edits', TEXT_DOMAIN ) }
+                onConfirm={ handleCancel }
+                onCancel={ () => setShowCancelModal( false ) }
+            />
         </div>
     );
 };

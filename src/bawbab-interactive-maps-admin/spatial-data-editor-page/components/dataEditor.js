@@ -6,12 +6,12 @@ import {
     TextareaControl,
     Flex,
     Dashicon,
-    Modal,
     ComboboxControl,
     ToggleControl,
     SelectControl,
     ColorPicker,
     Dropdown,
+    PanelBody,
     __experimentalText as Text,
 } from '@wordpress/components';
 import { useState, useEffect, useMemo } from '@wordpress/element';
@@ -19,12 +19,8 @@ import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
 import { useCategoryManager } from '../../category-editor-page/hooks/useCategoryManager';
 import { AttributeConfigModal } from './attributeConfigModal';
-import { BatchUpdateModal } from './batchUpdateModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
-// Fields strictly protected from bulk editing
-const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
 
 const formatFieldLabel = ( str ) => {
     if ( ! str ) return '';
@@ -56,11 +52,10 @@ const normalizeCompareValue = ( val ) => {
  * Deeply compares draft edits against current feature DB properties.
  * Returns true ONLY if at least one property differs from the original DB value.
  */
-const isFeatureDraftDirty = ( feature, draftData, globalSchema = [] ) => {
+export const isFeatureDraftDirty = ( feature, draftData, globalSchema = [] ) => {
     if ( ! feature || ! feature.properties || ! draftData ) return false;
     const dbProps = feature.properties;
 
-    // Check top-level draft keys (excluding private _dirtyKeys flag)
     const draftKeys = Object.keys( draftData ).filter( ( k ) => k !== '_dirtyKeys' );
 
     for ( const key of draftKeys ) {
@@ -300,50 +295,17 @@ const DataEditor = ( {
     building,
     draft = {},
     globalSchema = [],
-    allFeatures = [],
     updateSchemaKey,
     updateDraft,
-    onUpdate,
-    onCancel,
-    onExecuteBatchUpdate,
-    isSaving,
 } ) => {
     if ( ! building || ! building.properties ) return null;
 
     const [ localProps, setLocalProps ] = useState( building.properties );
     const [ pages, setPages ] = useState( [] );
     const [ isLoadingPages, setIsLoadingPages ] = useState( true );
-
-    const [ showSaveModal, setShowSaveModal ] = useState( false );
-    const [ showCancelModal, setShowCancelModal ] = useState( false );
-
-    // Dynamic property modal state
     const [ showAddPropModal, setShowAddPropModal ] = useState( false );
 
-    // Batch update modal state
-    const [ showBatchModal, setShowBatchModal ] = useState( false );
-
-    // Category Manager
-    const { groups, categoryMap } = useCategoryManager();
-
-    // Dynamically calculate if active feature draft is strictly modified vs DB
-    const isCurrentDraftDirty = useMemo( () => {
-        return isFeatureDraftDirty( building, draft, globalSchema );
-    }, [ building, draft, globalSchema ] );
-
-    // Check if the current active feature specifically has un-synced non-protected dirty keys
-    const activeDirtyKeys = draft._dirtyKeys || [];
-    const hasActiveFeatureDirtyKeys = useMemo( () => {
-        return (
-            isCurrentDraftDirty &&
-            activeDirtyKeys.some( ( k ) => {
-                const cleanKey = k.startsWith( 'custom_attr::' )
-                    ? k.replace( 'custom_attr::', '' )
-                    : k;
-                return ! PROTECTED_FIELDS.includes( cleanKey );
-            } )
-        );
-    }, [ isCurrentDraftDirty, activeDirtyKeys ] );
+    const { categoryMap } = useCategoryManager();
 
     const getValue = ( key, dbValue ) => {
         if ( draft && draft.hasOwnProperty( key ) ) return draft[ key ];
@@ -455,13 +417,6 @@ const DataEditor = ( {
         updateCustomAttr( key, null );
     };
 
-    const handleConfirmBatchModal = ( batchPayload ) => {
-        if ( onExecuteBatchUpdate ) {
-            onExecuteBatchUpdate( batchPayload );
-        }
-        setShowBatchModal( false );
-    };
-
     const handleCreateNewGlobalAttribute = async ( newAttributeConfig ) => {
         const keySlug = createKeySlug( newAttributeConfig.label );
         if ( ! keySlug ) return { success: false };
@@ -558,11 +513,6 @@ const DataEditor = ( {
         } );
     }, [ mergedCustomAttributes, globalSchema ] );
 
-    const handleConfirmSave = () => {
-        setShowSaveModal( false );
-        onUpdate();
-    };
-
     const newItemTemplate = useMemo(
         () => ( {
             key: 'new_attribute',
@@ -583,7 +533,7 @@ const DataEditor = ( {
     return (
         <div
             className="building-editor-container"
-            style={ { maxWidth: '650px' } }
+            style={ { maxWidth: '650px', margin: '0 auto' } }
         >
             <div
                 style={ {
@@ -597,7 +547,138 @@ const DataEditor = ( {
                 </Text>
             </div>
 
-            {/* 1. CORE IDENTIFICATION */}
+            {/* 1. LINKED WORDPRESS PAGE & MEDIA OVERRIDES */}
+            <div
+                style={ {
+                    padding: '15px',
+                    background: '#fafafa',
+                    border: '1px solid #e0e0e0',
+                    borderLeft: '4px solid #2271b1',
+                    borderRadius: '4px',
+                    marginBottom: '20px',
+                } }
+            >
+                <Text
+                    variant="label"
+                    display="block"
+                    style={ { fontWeight: '600', marginBottom: '12px' } }
+                >
+                    { __( 'Linked WordPress Page', TEXT_DOMAIN ) }
+                </Text>
+
+                <div style={ { marginBottom: '12px' } }>
+                    <ComboboxControl
+                        label={ __( 'Select Page', TEXT_DOMAIN ) }
+                        value={ linkedPageId ? linkedPageId.toString() : '' }
+                        onChange={ ( val ) => updateDraft( { wp_page_id: val } ) }
+                        options={ pages }
+                        __nextHasNoMarginBottom
+                    />
+                </div>
+
+                <PanelBody
+                    title={ __( 'Advanced Settings (Media Overrides)', TEXT_DOMAIN ) }
+                    initialOpen={ false }
+                    style={ { marginTop: '10px', border: '1px solid #e0e0e0', borderRadius: '4px', background: '#fff' } }
+                >
+                    <div style={ { padding: '10px 0' } }>
+                        <div
+                            style={ {
+                                marginBottom: '15px',
+                                paddingBottom: '12px',
+                                borderBottom: '1px solid #eee',
+                            } }
+                        >
+                            <ToggleControl
+                                label={ __( 'Hide Linked Page Video', TEXT_DOMAIN ) }
+                                checked={ hidePageVideo }
+                                onChange={ ( val ) =>
+                                    updateDraft( { hide_page_video: val } )
+                                }
+                            />
+                            { ! hidePageVideo && (
+                                <div style={ { marginTop: '12px' } }>
+                                    <TextControl
+                                        label={ __( 'Custom Video URL', TEXT_DOMAIN ) }
+                                        value={ customVideoUrl }
+                                        onChange={ ( val ) =>
+                                            updateDraft( { custom_video_url: val } )
+                                        }
+                                        __nextHasNoMarginBottom
+                                    />
+                                </div>
+                            ) }
+                        </div>
+
+                        <div>
+                            <ToggleControl
+                                label={ __(
+                                    'Hide Linked Page Floorplan',
+                                    TEXT_DOMAIN
+                                ) }
+                                checked={ hidePageFloorplan }
+                                onChange={ ( val ) =>
+                                    updateDraft( { hide_page_floorplan: val } )
+                                }
+                            />
+                            { ! hidePageFloorplan && (
+                                <div
+                                    style={ {
+                                        marginTop: '12px',
+                                        display: 'flex',
+                                        gap: '8px',
+                                        alignItems: 'flex-start',
+                                    } }
+                                >
+                                    <div style={ { flex: 1 } }>
+                                        <TextControl
+                                            label={ __(
+                                                'Custom Floorplan URL',
+                                                TEXT_DOMAIN
+                                            ) }
+                                            value={ customFloorplanUrl }
+                                            onChange={ ( val ) =>
+                                                updateDraft( {
+                                                    custom_floorplan_url: val,
+                                                } )
+                                            }
+                                            __nextHasNoMarginBottom
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="secondary"
+                                        icon="upload"
+                                        onClick={ () => {
+                                            const frame = window.wp.media( {
+                                                title: __(
+                                                    'Select Custom Floorplan',
+                                                    TEXT_DOMAIN
+                                                ),
+                                                multiple: false,
+                                            } );
+                                            frame.on( 'select', () => {
+                                                const attachment = frame
+                                                    .state()
+                                                    .get( 'selection' )
+                                                    .first()
+                                                    .toJSON();
+                                                updateDraft( {
+                                                    custom_floorplan_url:
+                                                        attachment.url,
+                                                } );
+                                            } );
+                                            frame.open();
+                                        } }
+                                        style={ { marginTop: '24px', height: '36px' } }
+                                    />
+                                </div>
+                            ) }
+                        </div>
+                    </div>
+                </PanelBody>
+            </div>
+
+            {/* 2. CORE IDENTIFICATION & CANVAS LABEL */}
             <div
                 style={ {
                     padding: '15px',
@@ -615,97 +696,128 @@ const DataEditor = ( {
                     { __( 'Core Identification & Canvas Label', TEXT_DOMAIN ) }
                 </Text>
 
-                <Flex gap={ 3 } style={ { marginBottom: '12px' } }>
-                    <FlexItem style={ { flex: 1 } }>
-                        <TextControl
-                            label={ __( 'Feature Name', TEXT_DOMAIN ) }
-                            value={ featureName }
-                            onChange={ ( val ) => updateDraft( { name: val } ) }
-                            placeholder={ __(
-                                'e.g. Building A or Main Entrance',
-                                TEXT_DOMAIN
-                            ) }
-                            help={ __(
-                                'Primary name used in navigation and map labels.',
-                                TEXT_DOMAIN
-                            ) }
-                            __nextHasNoMarginBottom
-                        />
-                    </FlexItem>
-                    <FlexItem style={ { flex: '0 0 180px' } }>
-                        <TextControl
-                            label={ __( 'Unit / Room Code', TEXT_DOMAIN ) }
-                            value={ featureCode }
-                            onChange={ ( val ) => updateDraft( { code: val } ) }
-                            placeholder={ __( 'e.g. 101A', TEXT_DOMAIN ) }
-                            help={ __(
-                                'Room or unit code label.',
-                                TEXT_DOMAIN
-                            ) }
-                            __nextHasNoMarginBottom
-                        />
-                    </FlexItem>
-                </Flex>
+                <div style={ { marginBottom: '12px' } }>
+                    <TextControl
+                        label={ __(
+                            'Display Title (Overrides WP Page Title in Side Drawer)',
+                            TEXT_DOMAIN
+                        ) }
+                        value={ customTitle }
+                        onChange={ ( val ) => updateDraft( { title: val } ) }
+                        placeholder={ featureName || localProps.name }
+                        help={ __(
+                            'Public header shown inside side drawer popups when selected.',
+                            TEXT_DOMAIN
+                        ) }
+                        __nextHasNoMarginBottom
+                    />
+                </div>
 
-                <TextControl
-                    label={ __(
-                        'Display Title (Overrides WP Page Title in Side Drawer)',
-                        TEXT_DOMAIN
+                <div style={ { marginBottom: '12px' } }>
+                    <TextareaControl
+                        label={ __( 'Custom Description', TEXT_DOMAIN ) }
+                        value={ desc }
+                        onChange={ ( val ) => updateDraft( { description: val } ) }
+                        rows={ 4 }
+                    />
+
+                    { linkedPageId && desc.trim().length > 0 && (
+                        <div
+                            style={ {
+                                marginTop: '8px',
+                                padding: '8px 12px',
+                                background: '#fff',
+                                border: '1px solid #ccd0d4',
+                                borderRadius: '4px',
+                            } }
+                        >
+                            <ToggleControl
+                                label={ __(
+                                    'Append to WP Page Content',
+                                    TEXT_DOMAIN
+                                ) }
+                                checked={ appendDescription }
+                                onChange={ ( val ) =>
+                                    updateDraft( { append_description: val } )
+                                }
+                            />
+                        </div>
                     ) }
-                    value={ customTitle }
-                    onChange={ ( val ) => updateDraft( { title: val } ) }
-                    placeholder={ featureName || localProps.name }
-                    help={ __(
-                        'Public header shown inside side drawer popups when selected.',
-                        TEXT_DOMAIN
-                    ) }
-                    __nextHasNoMarginBottom
-                />
+                </div>
+
+                <PanelBody
+                    title={ __( 'Advanced Settings (Name & Code)', TEXT_DOMAIN ) }
+                    initialOpen={ false }
+                    style={ { border: '1px solid #e0e0e0', borderRadius: '4px', background: '#fff' } }
+                >
+                    <div style={ { padding: '10px 0' } }>
+                        <Flex gap={ 3 }>
+                            <FlexItem style={ { flex: 1 } }>
+                                <TextControl
+                                    label={ __( 'Feature Name', TEXT_DOMAIN ) }
+                                    value={ featureName }
+                                    onChange={ ( val ) => updateDraft( { name: val } ) }
+                                    placeholder={ __(
+                                        'e.g. Building A or Main Entrance',
+                                        TEXT_DOMAIN
+                                    ) }
+                                    help={ __(
+                                        'Primary name used in navigation and map labels.',
+                                        TEXT_DOMAIN
+                                    ) }
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+                            <FlexItem style={ { flex: '0 0 180px' } }>
+                                <TextControl
+                                    label={ __( 'Unit / Room Code', TEXT_DOMAIN ) }
+                                    value={ featureCode }
+                                    onChange={ ( val ) => updateDraft( { code: val } ) }
+                                    placeholder={ __( 'e.g. 101A', TEXT_DOMAIN ) }
+                                    help={ __(
+                                        'Room or unit code label.',
+                                        TEXT_DOMAIN
+                                    ) }
+                                    __nextHasNoMarginBottom
+                                />
+                            </FlexItem>
+                        </Flex>
+                    </div>
+                </PanelBody>
             </div>
 
-            {/* 2. FEATURE CATEGORY */}
-            <div style={ { marginBottom: '20px' } }>
-                <SelectControl
-                    label={ __( 'Feature Category', TEXT_DOMAIN ) }
-                    value={ currentCategory }
-                    options={ categoryOptions }
-                    onChange={ ( val ) => updateDraft( { category: val } ) }
-                    help={ __(
-                        'Determines default group placement and color theme.',
-                        TEXT_DOMAIN
-                    ) }
-                    __nextHasNoMarginBottom
-                />
-            </div>
-
-            {/* 3. LINKED WORDPRESS PAGE */}
+            {/* 3. FEATURE CATEGORY & STYLING */}
             <div
                 style={ {
                     padding: '15px',
-                    background: '#f0f6fb',
-                    borderRadius: '4px',
-                    borderLeft: '4px solid #2271b1',
-                    marginBottom: '20px',
-                } }
-            >
-                <ComboboxControl
-                    label={ __( 'Linked WordPress Page', TEXT_DOMAIN ) }
-                    value={ linkedPageId ? linkedPageId.toString() : '' }
-                    onChange={ ( val ) => updateDraft( { wp_page_id: val } ) }
-                    options={ pages }
-                />
-            </div>
-
-            {/* 4. CUSTOM FILL COLOR */}
-            <div
-                style={ {
-                    padding: '15px',
-                    background: '#f9f9f9',
+                    background: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                     marginBottom: '20px',
                 } }
             >
+                <Text
+                    variant="label"
+                    display="block"
+                    style={ { fontWeight: '600', marginBottom: '12px' } }
+                >
+                    { __( 'Feature Category & Styling', TEXT_DOMAIN ) }
+                </Text>
+
+                <div style={ { marginBottom: '15px', paddingBottom: '12px', borderBottom: '1px solid #eee' } }>
+                    <SelectControl
+                        label={ __( 'Feature Category', TEXT_DOMAIN ) }
+                        value={ currentCategory }
+                        options={ categoryOptions }
+                        onChange={ ( val ) => updateDraft( { category: val } ) }
+                        help={ __(
+                            'Determines default group placement and color theme.',
+                            TEXT_DOMAIN
+                        ) }
+                        __nextHasNoMarginBottom
+                    />
+                </div>
+
                 <Flex
                     align="center"
                     justify="space-between"
@@ -811,12 +923,12 @@ const DataEditor = ( {
                 ) }
             </div>
 
-            {/* 5. CUSTOM FEATURE PROPERTIES */}
+            {/* 4. CUSTOM FEATURE PROPERTIES */}
             <div
                 style={ {
                     marginBottom: '20px',
                     padding: '15px',
-                    background: '#f9f9f9',
+                    background: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                 } }
@@ -897,160 +1009,12 @@ const DataEditor = ( {
                 ) }
             </div>
 
-            {/* 6. MEDIA OVERRIDES SECTION */}
+            {/* 5. MAP INTERACTION & DISPLAY SETTINGS */}
             <div
                 style={ {
                     marginBottom: '20px',
                     padding: '15px',
-                    background: '#fcfcfc',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                } }
-            >
-                <Text
-                    variant="label"
-                    display="block"
-                    style={ { fontWeight: '600', marginBottom: '12px' } }
-                >
-                    { __(
-                        'Page Media Overrides (Video & Floorplan)',
-                        TEXT_DOMAIN
-                    ) }
-                </Text>
-
-                <div
-                    style={ {
-                        marginBottom: '15px',
-                        paddingBottom: '12px',
-                        borderBottom: '1px solid #eee',
-                    } }
-                >
-                    <ToggleControl
-                        label={ __( 'Hide Linked Page Video', TEXT_DOMAIN ) }
-                        checked={ hidePageVideo }
-                        onChange={ ( val ) =>
-                            updateDraft( { hide_page_video: val } )
-                        }
-                    />
-                    { ! hidePageVideo && (
-                        <div style={ { marginTop: '12px' } }>
-                            <TextControl
-                                label={ __( 'Custom Video URL', TEXT_DOMAIN ) }
-                                value={ customVideoUrl }
-                                onChange={ ( val ) =>
-                                    updateDraft( { custom_video_url: val } )
-                                }
-                                __nextHasNoMarginBottom
-                            />
-                        </div>
-                    ) }
-                </div>
-
-                <div>
-                    <ToggleControl
-                        label={ __(
-                            'Hide Linked Page Floorplan',
-                            TEXT_DOMAIN
-                        ) }
-                        checked={ hidePageFloorplan }
-                        onChange={ ( val ) =>
-                            updateDraft( { hide_page_floorplan: val } )
-                        }
-                    />
-                    { ! hidePageFloorplan && (
-                        <div
-                            style={ {
-                                marginTop: '12px',
-                                display: 'flex',
-                                gap: '8px',
-                                alignItems: 'flex-start',
-                            } }
-                        >
-                            <div style={ { flex: 1 } }>
-                                <TextControl
-                                    label={ __(
-                                        'Custom Floorplan URL',
-                                        TEXT_DOMAIN
-                                    ) }
-                                    value={ customFloorplanUrl }
-                                    onChange={ ( val ) =>
-                                        updateDraft( {
-                                            custom_floorplan_url: val,
-                                        } )
-                                    }
-                                    __nextHasNoMarginBottom
-                                />
-                            </div>
-                            <Button
-                                variant="secondary"
-                                icon="upload"
-                                onClick={ () => {
-                                    const frame = window.wp.media( {
-                                        title: __(
-                                            'Select Custom Floorplan',
-                                            TEXT_DOMAIN
-                                        ),
-                                        multiple: false,
-                                    } );
-                                    frame.on( 'select', () => {
-                                        const attachment = frame
-                                            .state()
-                                            .get( 'selection' )
-                                            .first()
-                                            .toJSON();
-                                        updateDraft( {
-                                            custom_floorplan_url:
-                                                attachment.url,
-                                        } );
-                                    } );
-                                    frame.open();
-                                } }
-                                style={ { marginTop: '24px', height: '36px' } }
-                            />
-                        </div>
-                    ) }
-                </div>
-            </div>
-
-            {/* 7. CUSTOM DESCRIPTION */}
-            <div style={ { marginBottom: '20px' } }>
-                <TextareaControl
-                    label={ __( 'Custom Description', TEXT_DOMAIN ) }
-                    value={ desc }
-                    onChange={ ( val ) => updateDraft( { description: val } ) }
-                    rows={ 5 }
-                />
-
-                { linkedPageId && desc.trim().length > 0 && (
-                    <div
-                        style={ {
-                            marginTop: '10px',
-                            padding: '10px 12px',
-                            background: '#fff',
-                            border: '1px solid #ccd0d4',
-                            borderRadius: '4px',
-                        } }
-                    >
-                        <ToggleControl
-                            label={ __(
-                                'Append to WP Page Content',
-                                TEXT_DOMAIN
-                            ) }
-                            checked={ appendDescription }
-                            onChange={ ( val ) =>
-                                updateDraft( { append_description: val } )
-                            }
-                        />
-                    </div>
-                ) }
-            </div>
-
-            {/* 8. MAP BEHAVIOR TOGGLES */}
-            <div
-                style={ {
-                    marginBottom: '20px',
-                    padding: '15px',
-                    background: '#fcfcfc',
+                    background: '#fafafa',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
                 } }
@@ -1092,7 +1056,7 @@ const DataEditor = ( {
                 </div>
             </div>
 
-            {/* 9. CUSTOM GALLERY */}
+            {/* 6. CUSTOM GALLERY */}
             <div style={ { margin: '20px 0' } }>
                 <Text
                     variant="label"
@@ -1106,9 +1070,10 @@ const DataEditor = ( {
                     gap={ 2 }
                     style={ {
                         marginBottom: '15px',
-                        background: '#f9f9f9',
+                        background: '#fafafa',
                         padding: '10px',
                         borderRadius: '4px',
+                        border: '1px solid #e0e0e0',
                         justifyContent: 'flex-start',
                     } }
                 >
@@ -1186,81 +1151,6 @@ const DataEditor = ( {
                 </Button>
             </div>
 
-            {/* 10. ACTION BUTTON BAR AT BOTTOM */}
-            <div style={{ margin: '30px 0 10px', padding: '16px', background: '#f0f6fb', border: '1px solid #2271b1', borderRadius: '4px' }}>
-                <Flex align="center" justify="space-between" gap={3}>
-                    <div style={{ flex: '1 1 55%', minWidth: 0 }}>
-                        <Text variant="label" display="block" style={{ fontWeight: '600', color: '#1d2327' }}>
-                            { __('Batch Sync Draft Modifications', TEXT_DOMAIN) }
-                        </Text>
-                        <Text variant="caption" style={{ color: '#666', fontSize: '11px', display: 'block', lineHeight: '1.4' }}>
-                            { __('Propagate active draft changes across multiple units in the same group or category.', TEXT_DOMAIN) }
-                        </Text>
-                    </div>
-
-                    <div style={{ flex: '0 0 auto' }}>
-                        <Button
-                            variant="secondary"
-                            icon="admin-page"
-                            onClick={ () => setShowBatchModal( true ) }
-                            disabled={ ! hasActiveFeatureDirtyKeys }
-                            style={{
-                                whiteSpace: 'nowrap',
-                                height: 'auto',
-                                minHeight: '36px',
-                                padding: '6px 14px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                opacity: hasActiveFeatureDirtyKeys ? 1 : 0.4,
-                                cursor: hasActiveFeatureDirtyKeys ? 'pointer' : 'default',
-                                pointerEvents: hasActiveFeatureDirtyKeys ? 'auto' : 'none',
-                            }}
-                        >
-                            { __('Apply Changes to Other Features', TEXT_DOMAIN) }
-                        </Button>
-                    </div>
-                </Flex>
-            </div>
-
-            {/* GLOBAL ACTIONS FOOTER WITH UNIFORM FADED / DISABLED DIRTY STATES */}
-            <Flex
-                justify="flex-start"
-                style={ { marginTop: '15px', gap: '15px' } }
-            >
-                <Button
-                    variant="secondary"
-                    onClick={ () => setShowCancelModal( true ) }
-                    disabled={ isSaving || ! isCurrentDraftDirty }
-                    style={ {
-                        height: '40px',
-                        flex: '1',
-                        justifyContent: 'center',
-                        opacity: isCurrentDraftDirty ? 1 : 0.4,
-                        cursor: isCurrentDraftDirty ? 'pointer' : 'default',
-                        pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
-                    } }
-                >
-                    { __( 'Discard All Changes', TEXT_DOMAIN ) }
-                </Button>
-                <Button
-                    variant="primary"
-                    isBusy={ isSaving }
-                    disabled={ ! isCurrentDraftDirty || isSaving }
-                    onClick={ () => setShowSaveModal( true ) }
-                    style={ {
-                        height: '40px',
-                        flex: '1',
-                        justifyContent: 'center',
-                        opacity: isCurrentDraftDirty ? 1 : 0.4,
-                        cursor: isCurrentDraftDirty ? 'pointer' : 'default',
-                        pointerEvents: isCurrentDraftDirty ? 'auto' : 'none',
-                    } }
-                >
-                    { __( 'Save All Changes', TEXT_DOMAIN ) }
-                </Button>
-            </Flex>
-
             {/* MODAL: ADD CUSTOM PROPERTY */}
             <AttributeConfigModal
                 isOpen={ showAddPropModal }
@@ -1269,73 +1159,6 @@ const DataEditor = ( {
                 onClose={ () => setShowAddPropModal( false ) }
                 onSave={ handleCreateNewGlobalAttribute }
             />
-
-            {/* MODAL: BATCH UPDATE SELECTION */}
-            <BatchUpdateModal
-                isOpen={ showBatchModal }
-                activeFeature={ building }
-                draftData={ draft }
-                globalSchema={ globalSchema }
-                groups={ groups }
-                categoryMap={ categoryMap }
-                allFeatures={ allFeatures }
-                onClose={ () => setShowBatchModal( false ) }
-                onConfirmBatch={ handleConfirmBatchModal }
-            />
-
-            {/* CONFIRMATION MODALS */}
-            { showSaveModal && (
-                <Modal
-                    title={ __( 'Save All Changes?', TEXT_DOMAIN ) }
-                    onRequestClose={ () => setShowSaveModal( false ) }
-                >
-                    <p>
-                        { __(
-                            'This will save all pending modifications to the map database.',
-                            TEXT_DOMAIN
-                        ) }
-                    </p>
-                    <Flex justify="flex-end" style={ { marginTop: '20px' } }>
-                        <Button
-                            variant="tertiary"
-                            onClick={ () => setShowSaveModal( false ) }
-                        >
-                            { __( 'Wait, go back', TEXT_DOMAIN ) }
-                        </Button>
-                        <Button variant="primary" onClick={ handleConfirmSave }>
-                            { __( 'Confirm and Save All', TEXT_DOMAIN ) }
-                        </Button>
-                    </Flex>
-                </Modal>
-            ) }
-
-            { showCancelModal && (
-                <Modal
-                    title={ __( 'Discard Changes?', TEXT_DOMAIN ) }
-                    onRequestClose={ () => setShowCancelModal( false ) }
-                >
-                    <p>
-                        { __( 'You have unsaved modifications.', TEXT_DOMAIN ) }
-                    </p>
-                    <Flex justify="flex-end" style={ { marginTop: '20px' } }>
-                        <Button
-                            variant="tertiary"
-                            onClick={ () => setShowCancelModal( false ) }
-                        >
-                            { __( 'Keep editing', TEXT_DOMAIN ) }
-                        </Button>
-                        <Button
-                            isDestructive
-                            onClick={ () => {
-                                onCancel();
-                                setShowCancelModal( false );
-                            } }
-                        >
-                            { __( 'Discard Everything', TEXT_DOMAIN ) }
-                        </Button>
-                    </Flex>
-                </Modal>
-            ) }
         </div>
     );
 };
