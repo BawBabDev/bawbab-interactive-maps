@@ -18,7 +18,7 @@ export const NavigationWarningModal = ( {
         >
             <p style={ { fontSize: '13px', color: '#555', marginBottom: '20px' } }>
                 { __(
-                    'You have pending unsaved modifications. Navigating to another page will discard these changes. Are you sure you want to leave?',
+                    'You have unsaved changes. Navigating to another page will discard all pending modifications. Are you sure you want to leave?',
                     TEXT_DOMAIN
                 ) }
             </p>

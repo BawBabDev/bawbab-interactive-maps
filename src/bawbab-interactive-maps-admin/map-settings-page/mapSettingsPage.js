@@ -16,7 +16,7 @@ const TEXT_DOMAIN = 'bawbab-interactive-maps';
 /**
  * MapSettingsPage Component
  */
-const MapSettingsPage = () => {
+const MapSettingsPage = ( { onDirtyStateChange } ) => {
     const [ refreshTrigger, setRefreshTrigger ] = useState( 0 );
     const triggerMapRefresh = () => setRefreshTrigger( ( prev ) => prev + 1 );
 
@@ -106,6 +106,19 @@ const MapSettingsPage = () => {
             setIsDirty( currentSnapshot !== initialSnapshotRef.current );
         }
     }, [ settings ] );
+
+    // Transmit local dirty state to the parent App Shell for global navigation intercepting
+    useEffect( () => {
+        if ( typeof onDirtyStateChange === 'function' ) {
+            onDirtyStateChange( isDirty );
+        }
+
+        return () => {
+            if ( typeof onDirtyStateChange === 'function' ) {
+                onDirtyStateChange( false );
+            }
+        };
+    }, [ isDirty, onDirtyStateChange ] );
 
     // Synchronize font edits into both local hook state AND parent settings state
     const handleTypographyChange = ( keyOrObject, value ) => {

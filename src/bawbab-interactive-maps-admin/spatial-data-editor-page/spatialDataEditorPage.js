@@ -36,7 +36,7 @@ const formatLabel = ( str ) => {
 /**
  * SpatialDataEditorPage Component
  */
-const SpatialDataEditorPage = () => {
+const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
     const [ features, setFeatures ] = useState( [] );
     const [ selectedLayer, setSelectedLayer ] = useState( 'all' );
     const [ searchQuery, setSearchQuery ] = useState( '' );
@@ -136,6 +136,23 @@ const SpatialDataEditorPage = () => {
     const isCurrentDraftDirty = useMemo( () => {
         return isFeatureDraftDirty( activeFeature, activeDraft, schema );
     }, [ activeFeature, activeDraft, schema ] );
+
+    const hasAnyDraftChanges = useMemo( () => {
+        return Object.keys( drafts ).length > 0;
+    }, [ drafts ] );
+
+    // Transmit overall page dirty state signal to top-level router/app shell
+    useEffect( () => {
+        if ( typeof onDirtyStateChange === 'function' ) {
+            onDirtyStateChange( hasAnyDraftChanges );
+        }
+
+        return () => {
+            if ( typeof onDirtyStateChange === 'function' ) {
+                onDirtyStateChange( false );
+            }
+        };
+    }, [ hasAnyDraftChanges, onDirtyStateChange ] );
 
     const activeDirtyKeys = activeDraft._dirtyKeys || [];
     const hasActiveFeatureDirtyKeys = useMemo( () => {

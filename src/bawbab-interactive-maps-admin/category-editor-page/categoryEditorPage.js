@@ -20,7 +20,7 @@ import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
-export const CategoryEditorPage = () => {
+export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
     const {
         groups,
         setGroups,
@@ -74,6 +74,19 @@ export const CategoryEditorPage = () => {
             setIsDirty( currentSnapshot !== initialSnapshotRef.current );
         }
     }, [ groups, categoryMap, legendConfig ] );
+
+    // Transmit local dirty state to top-level AppShell for navigation intercepting
+    useEffect( () => {
+        if ( typeof onDirtyStateChange === 'function' ) {
+            onDirtyStateChange( isDirty );
+        }
+
+        return () => {
+            if ( typeof onDirtyStateChange === 'function' ) {
+                onDirtyStateChange( false );
+            }
+        };
+    }, [ isDirty, onDirtyStateChange ] );
 
     const handleConfirmSave = async () => {
         setShowSaveModal( false );
