@@ -21,7 +21,7 @@ export const InfoTab = () => {
 				<Text
 					variant="title.small"
 					display="block"
-					style={ { fontWeight: '600', color: '#101828' } }
+					style={ { fontWeight: '700', marginBottom: '4px' } }
 				>
 					{ __(
 						'About Bawbab Interactive Maps',

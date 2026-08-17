@@ -93,7 +93,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
             <Text
                 variant="title.small"
                 display="block"
-                style={ { marginBottom: '5px' } }
+                style={ { fontWeight: '700', marginBottom: '4px' } }
             >
                 { __( 'GIS Layer Manager', TEXT_DOMAIN ) }
             </Text>

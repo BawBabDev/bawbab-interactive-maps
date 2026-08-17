@@ -59,7 +59,13 @@ const AdminSidebar = ( {
         },
         {
             name: 'typography',
-            label: __( 'Font Management', 'bawbab-interactive-maps' ),
+            label: (
+                <>
+                    { __( 'Font', 'bawbab-interactive-maps' ) }
+                    <br />
+                    { __( 'Management', 'bawbab-interactive-maps' ) }
+                </>
+            ),
             icon: (
                 <span
                     style={ {

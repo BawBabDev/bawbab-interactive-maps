@@ -27,9 +27,9 @@ export const LocationsTab = ( {
 			<Text
 				variant="title.small"
 				display="block"
-				style={ { marginBottom: '15px' } }
+				style={ { fontWeight: '700', marginBottom: '4px' } }
 			>
-				{ __( 'Estate Locations', 'bawbab-interactive-maps' ) }
+				{ __( 'Custom Locations', 'bawbab-interactive-maps' ) }
 			</Text>
 			{ locations.map( ( loc, i ) => (
 				<PanelBody

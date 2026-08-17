@@ -29,7 +29,7 @@ export const MapsTab = ( {
 			<Text
 				variant="title.small"
 				display="block"
-				style={ { marginBottom: '15px' } }
+				style={ { fontWeight: '700', marginBottom: '4px' } }
 			>
 				{ __(
 					'Global Map Details & Provider Settings',

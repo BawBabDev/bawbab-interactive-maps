@@ -281,9 +281,9 @@ export const AttributeSchemaManager = ({
         : '1fr 140px 140px 140px auto';
 
     return (
-        <div style={{ padding: '20px 0' }}>
-            <Text variant="title.medium" display="block" style={{ marginBottom: '6px' }}>
-                {__('Global Custom Attributes Schema Manager', TEXT_DOMAIN)}
+        <div className="tab-content">
+            <Text variant="title.medium" display="block" style={{ fontWeight: '700', marginBottom: '6px' }}>
+                {__('Custom Attributes Schema Manager', TEXT_DOMAIN)}
             </Text>
             <Text variant="caption" display="block" style={{ color: '#666', marginBottom: '20px' }}>
                 {__('Manage custom fields across all map features. Use the arrow buttons to reorder how custom fields appear inside the side drawer.', TEXT_DOMAIN)}
