@@ -15,6 +15,7 @@ import {
     TextControl,
     SelectControl,
     Modal,
+    __experimentalText as Text,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -389,31 +390,23 @@ export const MapLegendManager = ( {
     } ) );
 
     return (
-        <div
-            style={ {
-                background: '#fff',
-                border: '1px solid #e0e0e0',
-                borderRadius: '6px',
-                padding: '20px',
-                marginBottom: '15px',
-            } }
-        >
+        <div className="tab-content">
             <h2
                 style={ {
                     fontSize: '16px',
-                    fontWeight: '600',
+                    fontWeight: '700',
                     marginTop: 0,
                     marginBottom: '8px',
                 } }
             >
                 { __( 'Map Legend Customizer', TEXT_DOMAIN ) }
             </h2>
-            <p style={ { fontSize: '13px', color: '#666', marginBottom: '20px' } }>
+            <Text variant="caption" display="block" style={ { color: '#666', marginBottom: '20px' } }>
                 { __(
                     'Organize active legend sections on the left or assign available layer categories from the right palette.',
                     TEXT_DOMAIN
                 ) }
-            </p>
+            </Text>
 
             { /* COMPACT TOP TOGGLES BOX (ON TOP OF EACH OTHER) */ }
             <div

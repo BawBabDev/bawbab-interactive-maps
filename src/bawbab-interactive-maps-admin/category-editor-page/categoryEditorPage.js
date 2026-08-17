@@ -1,12 +1,13 @@
 /**
  * CategoryEditorPage Component
- * Tabbed interface for managing groups, category mappings, and map legends with dirty-state and confirmation modals.
+ * Refactored with a vertical tab sidebar, full-width content workspace,
+ * fixed viewport scroll container, and pinned bottom action footer.
  *
  * File: src/components/categoryEditorPage.jsx
  */
 
 import { useState, useEffect, useRef } from '@wordpress/element';
-import { Button, Flex, NoticeList, Spinner, TabPanel } from '@wordpress/components';
+import { Button, Flex, NoticeList, Spinner, Dashicon } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
@@ -32,6 +33,9 @@ export const CategoryEditorPage = () => {
         saveCategoryData,
         cleanupUnusedCategories,
     } = useCategoryManager();
+
+    // Active Navigation Tab ('groups', 'categories', or 'legend')
+    const [ activeNavTab, setActiveNavTab ] = useState( 'groups' );
 
     // Baseline snapshot for dirty-state detection
     const initialSnapshotRef = useRef( null );
@@ -116,178 +120,265 @@ export const CategoryEditorPage = () => {
         );
     }
 
-    const tabs = [
+    const navTabs = [
         {
-            name: 'groups',
-            title: __( 'Navigation Groups', TEXT_DOMAIN ),
-            className: 'category-tab-groups',
+            id: 'groups',
+            label: __( 'Group Editor', TEXT_DOMAIN ),
+            icon: 'category',
         },
         {
-            name: 'categories',
-            title: __( 'Category Mappings & Colors', TEXT_DOMAIN ),
-            className: 'category-tab-mappings',
+            id: 'categories',
+            label: __( 'Category Editor', TEXT_DOMAIN ),
+            icon: 'filter',
         },
         {
-            name: 'legend',
-            title: __( 'Map Legend Customizer', TEXT_DOMAIN ),
-            className: 'category-tab-legend',
+            id: 'legend',
+            label: __( 'Legend Editor', TEXT_DOMAIN ),
+            icon: 'list-view',
         },
     ];
 
     return (
         <div
             className="wrap"
-            style={ { maxWidth: '960px', margin: '20px auto' } }
+            style={ {
+                height: 'calc(100vh - 65px)',
+                maxHeight: 'calc(100vh - 65px)',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box',
+                marginRight: '15px',
+                marginLeft: '15px',
+                marginBottom: '15px',
+                overflow: 'hidden',
+            } }
         >
+            { /* HIDE WP FOOTER AND LOCK WINDOW FROM SCROLLING */ }
+            <style>{ `
+                #wpfooter { display: none !important; }
+                #wpbody-content { padding-bottom: 0 !important; }
+                html, body { overflow: hidden !important; }
+            ` }</style>
+
             <NoticeList
                 notices={ notices }
                 onRemove={ removeNotice }
-                style={ { marginBottom: '20px' } }
+                style={ { marginBottom: '8px', flexShrink: 0 } }
             />
 
-            <h1
-                className="wp-heading-inline"
-                style={ { marginBottom: '10px' } }
-            >
-                { __( 'Edit Categories & Navigation', TEXT_DOMAIN ) }
-            </h1>
-            <p style={ { color: '#666', marginBottom: '20px' } }>
-                { __(
-                    'Manage navigation groups, assign spatial categories strictly 1-to-1, and configure category colors across your map layers.',
-                    TEXT_DOMAIN
-                ) }
-            </p>
-
-            { /* TABBED INTERFACE CONTAINER */ }
-            <div
-                style={ {
-                    background: '#fff',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '4px',
-                    padding: '20px',
-                    marginBottom: '20px',
-                } }
-            >
-                <TabPanel
-                    className="category-editor-tab-panel"
-                    activeClass="is-active"
-                    tabs={ tabs }
+            { /* PAGE TITLE HEADER */ }
+            <div style={ { flexShrink: 0 } }>
+                <h1
+                    className="wp-heading-inline"
+                    style={ { marginBottom: '8px' } }
                 >
-                    { ( activeTab ) => (
-                        <div style={ { paddingTop: '20px' } }>
-                            { activeTab.name === 'groups' && (
-                                <CategoryGroupManager
-                                    groups={ groups }
-                                    setGroups={ setGroups }
-                                    categoryMap={ categoryMap }
-                                    setCategoryMap={ setCategoryMap }
-                                />
-                            ) }
-
-                            { activeTab.name === 'categories' && (
-                                <CategoryMappingTable
-                                    groups={ groups }
-                                    categoryMap={ categoryMap }
-                                    setCategoryMap={ setCategoryMap }
-                                />
-                            ) }
-
-                            { activeTab.name === 'legend' && (
-                                <MapLegendManager
-                                    categoryMap={ categoryMap }
-                                    legendConfig={ legendConfig }
-                                    setLegendConfig={ setLegendConfig }
-                                />
-                            ) }
-                        </div>
-                    ) }
-                </TabPanel>
+                    { __( 'Edit Categories & Navigation', TEXT_DOMAIN ) }
+                </h1>
+                <hr className="wp-header-end" />
             </div>
 
-            { /* GLOBAL ACTIONS FOOTER CONTAINER */ }
+            { /* MAIN WORKSPACE CONTAINER PANEL */ }
             <div
                 style={ {
+                    marginTop: '8px',
                     background: '#fff',
                     border: '1px solid #e0e0e0',
                     borderRadius: '4px',
-                    padding: '16px 20px',
-                    marginTop: '20px',
+                    flex: 1,
+                    minHeight: 0,
+                    height: '100%',
+                    overflow: 'hidden',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    boxSizing: 'border-box',
+                    flexDirection: 'row',
                 } }
             >
-                { /* LEFT: CLEANUP BUTTON */ }
-                <div>
-                    <Button
-                        variant="secondary"
-                        isDestructive
-                        onClick={ () => setShowCleanupModal( true ) }
-                        isBusy={ isSaving }
-                        disabled={ isSaving }
-                        style={ {
-                            height: '40px',
-                            padding: '0 20px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            whiteSpace: 'nowrap',
-                        } }
-                    >
-                        { __( 'Cleanup Unused Categories', TEXT_DOMAIN ) }
-                    </Button>
-                </div>
-
-                { /* RIGHT: DISCARD CHANGES & SAVE SETTINGS */ }
+                { /* FAR LEFT VERTICAL NAVIGATION SIDEBAR (100PX FIXED WIDTH) */ }
                 <div
                     style={ {
+                        width: '100px',
+                        flex: '0 0 100px',
+                        borderRight: '1px solid #e0e0e0',
+                        background: '#fcfcfc',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
+                        flexDirection: 'column',
+                        overflowY: 'auto',
                     } }
                 >
-                    <Button
-                        variant="secondary"
-                        onClick={ () => setShowCancelModal( true ) }
-                        disabled={ ! isDirty || isSaving }
-                        style={ {
-                            height: '40px',
-                            padding: '0 20px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            whiteSpace: 'nowrap',
-                            opacity: isDirty ? 1 : 0.4,
-                            cursor: isDirty ? 'pointer' : 'default',
-                            pointerEvents: isDirty ? 'auto' : 'none',
-                        } }
-                    >
-                        { __( 'Discard Changes', TEXT_DOMAIN ) }
-                    </Button>
+                    { navTabs.map( ( tab ) => {
+                        const isActive = activeNavTab === tab.id;
+                        return (
+                            <Button
+                                key={ tab.id }
+                                onClick={ () => setActiveNavTab( tab.id ) }
+                                style={ {
+                                    height: '70px',
+                                    width: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: 0,
+                                    margin: 0,
+                                    borderBottom: '1px solid #eee',
+                                    background: isActive ? '#fff' : 'transparent',
+                                    color: isActive ? '#007cba' : '#555',
+                                    boxShadow: isActive ? 'inset 4px 0 0 #007cba' : 'none',
+                                    fontWeight: isActive ? '600' : '400',
+                                    cursor: 'pointer',
+                                    padding: '8px 4px',
+                                } }
+                            >
+                                <div
+                                    style={ {
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontSize: '11px',
+                                    } }
+                                >
+                                    <Dashicon icon={ tab.icon } />
+                                    <span style={ { textAlign: 'center', lineHeight: '1.2' } }>
+                                        { tab.label }
+                                    </span>
+                                </div>
+                            </Button>
+                        );
+                    } ) }
+                </div>
 
-                    <Button
-                        variant="primary"
-                        onClick={ () => setShowSaveModal( true ) }
-                        isBusy={ isSaving }
-                        disabled={ ! isDirty || isSaving }
+                { /* FULL-WIDTH TAB CONTENT AREA WITH PINNED ACTION FOOTER */ }
+                <div
+                    style={ {
+                        flex: 1,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        overflow: 'hidden',
+                    } }
+                >
+                    { /* SCROLLABLE CONTENT WORKSPACE FOR ACTIVE TAB */ }
+                    <div
                         style={ {
-                            height: '40px',
-                            padding: '0 32px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            whiteSpace: 'nowrap',
-                            opacity: isDirty ? 1 : 0.4,
-                            cursor: isDirty ? 'pointer' : 'default',
-                            pointerEvents: isDirty ? 'auto' : 'none',
+                            flex: 1,
+                            minHeight: 0,
+                            overflowY: 'auto',
+                            padding: '24px 30px',
                         } }
                     >
-                        { isSaving
-                            ? __( 'Saving...', TEXT_DOMAIN )
-                            : __( 'Save Category Settings', TEXT_DOMAIN ) }
-                    </Button>
+                        { activeNavTab === 'groups' && (
+                            <CategoryGroupManager
+                                groups={ groups }
+                                setGroups={ setGroups }
+                                categoryMap={ categoryMap }
+                                setCategoryMap={ setCategoryMap }
+                            />
+                        ) }
+
+                        { activeNavTab === 'categories' && (
+                            <CategoryMappingTable
+                                groups={ groups }
+                                categoryMap={ categoryMap }
+                                setCategoryMap={ setCategoryMap }
+                            />
+                        ) }
+
+                        { activeNavTab === 'legend' && (
+                            <MapLegendManager
+                                categoryMap={ categoryMap }
+                                legendConfig={ legendConfig }
+                                setLegendConfig={ setLegendConfig }
+                            />
+                        ) }
+                    </div>
+
+                    { /* STATIC ACTION FOOTER PINNED AT BOTTOM Across FULL WIDTH */ }
+                    <div
+                        style={ {
+                            padding: '12px 24px',
+                            borderTop: '1px solid #e0e0e0',
+                            background: '#fcfcfc',
+                            flexShrink: 0,
+                            zIndex: 10,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                        } }
+                    >
+                        { /* LEFT: CLEANUP BUTTON */ }
+                        <div>
+                            <Button
+                                variant="secondary"
+                                isDestructive
+                                onClick={ () => setShowCleanupModal( true ) }
+                                isBusy={ isSaving }
+                                disabled={ isSaving }
+                                style={ {
+                                    height: '38px',
+                                    padding: '0 20px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    whiteSpace: 'nowrap',
+                                } }
+                            >
+                                { __( 'Cleanup Unused Categories', TEXT_DOMAIN ) }
+                            </Button>
+                        </div>
+
+                        { /* RIGHT: DISCARD CHANGES & SAVE SETTINGS */ }
+                        <div
+                            style={ {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                            } }
+                        >
+                            <Button
+                                variant="secondary"
+                                onClick={ () => setShowCancelModal( true ) }
+                                disabled={ ! isDirty || isSaving }
+                                style={ {
+                                    height: '38px',
+                                    padding: '0 20px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isDirty ? 1 : 0.4,
+                                    cursor: isDirty ? 'pointer' : 'default',
+                                    pointerEvents: isDirty ? 'auto' : 'none',
+                                } }
+                            >
+                                { __( 'Discard Changes', TEXT_DOMAIN ) }
+                            </Button>
+
+                            <Button
+                                variant="primary"
+                                onClick={ () => setShowSaveModal( true ) }
+                                isBusy={ isSaving }
+                                disabled={ ! isDirty || isSaving }
+                                style={ {
+                                    height: '38px',
+                                    padding: '0 28px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isDirty ? 1 : 0.4,
+                                    cursor: isDirty ? 'pointer' : 'default',
+                                    pointerEvents: isDirty ? 'auto' : 'none',
+                                } }
+                            >
+                                { isSaving
+                                    ? __( 'Saving...', TEXT_DOMAIN )
+                                    : __( 'Save Category Settings', TEXT_DOMAIN ) }
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

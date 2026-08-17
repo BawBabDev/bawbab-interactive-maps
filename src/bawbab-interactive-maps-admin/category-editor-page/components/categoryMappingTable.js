@@ -7,6 +7,7 @@ import {
     ColorPicker,
     Dropdown,
     Modal,
+    __experimentalText as Text,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -110,19 +111,11 @@ export const CategoryMappingTable = ( {
     const activeLayers = Object.keys( categoriesByLayer );
 
     return (
-        <div
-            style={ {
-                background: '#fff',
-                border: '1px solid #e0e0e0',
-                borderRadius: '6px',
-                padding: '20px',
-                marginBottom: '15px',
-            } }
-        >
+        <div className="tab-content">
             <h2
                 style={ {
                     fontSize: '16px',
-                    fontWeight: '600',
+                    fontWeight: '700',
                     marginTop: 0,
                     marginBottom: '8px',
                 } }
@@ -138,16 +131,17 @@ export const CategoryMappingTable = ( {
                 align="center"
                 style={ { marginBottom: '20px' } }
             >
-                <p style={ { fontSize: '13px', color: '#666', margin: 0 } }>
+                <Text variant="caption" style={ { color: '#666' } }>
                     { __(
                         'Categories map 1-to-1 to navigation groups and set feature colors for each layer.',
                         TEXT_DOMAIN
                     ) }
-                </p>
+                </Text>
                 <Button
-                    variant="secondary"
+                    variant="primary"
                     icon="plus-alt"
                     onClick={ () => setShowAddCatModal( true ) }
+                    style={ { height: '36px', minHeight: '36px' } }
                 >
                     { __( 'Add Category', TEXT_DOMAIN ) }
                 </Button>
@@ -182,6 +176,7 @@ export const CategoryMappingTable = ( {
                                 border: '1px solid #e0e0e0',
                                 borderRadius: '4px',
                                 overflow: 'hidden',
+                                background: '#fff',
                             } }
                         >
                             <div
