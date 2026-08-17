@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef } from '@wordpress/element';
-import {
-    Panel,
-    Button,
-    Flex,
-    FlexItem,
-    NoticeList,
-    Spinner,
-} from '@wordpress/components';
+import { Button, NoticeList, Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
@@ -64,7 +57,7 @@ const MapSettingsPage = () => {
         setTypography,
     } = setters;
 
-    // Dedicated typography hook for central font state, reset, and dynamic CSS variables
+    // Dedicated typography hook
     const {
         typographySettings,
         updateTypography,
@@ -75,7 +68,6 @@ const MapSettingsPage = () => {
     const initialSnapshotRef = useRef( null );
     const [ isDirty, setIsDirty ] = useState( false );
 
-    // Generates a clean, normalized string representation of editable settings
     const getSettingsSnapshot = ( data ) => {
         if ( ! data ) return '';
         return JSON.stringify( {
@@ -133,13 +125,11 @@ const MapSettingsPage = () => {
 
     useMapCredentialsCheck( isLoaded, googleApiKey, googleMapId );
 
-    // Confirmed Save Execution Handler
     const handleConfirmSave = async () => {
         setShowConfirmModal( false );
         const result = await saveSettings();
 
         if ( result.success ) {
-            // Reset dirty snapshot to current state
             initialSnapshotRef.current = getSettingsSnapshot( settings );
             setIsDirty( false );
 
@@ -169,183 +159,204 @@ const MapSettingsPage = () => {
         }
     };
 
-    // Revert / Discard Changes Handler
     const handleConfirmCancel = () => {
         setShowCancelModal( false );
         window.location.reload();
     };
 
     return (
-        <div className="wrap">
+        <div
+            className="wrap"
+            style={ {
+                height: 'calc(100vh - 65px)',
+                maxHeight: 'calc(100vh - 65px)',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box',
+                marginLeft: '15px',
+                marginRight: '15px',
+                marginBottom: '15px',
+                overflow: 'hidden',
+            } }
+        >
+            { /* HIDE WP FOOTER AND LOCK WINDOW FROM SCROLLING */ }
+            <style>{ `
+                #wpfooter { display: none !important; }
+                #wpbody-content { padding-bottom: 0 !important; }
+                html, body { overflow: hidden !important; }
+            ` }</style>
+
             <NoticeList
                 notices={ notices }
                 onRemove={ removeNotice }
-                style={ { marginBottom: '20px' } }
+                style={ { marginBottom: '8px', flexShrink: 0 } }
             />
 
-            <h1
-                className="wp-heading-inline"
-                style={ { marginBottom: '20px' } }
-            >
-                { __( 'Bawbab Interactive Map Settings', TEXT_DOMAIN ) }
-            </h1>
-            <hr className="wp-header-end" />
+            { /* PAGE TITLE HEADER (UNTOUCHED AT TOP) */ }
+            <div style={ { flexShrink: 0 } }>
+                <h1
+                    className="wp-heading-inline"
+                    style={ { marginBottom: '8px' } }
+                >
+                    { __( 'Bawbab Interactive Map Settings', TEXT_DOMAIN ) }
+                </h1>
+                <hr className="wp-header-end" />
+            </div>
 
-            <Panel
+            { /* MAIN WORKSPACE CONTAINER PANEL */ }
+            <div
                 style={ {
-                    marginTop: '20px',
+                    marginTop: '8px',
                     background: '#fff',
                     border: '1px solid #e0e0e0',
-                    height: 'auto',
+                    borderRadius: '4px',
+                    flex: 1,
+                    minHeight: 0,
+                    height: '100%',
                     overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'row',
                 } }
             >
-                <Flex align="stretch" gap={ 0 } style={ { height: '100%' } }>
-                    { /* LEFT SIDEBAR CONTROLS CONTAINER */ }
-                    <FlexItem
+                { /* LEFT SIDEBAR CONTAINER (FIXED 500PX WIDTH) */ }
+                <div
+                    style={ {
+                        flex: '0 0 500px',
+                        width: '500px',
+                        borderRight: '1px solid #e0e0e0',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        overflow: 'hidden',
+                    } }
+                >
+                    { /* SCROLLABLE ADMIN SIDEBAR TAB CONTENT */ }
+                    <div style={ { flex: 1, minHeight: 0, overflow: 'hidden' } }>
+                        <AdminSidebar
+                            mapDescription={ mapDescription }
+                            setMapDescription={ setMapDescription }
+                            mapType={ mapType }
+                            setMapType={ setMapType }
+                            locations={ locations }
+                            addLocation={ repeater.addLocation }
+                            removeLocation={ repeater.removeLocation }
+                            updateLocation={ repeater.updateLocation }
+                            addImageToLocation={ repeater.addImageToLocation }
+                            removeImageFromLocation={
+                                repeater.removeImageFromLocation
+                            }
+                            onUploadSuccess={ triggerMapRefresh }
+                            mapLogo={ mapLogo }
+                            setMapLogo={ setMapLogo }
+                            navBackground={ navBackground }
+                            setNavBackground={ setNavBackground }
+                            colorTheme={ colorTheme }
+                            setColorTheme={ setColorTheme }
+                            googleApiKey={ googleApiKey }
+                            setGoogleApiKey={ setGoogleApiKey }
+                            googleMapId={ googleMapId }
+                            setGoogleMapId={ setGoogleMapId }
+                            typographySettings={ typographySettings }
+                            updateTypography={ handleTypographyChange }
+                            resetTypography={ handleResetTypography }
+                        />
+                    </div>
+
+                    { /* STATIC ACTION FOOTER PINNED AT BOTTOM LEFT */ }
+                    <div
                         style={ {
-                            flex: '0 0 500px',
-                            borderRight: '1px solid #e0e0e0',
-                            height: '88vh',
+                            padding: '12px 20px',
+                            borderTop: '1px solid #e0e0e0',
+                            background: '#fcfcfc',
+                            flexShrink: 0,
+                            zIndex: 10,
                         } }
                     >
                         <div
                             style={ {
-                                height: '100%',
                                 display: 'flex',
-                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                boxSizing: 'border-box',
                             } }
                         >
-                            <div style={ { flex: 1, overflow: 'auto' } }>
-                                <AdminSidebar
-                                    mapDescription={ mapDescription }
-                                    setMapDescription={ setMapDescription }
-                                    mapType={ mapType }
-                                    setMapType={ setMapType }
-                                    locations={ locations }
-                                    addLocation={ repeater.addLocation }
-                                    removeLocation={ repeater.removeLocation }
-                                    updateLocation={ repeater.updateLocation }
-                                    addImageToLocation={
-                                        repeater.addImageToLocation
-                                    }
-                                    removeImageFromLocation={
-                                        repeater.removeImageFromLocation
-                                    }
-                                    onUploadSuccess={ triggerMapRefresh }
-                                    mapLogo={ mapLogo }
-                                    setMapLogo={ setMapLogo }
-                                    navBackground={ navBackground }
-                                    setNavBackground={ setNavBackground }
-                                    colorTheme={ colorTheme }
-                                    setColorTheme={ setColorTheme }
-                                    googleApiKey={ googleApiKey }
-                                    setGoogleApiKey={ setGoogleApiKey }
-                                    googleMapId={ googleMapId }
-                                    setGoogleMapId={ setGoogleMapId }
-                                    typographySettings={ typographySettings }
-                                    updateTypography={ handleTypographyChange }
-                                    resetTypography={ handleResetTypography }
-                                />
-                            </div>
-
-                            { /* ACTION FOOTER WITH DISCARD (LEFT) & SAVE (RIGHT) BUTTONS */ }
-                            <div
+                            { /* LEFT: DISCARD CHANGES */ }
+                            <Button
+                                variant="secondary"
+                                onClick={ () => setShowCancelModal( true ) }
+                                disabled={ ! isDirty || isSaving }
                                 style={ {
-                                    padding: '16px 24px',
-                                    borderTop: '1px solid #e0e0e0',
-                                    background: '#fcfcfc',
-                                } }
-                            >
-                                <div
-                                    style={ {
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        width: '100%',
-                                        boxSizing: 'border-box',
-                                    } }
-                                >
-                                    { /* LEFT: DISCARD CHANGES */ }
-                                    <Button
-                                        variant="secondary"
-                                        onClick={ () => setShowCancelModal( true ) }
-                                        disabled={ ! isDirty || isSaving }
-                                        style={ {
-                                            height: '40px',
-                                            padding: '0 20px',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap',
-                                            opacity: isDirty ? 1 : 0.4,
-                                            cursor: isDirty ? 'pointer' : 'default',
-                                            pointerEvents: isDirty ? 'auto' : 'none',
-                                        } }
-                                    >
-                                        { __( 'Discard Changes', TEXT_DOMAIN ) }
-                                    </Button>
-
-                                    { /* RIGHT: SAVE ALL CHANGES */ }
-                                    <Button
-                                        variant="primary"
-                                        onClick={ () => setShowConfirmModal( true ) }
-                                        isBusy={ isSaving }
-                                        disabled={ ! isDirty || isSaving }
-                                        style={ {
-                                            height: '40px',
-                                            padding: '0 24px',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            whiteSpace: 'nowrap',
-                                            opacity: isDirty ? 1 : 0.4,
-                                            cursor: isDirty ? 'pointer' : 'default',
-                                            pointerEvents: isDirty ? 'auto' : 'none',
-                                        } }
-                                    >
-                                        { isSaving
-                                            ? __( 'Saving...', TEXT_DOMAIN )
-                                            : __( 'Save All Changes', TEXT_DOMAIN ) }
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </FlexItem>
-
-                    { /* RIGHT PREVIEW MAP BLOCK SCREEN */ }
-                    <FlexItem
-                        style={ { flex: '1' } }
-                        key={ `map-wrapper-${ googleApiKey }-${ googleMapId }-${ refreshTrigger }` }
-                    >
-                        { isLoaded ? (
-                            <BawBabIMaps
-                                mapTypeProp={ mapType }
-                                locations={ locations }
-                                mapLogoProp={ mapLogo }
-                                navBackgroundProp={ navBackground }
-                                colorThemeProp={ colorTheme }
-                                apiKeyProp={ googleApiKey }
-                                mapIdProp={ googleMapId }
-                                selectedLocationProp={ {
-                                    properties: { typography: typographySettings },
-                                } }
-                            />
-                        ) : (
-                            <div
-                                style={ {
-                                    display: 'flex',
-                                    height: '100%',
+                                    height: '38px',
+                                    padding: '0 20px',
+                                    display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isDirty ? 1 : 0.4,
+                                    cursor: isDirty ? 'pointer' : 'default',
+                                    pointerEvents: isDirty ? 'auto' : 'none',
                                 } }
                             >
-                                <Spinner />
-                            </div>
-                        ) }
-                    </FlexItem>
-                </Flex>
-            </Panel>
+                                { __( 'Discard Changes', TEXT_DOMAIN ) }
+                            </Button>
+
+                            { /* RIGHT: SAVE ALL CHANGES */ }
+                            <Button
+                                variant="primary"
+                                onClick={ () => setShowConfirmModal( true ) }
+                                isBusy={ isSaving }
+                                disabled={ ! isDirty || isSaving }
+                                style={ {
+                                    height: '38px',
+                                    padding: '0 22px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isDirty ? 1 : 0.4,
+                                    cursor: isDirty ? 'pointer' : 'default',
+                                    pointerEvents: isDirty ? 'auto' : 'none',
+                                } }
+                            >
+                                { isSaving
+                                    ? __( 'Saving...', TEXT_DOMAIN )
+                                    : __( 'Save All Changes', TEXT_DOMAIN ) }
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                { /* RIGHT MAP PREVIEW CONTAINER (STATIC FULL HEIGHT) */ }
+                <div style={ { flex: 1, height: '100%', minHeight: 0, overflow: 'hidden' } }>
+                    { isLoaded ? (
+                        <BawBabIMaps
+                            mapTypeProp={ mapType }
+                            locations={ locations }
+                            mapLogoProp={ mapLogo }
+                            navBackgroundProp={ navBackground }
+                            colorThemeProp={ colorTheme }
+                            apiKeyProp={ googleApiKey }
+                            mapIdProp={ googleMapId }
+                            selectedLocationProp={ {
+                                properties: { typography: typographySettings },
+                            } }
+                        />
+                    ) : (
+                        <div
+                            style={ {
+                                display: 'flex',
+                                height: '100%',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            } }
+                        >
+                            <Spinner />
+                        </div>
+                    ) }
+                </div>
+            </div>
 
             { /* GENERIC CONFIRMATION MODAL */ }
             <ConfirmModal
