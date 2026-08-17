@@ -774,6 +774,7 @@ const SpatialDataEditorPage = () => {
                                         globalSchema={ schema }
                                         allFeatures={ features }
                                         updateSchemaKey={ updateSchemaKey }
+                                        onOpenSchema={ () => setActiveNavTab( 'schema' ) }
                                         updateDraft={ ( data, options ) =>
                                             updateDraft(
                                                 activeFeature.properties
