@@ -32,6 +32,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         isLoaded,
         isSaving,
         saveSettings,
+        refetchSettings, // Hook helper to restore saved state from REST API
     } = useMapSettings();
 
     const {
@@ -66,6 +67,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
     // Baseline snapshot for dirty-state detection
     const initialSnapshotRef = useRef( null );
+    const savedCredentialsRef = useRef( { apiKey: '', mapId: '' } );
     const [ isDirty, setIsDirty ] = useState( false );
 
     // Clean, normalized snapshot string function
@@ -96,6 +98,10 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
     useEffect( () => {
         if ( isLoaded && initialSnapshotRef.current === null ) {
             initialSnapshotRef.current = getSettingsSnapshot( settings );
+            savedCredentialsRef.current = {
+                apiKey: settings.googleApiKey || '',
+                mapId: settings.googleMapId || '',
+            };
         }
     }, [ isLoaded, settings ] );
 
@@ -157,6 +163,10 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
         if ( result.success ) {
             initialSnapshotRef.current = getSettingsSnapshot( settings );
+            savedCredentialsRef.current = {
+                apiKey: googleApiKey || '',
+                mapId: googleMapId || '',
+            };
             setIsDirty( false );
 
             if ( result.credentialsChanged ) {
@@ -185,9 +195,58 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         }
     };
 
-    const handleConfirmCancel = () => {
+    // DISCARD / CANCEL HANDLER
+    const handleConfirmCancel = async () => {
         setShowCancelModal( false );
-        window.location.reload();
+
+        // Check if user changed API key or Map ID prior to clicking discard
+        const credentialsTouched =
+            googleApiKey !== savedCredentialsRef.current.apiKey ||
+            googleMapId !== savedCredentialsRef.current.mapId;
+
+        if ( credentialsTouched ) {
+            createSuccessNotice(
+                __( 'Restoring map API credentials... Reloading page...', TEXT_DOMAIN ),
+                { type: 'snackbar' }
+            );
+            setTimeout( () => {
+                window.location.reload();
+            }, 500 );
+            return;
+        }
+
+        let restoredData = null;
+
+        // Restore clean data from REST API or fallback store
+        if ( typeof refetchSettings === 'function' ) {
+            restoredData = await refetchSettings();
+        } else {
+            restoredData = window.bawbinmapsSettings || {};
+            setMapDescription( restoredData.mapDescription || '' );
+            setMapType( restoredData.mapType || 'hybrid' );
+            setMapLogo( restoredData.mapLogo || '' );
+            setColorTheme( restoredData.colorTheme || 'blue' );
+            setNavBackground( restoredData.navBackground || '' );
+            setGoogleApiKey( restoredData.googleApiKey || '' );
+            setGoogleMapId( restoredData.googleMapId || '' );
+            setTypography( restoredData.typography || {} );
+        }
+
+        // Re-align snapshot baseline to the restored dataset and deactivate action buttons
+        const cleanState = restoredData || settings;
+        initialSnapshotRef.current = getSettingsSnapshot( cleanState );
+        setIsDirty( false );
+
+        if ( typeof onDirtyStateChange === 'function' ) {
+            onDirtyStateChange( false );
+        }
+
+        triggerMapRefresh();
+
+        createSuccessNotice(
+            __( 'Unsaved changes discarded.', TEXT_DOMAIN ),
+            { type: 'snackbar' }
+        );
     };
 
     return (
@@ -404,10 +463,10 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 isOpen={ showCancelModal }
                 title={ __( 'Discard Map Changes', TEXT_DOMAIN ) }
                 message={ __(
-                    'Are you sure you want to discard your unsaved modifications? The page will reload to restore your last saved configuration.',
+                    'Are you sure you want to discard your unsaved modifications?',
                     TEXT_DOMAIN
                 ) }
-                confirmLabel={ __( 'Discard & Reload', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Discard Changes', TEXT_DOMAIN ) }
                 onConfirm={ handleConfirmCancel }
                 onCancel={ () => setShowCancelModal( false ) }
             />
