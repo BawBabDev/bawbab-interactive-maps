@@ -43,26 +43,18 @@ class BWB_TinyMCE_Veditor_Button {
         return $buttons;
     }
 
-    public static function tinymce_button_styles() {
-        ?>
-        <style>
-            .mce-btn .mce-ico.mce-i-dashicons-location-alt,
-            .mce-btn .mce-ico.mce-i-dashicons-visibility {
-                font-family: dashicons !important; 
-                font-style: normal !important; 
-                font-weight: 400 !important; 
-                font-size: 18px !important; 
-                line-height: 1 !important; 
-                vertical-align: middle !important; 
-                -webkit-font-smoothing: antialiased;
-            }
-            .mce-btn .mce-ico.mce-i-dashicons-location-alt:before { content: "\f231" !important; }
-            .mce-btn .mce-ico.mce-i-dashicons-visibility:before { content: "\f177" !important; }
-            .mce-menubtn button span.mce-txt, 
-            .mce-menubtn button i.mce-ico { vertical-align: middle !important; display: inline-block !important; }
-            .mce-menubtn i.mce-caret { display: inline-block !important; vertical-align: middle !important; margin-top: -2px !important; margin-left: 4px !important; border-top-color: #50575e !important; }
-        </style>
-        <?php
+    public static function bwb_imaps_tinymce_button_styles( $hook ) {
+        // Only load on post/page editing screens to keep the dashboard lightweight
+        if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
+            return;
+        }
+
+        // Get the plugin base directory URL (stepping up two levels from /includes/integrations/)
+        $root_dir_url  = plugin_dir_url( dirname( __DIR__, 2 ) . '/bawbab-interactive-maps.php' );
+        $css_file_url  = $root_dir_url . 'assets/bwb-imaps-tinymce-btnstyles.css';
+
+        // Enqueue the external stylesheet safely
+        wp_enqueue_style('bawbin-maps-tinymce-btnstyles', $css_file_url,  array( 'dashicons' ), '1.0.0');
     }
 }
 
