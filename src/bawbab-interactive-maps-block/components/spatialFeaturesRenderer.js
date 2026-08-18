@@ -6,115 +6,122 @@ import Polygon from '../hooks/usePolygonHelper';
  * Wrapped in memo so un-hovered/un-selected polygons never re-render.
  */
 const SpatialFeatureItem = memo(
-	( {
-		feature,
-		formattedCoords,
-		isLayerVisible,
-		layerOpacityValue,
-		isSelected,
-		isHovered,
-		isSelectable,
-		isFloorMode,
-		isActiveFloorFeature,
-		baseLayerZIndex,
-		ACTIVE_FLOOR_Z_INDEX_BOOST,
-		onSelect,
-		onHoverStart,
-		onHoverEnd,
-	} ) => {
-		const { fid, layer_type, fill_color } = feature.properties;
+    ( {
+        feature,
+        formattedCoords,
+        isLayerVisible,
+        layerOpacityValue,
+        isSelected,
+        isHovered,
+        isSelectable,
+        isFloorMode,
+        isActiveFloorFeature,
+        baseLayerZIndex,
+        ACTIVE_FLOOR_Z_INDEX_BOOST,
+        onSelect,
+        onHoverStart,
+        onHoverEnd,
+    } ) => {
+        // Completely skip rendering if the layer is toggled off
+        if ( ! isLayerVisible ) {
+            return null;
+        }
 
-		const shouldHighlight = isSelected || isHovered;
-		const isForegroundFloorFeature = isFloorMode && isActiveFloorFeature;
-		const floorLayerZIndex = isForegroundFloorFeature
-			? baseLayerZIndex + ACTIVE_FLOOR_Z_INDEX_BOOST
-			: baseLayerZIndex;
-		const finalOpacity = isLayerVisible ? layerOpacityValue : 0.3;
+        const { fid, layer_type, fill_color } = feature.properties;
 
-		// Memoize options object to prevent Google Maps vector polygon thrashing
-		const options = useMemo(
-			() => ( {
-				zIndex:
-					shouldHighlight &&
-					( ! isFloorMode || isForegroundFloorFeature )
-						? floorLayerZIndex + 40
-						: floorLayerZIndex,
-				fillColor:
-					layer_type === 'parcels'
-						? 'transparent'
-						: fill_color || '#888888',
-				strokeColor: shouldHighlight
-					? '#ffff00'
-					: layer_type === 'parcels'
-					? '#000'
-					: layer_type === 'buildings'
-					? '#fff'
-					: 'transparent',
-				fillOpacity: finalOpacity,
-				strokeWeight: shouldHighlight
-					? 4
-					: layer_type === 'parcels'
-					? 1.5
-					: 0.4,
-				clickable:
-					isSelectable && ( ! isFloorMode || isActiveFloorFeature ),
-			} ),
-			[
-				shouldHighlight,
-				isFloorMode,
-				isForegroundFloorFeature,
-				floorLayerZIndex,
-				layer_type,
-				fill_color,
-				finalOpacity,
-				isSelectable,
-				isActiveFloorFeature,
-			]
-		);
+        const shouldHighlight = isSelected || isHovered;
+        const isForegroundFloorFeature = isFloorMode && isActiveFloorFeature;
+        const floorLayerZIndex = isForegroundFloorFeature
+            ? baseLayerZIndex + ACTIVE_FLOOR_Z_INDEX_BOOST
+            : baseLayerZIndex;
+        
+        // Exact opacity from slider when visible
+        const finalOpacity = layerOpacityValue;
 
-		const handleClick = useCallback( () => {
-			if ( isSelectable ) {
-				onSelect( feature, isSelectable );
-			}
-		}, [ feature, isSelectable, onSelect ] );
+        // Memoize options object to prevent Google Maps vector polygon thrashing
+        const options = useMemo(
+            () => ( {
+                zIndex:
+                    shouldHighlight &&
+                    ( ! isFloorMode || isForegroundFloorFeature )
+                        ? floorLayerZIndex + 40
+                        : floorLayerZIndex,
+                fillColor:
+                    layer_type === 'parcels'
+                        ? 'transparent'
+                        : fill_color || '#888888',
+                strokeColor: shouldHighlight
+                    ? '#ffff00'
+                    : layer_type === 'parcels'
+                    ? '#000'
+                    : layer_type === 'buildings'
+                    ? '#fff'
+                    : 'transparent',
+                fillOpacity: finalOpacity,
+                strokeWeight: shouldHighlight
+                    ? 4
+                    : layer_type === 'parcels'
+                    ? 1.5
+                    : 0.4,
+                clickable:
+                    isSelectable && ( ! isFloorMode || isActiveFloorFeature ),
+            } ),
+            [
+                shouldHighlight,
+                isFloorMode,
+                isForegroundFloorFeature,
+                floorLayerZIndex,
+                layer_type,
+                fill_color,
+                finalOpacity,
+                isSelectable,
+                isActiveFloorFeature,
+            ]
+        );
 
-		const handleMouseEnter = useCallback( () => {
-			if ( isSelectable ) {
-				onHoverStart( fid, layer_type );
-			}
-		}, [ isSelectable, fid, layer_type, onHoverStart ] );
+        const handleClick = useCallback( () => {
+            if ( isSelectable ) {
+                onSelect( feature, isSelectable );
+            }
+        }, [ feature, isSelectable, onSelect ] );
 
-		const polyProps = {
-			options,
-			onClick: handleClick,
-			onMouseEnter: handleMouseEnter,
-			onMouseLeave: onHoverEnd,
-		};
+        const handleMouseEnter = useCallback( () => {
+            if ( isSelectable ) {
+                onHoverStart( fid, layer_type );
+            }
+        }, [ isSelectable, fid, layer_type, onHoverStart ] );
 
-		const isMulti = feature.geometry?.type === 'MultiPolygon';
+        const polyProps = {
+            options,
+            onClick: handleClick,
+            onMouseEnter: handleMouseEnter,
+            onMouseLeave: onHoverEnd,
+        };
 
-		if ( isMulti ) {
-			return (
-				<>
-					{ formattedCoords.map( ( p, pi ) => (
-						<Polygon
-							key={ `poly-${ layer_type }-${ fid }-${ pi }` }
-							paths={ p }
-							{ ...polyProps }
-						/>
-					) ) }
-				</>
-			);
-		}
+        const isMulti = feature.geometry?.type === 'MultiPolygon';
 
-		return (
-			<Polygon
-				key={ `poly-${ layer_type }-${ fid }` }
-				paths={ formattedCoords }
-				{ ...polyProps }
-			/>
-		);
-	}
+        if ( isMulti ) {
+            return (
+                <>
+                    { formattedCoords.map( ( p, pi ) => (
+                        <Polygon
+                            key={ `poly-${ layer_type }-${ fid }-${ pi }` }
+                            paths={ p }
+                            { ...polyProps }
+                        />
+                    ) ) }
+                </>
+            );
+        }
+
+        return (
+            <Polygon
+                key={ `poly-${ layer_type }-${ fid }` }
+                paths={ formattedCoords }
+                { ...polyProps }
+            />
+        );
+    }
 );
 
 SpatialFeatureItem.displayName = 'SpatialFeatureItem';
@@ -123,183 +130,187 @@ SpatialFeatureItem.displayName = 'SpatialFeatureItem';
  * SpatialFeaturesRenderer Main Container
  */
 export const SpatialFeaturesRenderer = memo(
-	( {
-		spatialFeatures = [],
-		visibleLayers = {},
-		selectedLocation,
-		editMode = false,
-		hoveredFeature,
-		activeFloor = 0,
-		layerOpacity = {},
-		isFloorMode = false,
-		FLOOR_AWARE_LAYERS = [],
-		FLOOR_LAYER_Z_INDEX = {},
-		ACTIVE_FLOOR_Z_INDEX_BOOST = 50,
-		formatCoords,
-		setHoveredFeature,
-		setSelectedLocation,
-		setIsDrawerOpen,
-		setActiveNavigationPath,
-		setManualOriginNode,
-		onFeatureSelect,
-	} ) => {
-		// 1. Pre-calculate coordinate formatting and feature metadata in memory
-		const processedList = useMemo( () => {
-			return spatialFeatures
-				.map( ( feature ) => {
-					const props = feature.properties || {};
-					const fid = props.fid;
-					const layer_type = props.layer_type;
-					const floor = Number.parseInt( props.floor || 0, 10 );
-					const featureFloor = Number.isNaN( floor ) ? 0 : floor;
+    ( {
+        spatialFeatures = [],
+        visibleLayers = {},
+        selectedLocation,
+        editMode = false,
+        hoveredFeature,
+        activeFloor = 0,
+        layerOpacity = {},
+        isFloorMode = false,
+        FLOOR_AWARE_LAYERS = [],
+        FLOOR_LAYER_Z_INDEX = {},
+        ACTIVE_FLOOR_Z_INDEX_BOOST = 50,
+        formatCoords,
+        setHoveredFeature,
+        setSelectedLocation,
+        setIsDrawerOpen,
+        setActiveNavigationPath,
+        setManualOriginNode,
+        onFeatureSelect,
+    } ) => {
+        // 1. Pre-calculate coordinate formatting and feature metadata in memory
+        const processedList = useMemo( () => {
+            return spatialFeatures
+                .map( ( feature ) => {
+                    const props = feature.properties || {};
+                    const fid = props.fid;
+                    const layer_type = props.layer_type;
 
-					const isLayerVisible = Boolean(
-						visibleLayers[ layer_type ]
-					);
-					const isFloorAwareLayer =
-						FLOOR_AWARE_LAYERS.includes( layer_type );
-					const isGroundFloorFeature = featureFloor === 0;
-					const isActiveFloorFeature =
-						isFloorAwareLayer && featureFloor === activeFloor;
-					const shouldRenderFloorAwareFeature = ! isFloorAwareLayer
-						? true
-						: activeFloor === 0
-						? isGroundFloorFeature
-						: isGroundFloorFeature || isActiveFloorFeature;
+                    // FILTER 1: If layer is toggled OFF, drop it immediately
+                    const isLayerVisible = Boolean(
+                        visibleLayers[ layer_type ]
+                    );
+                    if ( ! isLayerVisible ) return null;
 
-					if ( ! shouldRenderFloorAwareFeature ) return null;
+                    const floor = Number.parseInt( props.floor || 0, 10 );
+                    const featureFloor = Number.isNaN( floor ) ? 0 : floor;
 
-					const coords = formatCoords(
-						feature.geometry?.coordinates
-					);
-					if ( ! coords || coords.length === 0 ) return null;
+                    const isFloorAwareLayer =
+                        FLOOR_AWARE_LAYERS.includes( layer_type );
+                    const isGroundFloorFeature = featureFloor === 0;
+                    const isActiveFloorFeature =
+                        isFloorAwareLayer && featureFloor === activeFloor;
+                    const shouldRenderFloorAwareFeature = ! isFloorAwareLayer
+                        ? true
+                        : activeFloor === 0
+                        ? isGroundFloorFeature
+                        : isGroundFloorFeature || isActiveFloorFeature;
 
-					// Check if feature is marked interactive in database (0/false means non-interactive)
-					const isInteractiveFlag =
-						props.is_interactive !== false &&
-						props.is_interactive !== 0 &&
-						props.is_interactive !== '0';
-					const hasContent = Boolean(
-						props.name ||
-							props.description ||
-							( props.wp_page_id &&
-								parseInt( props.wp_page_id, 10 ) > 0 ) ||
-							( props.gallery && props.gallery.length > 0 )
-					);
+                    // FILTER 2: Floor visibility check
+                    if ( ! shouldRenderFloorAwareFeature ) return null;
 
-					// In editMode, non-interactive features can be selected via the sidebar, but on map hover/click they strictly respect is_interactive
-					const isSelectable =
-						layer_type !== 'parcels' &&
-						layer_type !== 'paths' &&
-						isInteractiveFlag &&
-						( hasContent || editMode );
+                    const coords = formatCoords(
+                        feature.geometry?.coordinates
+                    );
+                    if ( ! coords || coords.length === 0 ) return null;
 
-					return {
-						feature,
-						coords,
-						fid,
-						layer_type,
-						featureFloor,
-						isLayerVisible,
-						isActiveFloorFeature,
-						isSelectable,
-						baseLayerZIndex:
-							FLOOR_LAYER_Z_INDEX[ layer_type ] ?? 30,
-						layerOpacityValue: layerOpacity[ layer_type ] ?? 0.5,
-					};
-				} )
-				.filter( Boolean );
-		}, [
-			spatialFeatures,
-			visibleLayers,
-			activeFloor,
-			FLOOR_AWARE_LAYERS,
-			FLOOR_LAYER_Z_INDEX,
-			layerOpacity,
-			formatCoords,
-			editMode,
-		] );
+                    // Check if feature is marked interactive in database
+                    const isInteractiveFlag =
+                        props.is_interactive !== false &&
+                        props.is_interactive !== 0 &&
+                        props.is_interactive !== '0';
+                    const hasContent = Boolean(
+                        props.name ||
+                            props.description ||
+                            ( props.wp_page_id &&
+                                parseInt( props.wp_page_id, 10 ) > 0 ) ||
+                            ( props.gallery && props.gallery.length > 0 )
+                    );
 
-		// 2. Stable selection and hover callbacks
-		const handleSelect = useCallback(
-			( feature, isSelectable ) => {
-				if ( isSelectable ) {
-					setSelectedLocation( {
-						...feature.properties,
-						geometry: feature.geometry,
-					} );
-					setIsDrawerOpen( true );
-					setActiveNavigationPath( null );
-					setManualOriginNode( null );
-					onFeatureSelect?.( feature );
-				} else {
-					setSelectedLocation( null );
-					setIsDrawerOpen( false );
-					setActiveNavigationPath( null );
-					setManualOriginNode( null );
-				}
-			},
-			[
-				setSelectedLocation,
-				setIsDrawerOpen,
-				setActiveNavigationPath,
-				setManualOriginNode,
-				onFeatureSelect,
-			]
-		);
+                    const isSelectable =
+                        layer_type !== 'parcels' &&
+                        layer_type !== 'paths' &&
+                        isInteractiveFlag &&
+                        ( hasContent || editMode );
 
-		const handleHoverStart = useCallback(
-			( fid, layer_type ) => {
-				setHoveredFeature( { fid, layer_type } );
-			},
-			[ setHoveredFeature ]
-		);
+                    return {
+                        feature,
+                        coords,
+                        fid,
+                        layer_type,
+                        featureFloor,
+                        isLayerVisible,
+                        isActiveFloorFeature,
+                        isSelectable,
+                        baseLayerZIndex:
+                            FLOOR_LAYER_Z_INDEX[ layer_type ] ?? 30,
+                        layerOpacityValue: layerOpacity[ layer_type ] ?? 0.5,
+                    };
+                } )
+                .filter( Boolean );
+        }, [
+            spatialFeatures,
+            visibleLayers,
+            activeFloor,
+            FLOOR_AWARE_LAYERS,
+            FLOOR_LAYER_Z_INDEX,
+            layerOpacity,
+            formatCoords,
+            editMode,
+        ] );
 
-		const handleHoverEnd = useCallback( () => {
-			setHoveredFeature( null );
-		}, [ setHoveredFeature ] );
+        // 2. Stable selection and hover callbacks
+        const handleSelect = useCallback(
+            ( feature, isSelectable ) => {
+                if ( isSelectable ) {
+                    setSelectedLocation( {
+                        ...feature.properties,
+                        geometry: feature.geometry,
+                    } );
+                    setIsDrawerOpen( true );
+                    setActiveNavigationPath( null );
+                    setManualOriginNode( null );
+                    onFeatureSelect?.( feature );
+                } else {
+                    setSelectedLocation( null );
+                    setIsDrawerOpen( false );
+                    setActiveNavigationPath( null );
+                    setManualOriginNode( null );
+                }
+            },
+            [
+                setSelectedLocation,
+                setIsDrawerOpen,
+                setActiveNavigationPath,
+                setManualOriginNode,
+                onFeatureSelect,
+            ]
+        );
 
-		return (
-			<>
-				{ processedList.map( ( item ) => {
-					const { feature, coords, fid, layer_type } = item;
+        const handleHoverStart = useCallback(
+            ( fid, layer_type ) => {
+                setHoveredFeature( { fid, layer_type } );
+            },
+            [ setHoveredFeature ]
+        );
 
-					// Fast string checks for selection and hover states
-					const isSelected =
-						selectedLocation &&
-						String( selectedLocation.fid ) === String( fid ) &&
-						selectedLocation.layer_type === layer_type;
-					const isHovered =
-						item.isSelectable &&
-						hoveredFeature &&
-						String( hoveredFeature.fid ) === String( fid ) &&
-						hoveredFeature.layer_type === layer_type;
+        const handleHoverEnd = useCallback( () => {
+            setHoveredFeature( null );
+        }, [ setHoveredFeature ] );
 
-					return (
-						<SpatialFeatureItem
-							key={ `feat-${ layer_type }-${ fid }` }
-							feature={ feature }
-							formattedCoords={ coords }
-							isLayerVisible={ item.isLayerVisible }
-							layerOpacityValue={ item.layerOpacityValue }
-							isSelected={ isSelected }
-							isHovered={ isHovered }
-							isSelectable={ item.isSelectable }
-							isFloorMode={ isFloorMode }
-							isActiveFloorFeature={ item.isActiveFloorFeature }
-							baseLayerZIndex={ item.baseLayerZIndex }
-							ACTIVE_FLOOR_Z_INDEX_BOOST={
-								ACTIVE_FLOOR_Z_INDEX_BOOST
-							}
-							onSelect={ handleSelect }
-							onHoverStart={ handleHoverStart }
-							onHoverEnd={ handleHoverEnd }
-						/>
-					);
-				} ) }
-			</>
-		);
-	}
+        return (
+            <>
+                { processedList.map( ( item ) => {
+                    const { feature, coords, fid, layer_type } = item;
+
+                    // Fast string checks for selection and hover states
+                    const isSelected =
+                        selectedLocation &&
+                        String( selectedLocation.fid ) === String( fid ) &&
+                        selectedLocation.layer_type === layer_type;
+                    const isHovered =
+                        item.isSelectable &&
+                        hoveredFeature &&
+                        String( hoveredFeature.fid ) === String( fid ) &&
+                        hoveredFeature.layer_type === layer_type;
+
+                    return (
+                        <SpatialFeatureItem
+                            key={ `feat-${ layer_type }-${ fid }` }
+                            feature={ feature }
+                            formattedCoords={ coords }
+                            isLayerVisible={ item.isLayerVisible }
+                            layerOpacityValue={ item.layerOpacityValue }
+                            isSelected={ isSelected }
+                            isHovered={ isHovered }
+                            isSelectable={ item.isSelectable }
+                            isFloorMode={ isFloorMode }
+                            isActiveFloorFeature={ item.isActiveFloorFeature }
+                            baseLayerZIndex={ item.baseLayerZIndex }
+                            ACTIVE_FLOOR_Z_INDEX_BOOST={
+                                ACTIVE_FLOOR_Z_INDEX_BOOST
+                            }
+                            onSelect={ handleSelect }
+                            onHoverStart={ handleHoverStart }
+                            onHoverEnd={ handleHoverEnd }
+                        />
+                    );
+                } ) }
+            </>
+        );
+    }
 );
 
 SpatialFeaturesRenderer.displayName = 'SpatialFeaturesRenderer';
