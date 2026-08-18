@@ -9,96 +9,112 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sanitizes global settings changes and protects core string types
+ * Field-by-field sanitization callback for registered settings options
+ * Complies strictly with WordPress.org Plugin Review Guidelines.
+ *
+ * @param array $input Raw input payload from admin panel or REST API.
+ * @return array Thoroughly sanitized settings payload.
  */
 function bawbin_maps_sanitize_global_settings( $input ) {
     if ( ! is_array( $input ) ) {
         return array();
     }
 
-    // Ensure all string fields are valid strings
-    $string_fields = array( 
-        'mapDescription', 
-        'mapType', 
-        'mapLogo', 
-        'colorTheme', 
-        'navBackground', 
-        'googleApiKey', 
-        'googleMapId' 
-    );
+    $sanitized = array();
 
-    foreach ( $string_fields as $field ) {
-        if ( isset( $input[ $field ] ) ) {
-            if ( is_array( $input[ $field ] ) || is_object( $input[ $field ] ) ) {
-                $input[ $field ] = isset( $input[ $field ]['url'] ) ? (string) $input[ $field ]['url'] : '';
-            } else {
-                $input[ $field ] = (string) $input[ $field ];
-            }
+    // 1. Text & Key Fields (sanitize_text_field & sanitize_key)
+    $sanitized['mapDescription'] = isset( $input['mapDescription'] ) ? sanitize_text_field( $input['mapDescription'] ) : '';
+    $sanitized['mapType']        = isset( $input['mapType'] ) ? sanitize_key( $input['mapType'] ) : 'hybrid';
+    $sanitized['colorTheme']     = isset( $input['colorTheme'] ) ? sanitize_key( $input['colorTheme'] ) : 'blue';
+    $sanitized['googleApiKey']   = isset( $input['googleApiKey'] ) ? sanitize_text_field( $input['googleApiKey'] ) : '';
+    $sanitized['googleMapId']    = isset( $input['googleMapId'] ) ? sanitize_text_field( $input['googleMapId'] ) : '';
+
+    // 2. URL / Image Media Fields (esc_url_raw)
+    if ( isset( $input['mapLogo'] ) ) {
+        if ( is_array( $input['mapLogo'] ) && isset( $input['mapLogo']['url'] ) ) {
+            $sanitized['mapLogo'] = esc_url_raw( $input['mapLogo']['url'] );
+        } elseif ( is_string( $input['mapLogo'] ) ) {
+            $sanitized['mapLogo'] = esc_url_raw( $input['mapLogo'] );
         } else {
-            $input[ $field ] = '';
+            $sanitized['mapLogo'] = '';
         }
+    } else {
+        $sanitized['mapLogo'] = '';
     }
 
-    if ( ! isset( $input['categoryConfig'] ) || ! is_array( $input['categoryConfig'] ) ) {
-        $input['categoryConfig'] = array(
+    if ( isset( $input['navBackground'] ) ) {
+        if ( is_array( $input['navBackground'] ) && isset( $input['navBackground']['url'] ) ) {
+            $sanitized['navBackground'] = esc_url_raw( $input['navBackground']['url'] );
+        } elseif ( is_string( $input['navBackground'] ) ) {
+            $sanitized['navBackground'] = esc_url_raw( $input['navBackground'] );
+        } else {
+            $sanitized['navBackground'] = '';
+        }
+    } else {
+        $sanitized['navBackground'] = '';
+    }
+
+    // 3. Category Configuration (Deep Recursive Array Sanitization)
+    if ( isset( $input['categoryConfig'] ) && is_array( $input['categoryConfig'] ) ) {
+        $sanitized['categoryConfig'] = map_deep( $input['categoryConfig'], 'sanitize_text_field' );
+    } else {
+        $sanitized['categoryConfig'] = array(
             'groups'      => array(),
             'categoryMap' => array(),
         );
     }
 
-    if ( ! isset( $input['attribute_schema'] ) || ! is_array( $input['attribute_schema'] ) ) {
-        $input['attribute_schema'] = array();
+    // 4. Attribute Schema Array (Deep Recursive Sanitization)
+    if ( isset( $input['attribute_schema'] ) && is_array( $input['attribute_schema'] ) ) {
+        $sanitized['attribute_schema'] = map_deep( $input['attribute_schema'], 'sanitize_text_field' );
+    } else {
+        $sanitized['attribute_schema'] = array();
     }
 
-    if ( ! isset( $input['locations'] ) || ! is_array( $input['locations'] ) ) {
-        $input['locations'] = array();
+    // 5. Locations Array (Deep Recursive Sanitization)
+    if ( isset( $input['locations'] ) && is_array( $input['locations'] ) ) {
+        $sanitized['locations'] = map_deep( $input['locations'], 'sanitize_text_field' );
+    } else {
+        $sanitized['locations'] = array();
     }
 
-    // Sanitize Typography Configuration
+    // 6. Typography Array (Strict Typed Sanitization)
+    $default_typography = array(
+        'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+        'legendHeaderFontSize'  => 13,
+        'legendSectionFontSize' => 10,
+        'legendItemFontSize'    => 11,
+        'drawerTitleFontSize'   => 28,
+        'drawerBodyFontSize'    => 14,
+        'controlsFontSize'      => 13,
+    );
+
     if ( isset( $input['typography'] ) && is_array( $input['typography'] ) ) {
         $sanitized_typo = array();
-        $defaults       = array(
-            'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-            'legendHeaderFontSize'  => 13,
-            'legendSectionFontSize' => 10,
-            'legendItemFontSize'    => 11,
-            'drawerTitleFontSize'   => 2.0,
-            'drawerBodyFontSize'    => 1.1,
-            'controlsFontSize'      => 13,
-        );
 
-        foreach ( $defaults as $key => $default_val ) {
-            if ( isset( $input['typography'][ $key ] ) ) {
-                if ( 'fontFamily' === $key ) {
-                    $sanitized_typo[ $key ] = sanitize_text_field( $input['typography'][ $key ] );
-                } elseif ( strpos( $key, 'drawer' ) !== false ) {
-                    $sanitized_typo[ $key ] = (float) $input['typography'][ $key ];
-                } else {
-                    $sanitized_typo[ $key ] = (int) $input['typography'][ $key ];
-                }
+        foreach ( $input['typography'] as $key => $val ) {
+            $safe_key = sanitize_key( $key );
+
+            if ( 'fontFamily' === $safe_key ) {
+                $sanitized_typo[ $safe_key ] = sanitize_text_field( $val );
+            } elseif ( is_numeric( $val ) ) {
+                $sanitized_typo[ $safe_key ] = ( strpos( (string) $val, '.' ) !== false ) ? (float) $val : (int) $val;
             } else {
-                $sanitized_typo[ $key ] = $default_val;
+                $sanitized_typo[ $safe_key ] = sanitize_text_field( $val );
             }
         }
-        $input['typography'] = $sanitized_typo;
+
+        $sanitized['typography'] = wp_parse_args( $sanitized_typo, $default_typography );
     } else {
-        $input['typography'] = array(
-            'fontFamily'            => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-            'legendHeaderFontSize'  => 13,
-            'legendSectionFontSize' => 10,
-            'legendItemFontSize'    => 11,
-            'drawerTitleFontSize'   => 2.0,
-            'drawerBodyFontSize'    => 1.1,
-            'controlsFontSize'      => 13,
-        );
+        $sanitized['typography'] = $default_typography;
     }
 
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_print_r
-        error_log( '[BWB iMaps Options Sanitizer] Processed option payload: ' . print_r( $input, true ) );
+        error_log( '[BAWBIN Maps Options Sanitizer] Successfully sanitized payload.' );
     }
 
-    return $input;
+    return $sanitized;
 }
 
 /**
@@ -157,7 +173,7 @@ function bawbin_maps_register_global_settings() {
                     ),
                 ),
             ),
-            'default' => array(
+            'default'           => array(
                 'mapDescription'   => 'Bawbab Interactive Maps',
                 'mapType'          => 'hybrid',
                 'mapLogo'          => '',
@@ -176,8 +192,8 @@ function bawbin_maps_register_global_settings() {
                     'legendHeaderFontSize'  => 13,
                     'legendSectionFontSize' => 10,
                     'legendItemFontSize'    => 11,
-                    'drawerTitleFontSize'   => 2.0,
-                    'drawerBodyFontSize'    => 1.1,
+                    'drawerTitleFontSize'   => 28,
+                    'drawerBodyFontSize'    => 14,
                     'controlsFontSize'      => 13,
                 ),
             ),

@@ -11,8 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class BAWBIN_Maps_Smart_DB_Migrator {
 
     /**
-     * Target schema version string. 
-     * Bump this value whenever you add new columns or modify constraints inside our modular table files.
+     * Target schema version string.
      */
     private static $schema_version = '0.7.0';
 
@@ -24,18 +23,22 @@ class BAWBIN_Maps_Smart_DB_Migrator {
     }
 
     /**
-     * Examines current version records and triggers upgrades sequentially without erasing table structures
+     * Examines current version records and triggers upgrades sequentially
      */
     public static function bawbin_maps_smart_schema_upgrade() {
-        // Safe lock: Only allow authorized operations inside the WordPress administration area
         if ( ! is_admin() ) {
             return;
         }
 
-        $stored_version = get_option( 'bawbin_maps_maps_version_db_version', '0.0.0' );
+        // Check for legacy db version flags if new version flag isn't set yet
+        $stored_version = get_option( 'bawbin_maps_maps_version_db_version', null );
+        if ( false === $stored_version || null === $stored_version ) {
+            $stored_version = get_option( 'bwb_maps_version_db_version', get_option( 'bawb_maps_version_db_version', '0.0.0' ) );
+        }
 
-        // If stored version is older than target schema version, execute upgrades
+        // Trigger migration if stored version is older than current schema target
         if ( version_compare( $stored_version, self::$schema_version, '<' ) ) {
+            self::bawbin_maps_migrate_legacy_prefixes();
             self::bawbin_maps_run_modular_activations();
             self::bawbin_maps_migrate_legacy_columns_to_json();
             self::bawbin_maps_migrate_legacy_types_to_dual_counter();
@@ -45,35 +48,88 @@ class BAWBIN_Maps_Smart_DB_Migrator {
     }
 
     /**
-     * Executes our modular tables routine systematically
+     * Safely renames legacy DB tables and transfers options to the new prefix
+     */
+    private static function bawbin_maps_migrate_legacy_prefixes() {
+        global $wpdb;
+
+        // 1. Array of legacy table suffixes to migrate to new prefix
+        $tables_to_migrate = array(
+            'general_spatial_data',
+            'nav_entries',
+            'nav_network',
+        );
+
+        $legacy_prefixes = array(
+            $wpdb->prefix . 'bwb_maps_',
+            $wpdb->prefix . 'bawb_maps_',
+            $wpdb->prefix . 'bwb_',
+        );
+
+        foreach ( $tables_to_migrate as $table_suffix ) {
+            $new_table_name = $wpdb->prefix . 'bawbin_maps_' . $table_suffix;
+
+            // Check if target table already exists
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $new_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new_table_name ) );
+
+            if ( $new_table_exists === $new_table_name ) {
+                continue;
+            }
+
+            // Search for existing legacy tables and rename them
+            foreach ( $legacy_prefixes as $legacy_prefix ) {
+                $old_table_name = $legacy_prefix . $table_suffix;
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $old_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table_name ) );
+
+                if ( $old_table_exists === $old_table_name ) {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+                    $wpdb->query( "RENAME TABLE {$old_table_name} TO {$new_table_name}" );
+                    break;
+                }
+            }
+        }
+
+        // 2. Transfer legacy option settings if new options don't exist yet
+        if ( false === get_option( 'bawbin_maps_options_data', false ) ) {
+            $legacy_options = array( 'bwb_maps_options_data', 'bawb_maps_options_data', 'bwb_options_data' );
+            foreach ( $legacy_options as $legacy_opt ) {
+                $old_data = get_option( $legacy_opt, false );
+                if ( false !== $old_data ) {
+                    update_option( 'bawbin_maps_options_data', $old_data );
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Executes modular table creation scripts
      */
     private static function bawbin_maps_run_modular_activations() {
-        // Trigger General Spatial Table Migration Engine
         if ( function_exists( 'bawbin_maps_create_general_spatial_dbtable' ) ) {
             bawbin_maps_create_general_spatial_dbtable();
         }
 
-        // Trigger Navigation Entries Table Migration Engine
         if ( function_exists( 'bawbin_maps_create_nav_entries_dbtable' ) ) {
             bawbin_maps_create_nav_entries_dbtable();
         }
 
-        // Trigger Navigation Network Table Migration Engine
         if ( function_exists( 'bawbin_maps_create_nav_network_dbtable' ) ) {
             bawbin_maps_create_nav_network_dbtable();
         }
     }
 
     /**
-     * Converts legacy table columns (sq_ft, baths, fireplace, sunroom) into
-     * custom_attributes JSON keys and registers them in attribute_schema options.
+     * Converts legacy table columns into custom_attributes JSON keys
      */
     private static function bawbin_maps_migrate_legacy_columns_to_json() {
         global $wpdb;
 
         $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
 
-        // 1. Inspect physically existing columns in MySQL
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $existing_columns = $wpdb->get_col( "DESCRIBE {$table_spatial}", 0 );
         if ( empty( $existing_columns ) ) {
@@ -83,7 +139,6 @@ class BAWBIN_Maps_Smart_DB_Migrator {
         $legacy_fields   = array( 'sq_ft', 'baths', 'fireplace', 'sunroom' );
         $keys_to_migrate = array_intersect( $legacy_fields, $existing_columns );
 
-        // 2. Safely merge existing column values into custom_attributes JSON
         if ( ! empty( $keys_to_migrate ) ) {
             foreach ( $keys_to_migrate as $key ) {
                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -112,7 +167,6 @@ class BAWBIN_Maps_Smart_DB_Migrator {
             }
         }
 
-        // 3. Register legacy keys into option array attribute_schema
         $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) 
             ? $settings['attribute_schema'] 
@@ -160,13 +214,11 @@ class BAWBIN_Maps_Smart_DB_Migrator {
             update_option( 'bawbin_maps_options_data', $settings );
         }
 
-        // 4. Purge cached GeoJSON collections to reflect changes immediately
         wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
     }
 
     /**
-     * Converts any schema items registered under legacy 'bathrooms' type
-     * to the generic 'dual_counter' type and updates icon pairs if needed.
+     * Converts legacy types to dual_counter
      */
     private static function bawbin_maps_migrate_legacy_types_to_dual_counter() {
         $settings = get_option( 'bawbin_maps_options_data', array() );
@@ -181,13 +233,11 @@ class BAWBIN_Maps_Smart_DB_Migrator {
         $has_changes = false;
 
         foreach ( $schema as &$item ) {
-            // Convert 'bathrooms' type to 'dual_counter'
             if ( isset( $item['type'] ) && 'bathrooms' === $item['type'] ) {
                 $item['type'] = 'dual_counter';
                 $has_changes  = true;
             }
 
-            // Ensure dual counter items have dual icon pairs (e.g. 'shower,sink')
             if ( isset( $item['type'] ) && 'dual_counter' === $item['type'] ) {
                 if ( empty( $item['icon'] ) || false === strpos( $item['icon'], ',' ) ) {
                     $item['icon'] = ! empty( $item['icon'] ) ? $item['icon'] . ',sink' : 'shower,sink';
