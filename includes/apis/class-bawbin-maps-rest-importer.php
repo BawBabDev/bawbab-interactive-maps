@@ -1,30 +1,30 @@
 <?php
 /**
  * GEOJSON FILE INSPECTION & DATA IMPORT REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-importer.php
+ * File: includes/apis/class-bawbin-maps-rest-importer.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Importer {
+class  BAWBIN_Maps_REST_Importer {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/inspect-geojson', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_inspect_geojson' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_inspect_geojson' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
 
         register_rest_route( $namespace, '/spatial-data-importer', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_spatial_geojson_import' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_spatial_geojson_import' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
-    public static function handle_inspect_geojson( $request ) {
+    public static function bawbin_maps_handle_inspect_geojson( $request ) {
         $files = $request->get_file_params();
         if ( empty( $files['geojson_file'] ) ) {
             return new WP_Error( 'no_file', 'No file found.', array( 'status' => 400 ) );
@@ -59,11 +59,11 @@ class BWB_IMaps_REST_Importer {
         ), 200 );
     }
 
-    public static function handle_spatial_geojson_import( $request ) {
+    public static function bawbin_maps_handle_spatial_geojson_import( $request ) {
         global $wpdb;
 
-        if ( function_exists( 'bwb_create_general_spatial_dbtable' ) ) {
-            bwb_create_general_spatial_dbtable();
+        if ( function_exists( 'bawbin_maps_create_general_spatial_dbtable' ) ) {
+            bawbin_maps_create_general_spatial_dbtable();
         }
 
         $files = $request->get_file_params();
@@ -90,7 +90,7 @@ class BWB_IMaps_REST_Importer {
             }
         }
 
-        BWB_IMaps_REST_Attributes::sync_custom_keys_to_schema( $imported_custom_keys );
+        BAWBIN_Maps_REST_Attributes::bawbin_maps_sync_custom_keys_to_schema( $imported_custom_keys );
 
         $data = json_decode( file_get_contents( $files['geojson_file']['tmp_name'] ), true );
 
@@ -112,7 +112,7 @@ class BWB_IMaps_REST_Importer {
         switch ( $layer_type ) {
 
             case 'entries':
-                $table_name = $wpdb->prefix . 'bwb_nav_entries_data';
+                $table_name = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
                 foreach ( $data['features'] as $feature ) {
                     $props   = $feature['properties'] ?? array();
                     $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
@@ -140,7 +140,7 @@ class BWB_IMaps_REST_Importer {
                 break;
 
             case 'network':
-                $table_name = $wpdb->prefix . 'bwb_nav_network_data';
+                $table_name = $wpdb->prefix . 'bawbin_maps__nav_network_data';
                 foreach ( $data['features'] as $feature ) {
                     $props   = $feature['properties'] ?? array();
                     $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
@@ -169,7 +169,7 @@ class BWB_IMaps_REST_Importer {
                 break;
 
             default:
-                $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+                $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
                 $mapped_source_keys = array_filter( array_values( $field_mapping ) );
 
                 foreach ( $data['features'] as $feature ) {
@@ -202,7 +202,7 @@ class BWB_IMaps_REST_Importer {
                         }
                     }
 
-                    list( $calc_lat, $calc_lng ) = self::compute_centroid_from_geom( $feature['geometry'] ?? array() );
+                    list( $calc_lat, $calc_lng ) = self::bawbin_maps_compute_centroid_from_geom( $feature['geometry'] ?? array() );
 
                     $lat_mapped = $field_mapping['lat'] ?? null;
                     if ( '__AUTO_COMPUTE__' === $lat_mapped ) {
@@ -276,7 +276,7 @@ class BWB_IMaps_REST_Importer {
         }
 
         if ( ! empty( $discovered_category_colors ) ) {
-            BWB_IMaps_REST_Categories::sync_imported_categories_to_config( $discovered_category_colors );
+            BAWBIN_Maps_REST_Categories::bawbin_maps_sync_imported_categories_to_config( $discovered_category_colors );
         }
 
         if ( ! empty( $imported_fids ) ) {
@@ -297,8 +297,8 @@ class BWB_IMaps_REST_Importer {
             }
         }
 
-        wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_navigation_graph_data', 'bawbin_maps_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array( 
             'success'  => true, 
@@ -307,7 +307,7 @@ class BWB_IMaps_REST_Importer {
         ), 200 );
     }
 
-    private static function compute_centroid_from_geom( $geometry ) {
+    private static function bawbin_maps_compute_centroid_from_geom( $geometry ) {
         if ( empty( $geometry['coordinates'] ) ) return array( null, null );
         
         $coords = $geometry['coordinates'];

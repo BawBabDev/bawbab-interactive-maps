@@ -19,7 +19,7 @@ export const MAX_MAP_TILT = 90;
 export const OVERLAY_PAD = 0.05;
 
 export const SPATIAL_DATA_ENDPOINT =
-	'/wp-json/bwb-imaps-federated-api/v1/get-spatial-data';
+	'/wp-json/bawbin-maps-federated-api/v1/get-spatial-data';
 
 /**
  * Normalizes properties across map layers and assigns functional metadata flags

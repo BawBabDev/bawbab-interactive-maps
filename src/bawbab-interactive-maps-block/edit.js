@@ -51,7 +51,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		// Use apiFetch to get the global settings object
 		apiFetch( { path: '/wp/v2/settings' } )
 			.then( ( response ) => {
-				const data = response.bwb_imaps_options_data;
+				const data = response.bawbin_maps_options_data;
 				if ( data ) {
 					setSettingsData( data );
 				}

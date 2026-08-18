@@ -1,32 +1,32 @@
 <?php
 /**
  * Isolated Class Manager for Plugin Shortcodes
- * File location: /includes/shortcodes/class-bwb-imap-shortcode.php
+ * File location: /includes/shortcodes/class-bawbin-maps-shortcode.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-class BWB_Imap_Shortcode {
+class BAWBIN_Maps_Shortcode {
 
     /**
      * Initializes and binds shortcode hooks to WordPress core
      */
     public static function init() {
-        add_shortcode( 'map', array( __CLASS__, 'render_map_shortcode' ) );
-        add_shortcode( 'interactive_map', array( __CLASS__, 'render_map_shortcode' ) );
-        add_shortcode( 'bawbab_map', array( __CLASS__, 'render_map_shortcode' ) );
-        add_shortcode( 'map_include', array( __CLASS__, 'map_include_shortcode' ) );
-        add_shortcode( 'map_exclude', array( __CLASS__, 'map_exclude_shortcode' ) );
+        add_shortcode( 'map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
+        add_shortcode( 'interactive_map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
+        add_shortcode( 'bawbab_map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
+        add_shortcode( 'map_include', array( __CLASS__, 'bawbin_maps_map_include_shortcode' ) );
+        add_shortcode( 'map_exclude', array( __CLASS__, 'bawbin_maps_map_exclude_shortcode' ) );
 
-        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_frontend_assets' ) );
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'bawbin_maps_register_frontend_assets' ) );
     }
 
     /**
      * Registers frontend script handles so wp_enqueue_script() can resolve them
      */
-    public static function register_frontend_assets() {
+    public static function bawbin_maps_register_frontend_assets() {
         $root_dir_path = dirname( __DIR__, 2 ) . '/';
         $root_dir_url  = plugin_dir_url( dirname( __DIR__, 2 ) . '/bawbab-interactive-maps.php' );
 
@@ -73,21 +73,21 @@ class BWB_Imap_Shortcode {
     /**
      * Renders the primary interactive map shortcode canvas wrapper
      */
-    public static function render_map_shortcode( $atts ) {
+    public static function bawbin_maps_render_map_shortcode( $atts ) {
         $atts = shortcode_atts( array(
             'height' => '650px',
         ), $atts, 'map' );
 
         // Ensure scripts and styles are enqueued
-        wp_enqueue_script( 'bwb-map-frontend-view' );
-        wp_enqueue_style( 'bwb-map-styles' );
+        wp_enqueue_script( 'bawbin-maps-frontend-view' );
+        wp_enqueue_style( 'bawbin-maps-styles' );
 
         // Inject global map settings into window scope for the frontend viewer
-        $map_settings = get_option( 'bwb_imaps_options_data', get_option( 'foulkeways_map_data', array() ) );
+        $map_settings = get_option( 'bawbin_maps_options_data', get_option( 'foulkeways_map_data', array() ) );
         if ( ! empty( $map_settings ) ) {
             wp_add_inline_script(
-                'bwb-map-frontend-view',
-                'window.bwbimapsSettings = ' . wp_json_encode( $map_settings ) . '; window.foulkewaysSettings = ' . wp_json_encode( $map_settings ) . ';',
+                'bawbin-maps-frontend-view',
+                'window.bawbinmapsSettings = ' . wp_json_encode( $map_settings ) . '; window.foulkewaysSettings = ' . wp_json_encode( $map_settings ) . ';',
                 'before'
             );
         }
@@ -102,17 +102,17 @@ class BWB_Imap_Shortcode {
     /**
      * Handles map inclusions container markup block wrapper
      */
-    public static function map_include_shortcode( $atts, $content = null ) {
+    public static function bawbin_maps_map_include_shortcode( $atts, $content = null ) {
         return '<div class="map-include map-sidebar-content">' . do_shortcode( $content ) . '</div>';
     }
 
     /**
      * Handles map exclusions container markup block wrapper
      */
-    public static function map_exclude_shortcode( $atts, $content = null ) {
+    public static function bawbin_maps_map_exclude_shortcode( $atts, $content = null ) {
         return '<div class="map-exclude">' . do_shortcode( $content ) . '</div>';
     }
 }
 
 // Activate shortcode hooks
-BWB_Imap_Shortcode::init();
+BAWBIN_Maps_Shortcode::init();

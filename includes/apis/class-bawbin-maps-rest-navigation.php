@@ -1,24 +1,24 @@
 <?php
 /**
  * INDOOR NAVIGATION GRAPH REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-navigation.php
+ * File: includes/apis/class-bawbin-maps-rest-navigation.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Navigation {
+class  BAWBIN_Maps_REST_Navigation {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/get-navigation-graph', array(
             'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'handle_get_navigation_graph' ),
+            'callback'            => array( __CLASS__, 'bwb_imaps_handle_get_navigation_graph' ),
             'permission_callback' => '__return_true',
         ) );
     }
 
-    public static function handle_get_navigation_graph() {
+    public static function bawbin_maps_handle_get_navigation_graph() {
         global $wpdb;
 
         $cache_key   = 'bwb_navigation_graph_data';
@@ -26,8 +26,8 @@ class BWB_IMaps_REST_Navigation {
         $graph_data  = wp_cache_get( $cache_key, $cache_group );
 
         if ( false === $graph_data ) {
-            $table_entries = $wpdb->prefix . 'bwb_nav_entries_data';
-            $table_network = $wpdb->prefix . 'bwb_nav_network_data';
+            $table_entries = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
+            $table_network = $wpdb->prefix . 'bawbin_maps_nav_network_data';
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $entries = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i", $table_entries ), ARRAY_A );

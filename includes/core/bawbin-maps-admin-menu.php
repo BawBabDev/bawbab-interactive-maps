@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Sidebar Navigation Menus and Routing Controllers
- * File location: /includes/bwb-imaps-admin-menu.php
+ * File location: /includes/bawbin-maps-admin-menu.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,15 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers the primary top-level menu page and sub-tab routes in the WP Admin sidebar
  */
-function bwb_imaps_add_admin_menu() {
+function bawbin_maps_add_admin_menu() {
     add_menu_page(
         'Bawbab Interactive Maps',
         'Bawbab Interactive Maps',
         'manage_options',
         'bawbab-interactive-maps-settings',
-        'bwb_imaps_render_admin_page',
+        'bawbin_maps_render_admin_page',
         'dashicons-location-alt',
-        25
+        57
     );
 
     // Main settings page
@@ -29,7 +29,7 @@ function bwb_imaps_add_admin_menu() {
         '<span class="dashicons dashicons-admin-settings"></span>'. __( 'Maps Settings', 'bawbab-interactive-maps' ),               
         'manage_options',
         'bawbab-interactive-maps-settings', 
-        'bwb_imaps_render_admin_page'
+        'bawbin_maps_render_admin_page'
     );
 
     // Feature edition page
@@ -39,7 +39,7 @@ function bwb_imaps_add_admin_menu() {
         '<span class="dashicons dashicons-edit"></span>'. __( 'Edit Spatial Data', 'bawbab-interactive-maps' ),
         'manage_options',
         'bawbab-interactive-maps-edit-spatial-data',
-        'bwb_imaps_render_admin_page'
+        'bawbin_maps_render_admin_page'
     );
 
     // Category edition page
@@ -49,7 +49,7 @@ function bwb_imaps_add_admin_menu() {
         '<span class="dashicons dashicons-category"></span> ' . __( 'Edit Categories', 'bawbab-interactive-maps' ),
         'manage_options',
         'bawbab-interactive-maps-edit-category',
-        'bwb_imaps_render_admin_page'
+        'bawbin_maps_render_admin_page'
     );
 }
-add_action( 'admin_menu', 'bwb_imaps_add_admin_menu' );
+add_action( 'admin_menu', 'bawbin_maps_add_admin_menu' );

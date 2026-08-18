@@ -133,7 +133,7 @@ export const useCategoryManager = () => {
 
 			// Fetch active spatial features
 			const spatialRes = await fetch(
-				'/wp-json/bwb-imaps-federated-api/v1/get-spatial-data'
+				'/wp-json/bawbin-maps-federated-api/v1/get-spatial-data'
 			);
 			const spatialData = await spatialRes.json();
 
@@ -428,7 +428,7 @@ export const useCategoryManager = () => {
 		setIsSaving( true );
 		try {
 			const response = await fetch(
-				'/wp-json/bwb-imaps-federated-api/v1/cleanup-category-schema',
+				'/wp-json/bawbin-maps-federated-api/v1/cleanup-category-schema',
 				{
 					method: 'POST',
 					headers: {

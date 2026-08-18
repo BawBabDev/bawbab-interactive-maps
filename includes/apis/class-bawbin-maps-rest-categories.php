@@ -1,20 +1,20 @@
 <?php
 /**
  * CATEGORY & SCHEMA MANAGEMENT REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-categories.php
+ * File: includes/apis/class-bawbin-maps-rest-categories.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Categories {
+class  BAWBIN_Maps_REST_Categories {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/cleanup-category-schema', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_cleanup_category_schema' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_cleanup_category_schema' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
@@ -23,10 +23,10 @@ class BWB_IMaps_REST_Categories {
      * that are no longer assigned to any spatial feature in MySQL.
      * Evaluates STRICTLY against layer_type::category_slug composite keys.
      */
-    public static function handle_cleanup_category_schema() {
+    public static function bawbin_maps_handle_cleanup_category_schema() {
         global $wpdb;
 
-        $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
+        $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
         
         // Query distinct composite keys (layer_type::category) directly from MySQL
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -39,7 +39,7 @@ class BWB_IMaps_REST_Categories {
 
         $active_composite_set = is_array( $active_composites ) ? array_flip( $active_composites ) : array();
 
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $config   = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] ) ? $settings['categoryConfig'] : array();
         
         $current_map  = isset( $config['categoryMap'] ) && is_array( $config['categoryMap'] ) ? $config['categoryMap'] : array();
@@ -69,9 +69,9 @@ class BWB_IMaps_REST_Categories {
 
         $config['categoryMap']      = $cleaned_map;
         $settings['categoryConfig'] = $config;
-        update_option( 'bwb_imaps_options_data', $settings );
+        update_option( 'bawbin_maps_options_data', $settings );
 
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array(
             'success'      => true,
@@ -84,7 +84,7 @@ class BWB_IMaps_REST_Categories {
     /**
      * Syncs newly imported spatial categories into categoryConfig option using composite keys with fuzzy auto-group matching.
      */
-    public static function sync_imported_categories_to_config( $category_color_map = array() ) {
+    public static function bawbin_maps_sync_imported_categories_to_config( $category_color_map = array() ) {
         if ( empty( $category_color_map ) ) return;
 
         $settings = get_option( 'bwb_imaps_options_data', array() );
@@ -158,7 +158,7 @@ class BWB_IMaps_REST_Categories {
         if ( $has_changes ) {
             $config['categoryMap']      = $categoryMap;
             $settings['categoryConfig'] = $config;
-            update_option( 'bwb_imaps_options_data', $settings );
+            update_option( 'bawbin_maps_options_data', $settings );
         }
     }
 }

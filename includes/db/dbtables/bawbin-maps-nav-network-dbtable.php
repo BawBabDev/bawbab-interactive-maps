@@ -1,7 +1,7 @@
 <?php
 /**
  * Database tables Setup Handler
- * File: includes/class-bwb-nav-network-dbtable.php
+ * File: includes/class-bawbin-maps-nav-network-dbtable.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create the database table for nav entries tables plugin is activated.
  */
-function bwb_create_nav_network_dbtable() {
+function bawbin_maps_create_nav_network_dbtable() {
     /**
      * SQL Rules for dbDelta():
      * - You must put each field on its own line in your SQL statement [1].
@@ -24,7 +24,7 @@ function bwb_create_nav_network_dbtable() {
     global $wpdb;
 
     // Define easy timer table(prefixed with the WP database prefix)
-    $table_network = $wpdb->prefix . 'bwb_nav_network_data';
+    $table_network = $wpdb->prefix . 'bawbin_maps_nav_network_data';
     
     // Get the correct character collate for the database
     $charset_collate = $wpdb->get_charset_collate();
@@ -47,5 +47,5 @@ function bwb_create_nav_network_dbtable() {
     dbDelta( $sql_network );
 
     // Store a database version number in the options table for future migrations
-    add_option( 'bwb_maps_version_db_version', '1.0.0' );
+    add_option( 'bawbin_maps_version_db_version', '1.0.0' );
 }

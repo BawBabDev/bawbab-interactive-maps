@@ -66,10 +66,10 @@ export default function BawBabIMaps( {
 	const [ dimensions, containerRef ] = useMapDimensions();
 	const isLayoutReady = dimensions.width > 0;
 
-	const API_KEY = apiKeyProp || window.bwbimapsSettings?.googleApiKey || '';
-	const MAP_ID = mapIdProp || window.bwbimapsSettings?.googleMapId || '';
+	const API_KEY = apiKeyProp || window.bawbinmapsSettings?.googleApiKey || '';
+	const MAP_ID = mapIdProp || window.bawbinmapsSettings?.googleMapId || '';
 	const MAP_TYPE =
-		mapTypeProp || window.bwbimapsSettings?.mapType || 'roadmap';
+		mapTypeProp || window.bawbinmapsSettings?.mapType || 'roadmap';
 
 	const { formatCoords } = useCoordinateFormatter();
 	const [ isDrawerOpen, setIsDrawerOpen ] = useState( false );
@@ -210,7 +210,7 @@ export default function BawBabIMaps( {
 				);
 				const apiRoot = apiRootLink ? apiRootLink.href : '/wp-json/';
 				const response = await fetch(
-					`${ apiRoot }bwb-imaps-federated-api/v1/map-locations`
+					`${ apiRoot }bawbin-maps-federated-api/v1/map-locations`
 				);
 				if ( response.ok ) {
 					const data = await response.json();

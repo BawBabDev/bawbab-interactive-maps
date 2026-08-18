@@ -29,7 +29,7 @@ export const useSpatialDataImporter = () => {
 
 		try {
 			const response = await fetch(
-				'/wp-json/bwb-imaps-federated-api/v1/inspect-geojson',
+				'/wp-json/bawbin-maps-federated-api/v1/inspect-geojson',
 				{
 					method: 'POST',
 					headers: {
@@ -88,7 +88,7 @@ export const useSpatialDataImporter = () => {
 
 			try {
 				const response = await fetch(
-					'/wp-json/bwb-imaps-federated-api/v1/spatial-data-importer',
+					'/wp-json/bawbin-maps-federated-api/v1/spatial-data-importer',
 					{
 						method: 'POST',
 						headers: {
@@ -179,7 +179,7 @@ export const useSpatialDataImporter = () => {
 
 		try {
 			const response = await fetch(
-				`/wp-json/bwb-imaps-federated-api/v1/delete-layer/${ layerType }`,
+				`/wp-json/bawbin-maps-federated-api/v1/delete-layer/${ layerType }`,
 				{
 					method: 'DELETE',
 					headers: {
