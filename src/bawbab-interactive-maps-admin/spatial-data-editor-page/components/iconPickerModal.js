@@ -18,17 +18,17 @@ const renderModalIcon = (iconName) => {
 
     return (
         <span 
-            className={`bwb-modal-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
+            className={`bawbin-maps-modal-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
             style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}
         >
             {icon}
             <style>{`
-                .bwb-modal-icon-wrapper.is-lucide svg {
+                .bawbin-maps-modal-icon-wrapper.is-lucide svg {
                     fill: none !important;
                     stroke: currentColor !important;
                     stroke-width: 2px !important;
                 }
-                .bwb-modal-icon-wrapper.is-legacy svg {
+                .bawbin-maps-modal-icon-wrapper.is-legacy svg {
                     fill: currentColor !important;
                     stroke: none !important;
                     width: 20px !important;
@@ -85,7 +85,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
                         />
                     </FlexItem>
 
-                    <FlexItem style={{ width: '190px' }} className="bwb-select-control-wrapper">
+                    <FlexItem style={{ width: '190px' }} className="select-control-wrapper">
                         <SelectControl
                             label={__('Filter Category', TEXT_DOMAIN)}
                             value={activeCategory}

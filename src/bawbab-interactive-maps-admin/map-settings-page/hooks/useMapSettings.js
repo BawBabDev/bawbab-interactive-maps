@@ -5,12 +5,12 @@
 
 import { useState, useEffect, useRef } from '@wordpress/element';
 
-const ENDPOINT_GET = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
-const ENDPOINT_UPDATE = '/wp-json/bwb-imaps-federated-api/v1/update-map-settings';
+const ENDPOINT_GET = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
+const ENDPOINT_UPDATE = '/wp-json/bawbin-maps-federated-api/v1/update-map-settings';
 
 export const useMapSettings = () => {
     // Synchronously read inline window object injected by PHP on page load
-    const initialWindow = window.bwbimapsSettings || {};
+    const initialWindow = window.bawbinmapsSettings || {};
 
     const [ mapDescription, setMapDescription ] = useState( initialWindow.mapDescription || '' );
     const [ mapType, setMapType ] = useState( initialWindow.mapType || 'hybrid' );
@@ -59,8 +59,8 @@ export const useMapSettings = () => {
                         mapId: data.googleMapId || '',
                     };
 
-                    window.bwbimapsSettings = {
-                        ...window.bwbimapsSettings,
+                    window.bawbinmapsSettings = {
+                        ...window.bawbinmapsSettings,
                         ...data,
                     };
                 }
@@ -111,8 +111,8 @@ export const useMapSettings = () => {
             }
 
             // Sync window object in memory
-            window.bwbimapsSettings = {
-                ...window.bwbimapsSettings,
+            window.bawbinmapsSettings = {
+                ...window.bawbinmapsSettings,
                 mapType: safeString( mapType ),
                 colorTheme: safeString( colorTheme ),
                 mapLogo: safeString( mapLogo ),

@@ -61,7 +61,7 @@ const renderStyledIcon = (iconSlug, size = 18) => {
 
     return (
         <span 
-            className={`bwb-custom-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
+            className={`bawbin-maps-custom-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
             style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
@@ -72,12 +72,12 @@ const renderStyledIcon = (iconSlug, size = 18) => {
         >
             {icon}
             <style>{`
-                .bwb-custom-icon-wrapper.is-lucide svg {
+                .bawbin-maps-custom-icon-wrapper.is-lucide svg {
                     fill: none !important;
                     stroke: currentColor !important;
                     stroke-width: 2px !important;
                 }
-                .bwb-custom-icon-wrapper.is-legacy svg {
+                .bawbin-maps-custom-icon-wrapper.is-legacy svg {
                     fill: currentColor !important;
                     stroke: none !important;
                     width: ${size}px !important;
@@ -323,7 +323,7 @@ export const AttributeSchemaManager = ({
                             />
                         </div>
 
-                        <div className="bwb-select-control-wrapper">
+                        <div className="select-control-wrapper">
                             <SelectControl
                                 label={__('Field Type', TEXT_DOMAIN)}
                                 value={normalizeFieldType(newType)}
@@ -336,7 +336,7 @@ export const AttributeSchemaManager = ({
 
                         {/* DISPLAY LAYOUT SELECTOR (HIDDEN IN CATEGORY SPLIT MODE) */}
                         {!isNewSplit && (
-                            <div className="bwb-select-control-wrapper">
+                            <div className="select-control-wrapper">
                                 <SelectControl
                                     label={__('Display Layout', TEXT_DOMAIN)}
                                     value={newLayout}
@@ -410,7 +410,7 @@ export const AttributeSchemaManager = ({
                     {isNewDual && (
                         <div style={{ padding: '12px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
                             <Flex gap={2} align="end">
-                                <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                     <SelectControl
                                         label={__('Dual Counter Mode', TEXT_DOMAIN)}
                                         value={newDualMode}
@@ -425,7 +425,7 @@ export const AttributeSchemaManager = ({
                                 </FlexItem>
 
                                 {newDualMode === 'time' && (
-                                    <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                    <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                         <SelectControl
                                             label={__('Main Time Unit', TEXT_DOMAIN)}
                                             value={newMainUnit}
@@ -438,7 +438,7 @@ export const AttributeSchemaManager = ({
                                 )}
 
                                 {newDualMode === 'measurement' && (
-                                    <FlexItem style={{ flex: 1 }} className="bwb-select-control-wrapper">
+                                    <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                         <SelectControl
                                             label={__('Distance Unit', TEXT_DOMAIN)}
                                             value={newMainUnit}

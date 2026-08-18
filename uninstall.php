@@ -12,9 +12,9 @@ global $wpdb;
 
 //Delete the Custom Database Table
 $tables_to_delete = array(
-    $wpdb->prefix . 'bwb_nav_network_data',
-    $wpdb->prefix . 'bwb_nav_entries_data',
-    $wpdb->prefix . 'bwb_general_spatial_data'
+    $wpdb->prefix . 'bawbin_maps_nav_network_data',
+    $wpdb->prefix . 'bawbin_maps_nav_entries_data',
+    $wpdb->prefix . 'bawbin_maps_general_spatial_data'
 );
 
 // Delete the Settings/Options from wp_options
@@ -24,7 +24,7 @@ foreach ( $tables_to_delete as $table_name ) {
 }
 
 // delete any registered settings group if necessary
-delete_option( 'bwb_imaps_settings_group' );
+delete_option( 'bawbin_maps_settings_group' );
 
 //Clear any cached data (Optional but recommended)
 wp_cache_flush();

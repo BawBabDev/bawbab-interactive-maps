@@ -1,7 +1,7 @@
 <?php
 /**
  * Database tables Setup Handler
- * File: includes/class-bwb-general-spatial-dbtable.php
+ * File: includes/class-bawbin-maps-general-spatial-dbtable.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,10 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create or verify the database table for general spatial map data.
  */
-function bwb_create_general_spatial_dbtable() {
+function bawbin_maps_create_general_spatial_dbtable() {
     global $wpdb;
 
-    $table_spatial   = $wpdb->prefix . 'bwb_general_spatial_data';
+    $table_spatial   = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql_spatial = "CREATE TABLE $table_spatial (
@@ -47,5 +47,5 @@ function bwb_create_general_spatial_dbtable() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $sql_spatial );
 
-    update_option( 'bwb_maps_version_db_version', '1.1.1' );
+    update_option( 'bawbin_maps_maps_version_db_version', '1.1.1' );
 }

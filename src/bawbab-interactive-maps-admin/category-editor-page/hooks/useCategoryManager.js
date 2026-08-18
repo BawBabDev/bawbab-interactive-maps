@@ -17,8 +17,8 @@ import {
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
-const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
-const ENDPOINT_UPDATE_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/update-map-settings';
+const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
+const ENDPOINT_UPDATE_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/update-map-settings';
 
 const LAYER_TITLES = {
     buildings: 'Buildings',
@@ -119,7 +119,7 @@ export const useCategoryManager = () => {
 
             // Fetch active spatial features
             const spatialRes = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/get-spatial-data'
+                '/wp-json/bawbin-maps-federated-api/v1/get-spatial-data'
             );
             const spatialData = await spatialRes.json();
 
@@ -268,8 +268,8 @@ export const useCategoryManager = () => {
                 throw new Error( errData.message || 'Failed to update category data.' );
             }
 
-            if ( ! window.bwbimapsSettings ) window.bwbimapsSettings = {};
-            window.bwbimapsSettings.categoryConfig = categoryConfig;
+            if ( ! window.bawbinmapsSettings ) window.bawbinmapsSettings = {};
+            window.bawbinmapsSettings.categoryConfig = categoryConfig;
 
             setGroups( payloadGroups );
             setCategoryMap( payloadMap );
@@ -343,7 +343,7 @@ export const useCategoryManager = () => {
         setIsSaving( true );
         try {
             const response = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/cleanup-category-schema',
+                '/wp-json/bawbin-maps-federated-api/v1/cleanup-category-schema',
                 {
                     method: 'POST',
                     headers: {

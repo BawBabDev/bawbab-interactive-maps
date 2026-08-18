@@ -57,7 +57,7 @@ const renderStyledIcon = (iconSlug, size = 18) => {
 
     return (
         <span 
-            className={`bwb-custom-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
+            className={`bawbin-maps-custom-icon-wrapper ${isLegacy ? 'is-legacy' : 'is-lucide'}`} 
             style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
@@ -68,12 +68,12 @@ const renderStyledIcon = (iconSlug, size = 18) => {
         >
             {icon}
             <style>{`
-                .bwb-custom-icon-wrapper.is-lucide svg {
+                .bawbin-maps-custom-icon-wrapper.is-lucide svg {
                     fill: none !important;
                     stroke: currentColor !important;
                     stroke-width: 2px !important;
                 }
-                .bwb-custom-icon-wrapper.is-legacy svg {
+                .bawbin-maps-custom-icon-wrapper.is-legacy svg {
                     fill: currentColor !important;
                     stroke: none !important;
                     width: ${size}px !important;
@@ -275,7 +275,7 @@ export const AttributeConfigModal = ({
                     />
 
                     {/* 2. FIELD TYPE SELECTION */}
-                    <div className="bwb-select-control-wrapper">
+                    <div className="select-control-wrapper">
                         <SelectControl
                             label={__('Field Type', TEXT_DOMAIN)}
                             value={type}
@@ -293,7 +293,7 @@ export const AttributeConfigModal = ({
                                 {__('Dual Counter Mode & Unit Settings', TEXT_DOMAIN)}
                             </Text>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div className="bwb-select-control-wrapper">
+                                <div className="select-control-wrapper">
                                     <SelectControl
                                         label={__('Display Mode', TEXT_DOMAIN)}
                                         value={dualMode}
@@ -306,7 +306,7 @@ export const AttributeConfigModal = ({
 
                                 {/* ENFORCED UNIT SELECTION FOR TIME AND MEASUREMENT */}
                                 {dualMode === 'time' && (
-                                    <div className="bwb-select-control-wrapper">
+                                    <div className="select-control-wrapper">
                                         <SelectControl
                                             label={__('Main Time Unit Structure', TEXT_DOMAIN)}
                                             value={mainUnit || 'hours_minutes'}
@@ -320,7 +320,7 @@ export const AttributeConfigModal = ({
                                 )}
 
                                 {dualMode === 'measurement' && (
-                                    <div className="bwb-select-control-wrapper">
+                                    <div className="select-control-wrapper">
                                         <SelectControl
                                             label={__('Main Distance / Measurement Unit System', TEXT_DOMAIN)}
                                             value={mainUnit || 'feet_inches'}
@@ -366,7 +366,7 @@ export const AttributeConfigModal = ({
 
                     {/* 4. DISPLAY LAYOUT SELECTION (DISPLAYED BELOW DUAL COUNTER SETTINGS; HIDDEN FOR CATEGORY SPLIT) */}
                     {!isCategorySplit && (
-                        <div className="bwb-select-control-wrapper">
+                        <div className="select-control-wrapper">
                             <SelectControl
                                 label={__('Display Layout in Side Drawer', TEXT_DOMAIN)}
                                 value={layoutMode}

@@ -71,7 +71,7 @@ export const SettingsTab = ( {
 					</div>
 				) }
 
-				<Flex justify="flex-start" gap={ 3 }>
+				<Flex justify="space-between" gap={ 3 }>
 					<Button
 						variant="secondary"
 						onClick={ () =>
@@ -128,7 +128,7 @@ export const SettingsTab = ( {
 					) }
 				</Text>
 
-				<Flex justify="flex-start" gap={ 3 }>
+				<Flex justify="space-between" gap={ 3 }>
 					<Button
 						variant="secondary"
 						onClick={ () => {

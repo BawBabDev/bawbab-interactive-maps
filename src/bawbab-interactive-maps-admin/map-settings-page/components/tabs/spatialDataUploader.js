@@ -4,6 +4,7 @@ import {
     Flex,
     FlexItem,
     Dashicon,
+    ExternalLink,
     __experimentalText as Text,
 } from '@wordpress/components';
 import { useState, useEffect, useRef } from '@wordpress/element';
@@ -235,6 +236,22 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                         >
                             { sprintf( __( 'Export "%s" Layer to GeoJSON', TEXT_DOMAIN ), importType ) }
                         </Button>
+
+                        <Flex
+                            wrap="wrap"
+                            gap={ 2 }
+                            style={ {
+                                margin: '5px 0px',
+                                justifyContent: 'flex-end',
+                            } }
+                        >
+                            <ExternalLink
+                                href="https://drive.google.com/file/d/10MCwKA_8h_gtj9pKiG1m6G4Z7nryRLxY/view?usp=sharing"
+                                style={ { color: '#2271b1' } }
+                            >
+                                { __( 'Sample Import Data', TEXT_DOMAIN ) }
+                            </ExternalLink>
+                        </Flex>
                     </div>
                 </div>
 
@@ -252,7 +269,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                 { /* Danger Zone: Wiping Layer */ }
                 <div
                     style={ {
-                        marginTop: '30px',
+                        marginTop: '20px',
                         padding: '20px',
                         border: '2px dashed #d63638',
                         borderRadius: '8px',

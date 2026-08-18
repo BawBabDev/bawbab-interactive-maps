@@ -30,7 +30,7 @@ export const useMapCredentialsCheck = (
 						'bawbab-interactive-maps'
 					),
 					{
-						id: 'bwb-maps-missing-key-warning', // Strict ID target prevents duplicate layout renders
+						id: 'bawbin-maps-maps-missing-key-warning', // Strict ID target prevents duplicate layout renders
 						isDismissible: true,
 						type: 'default', // Mounts as a standard administrative horizontal banner row
 					}
@@ -46,7 +46,7 @@ export const useMapCredentialsCheck = (
 						'bawbab-interactive-maps'
 					),
 					{
-						id: 'bwb-maps-missing-id-warning', // Unique ID prevents double-rendering duplicate notices
+						id: 'bawbin-maps-maps-missing-id-warning', // Unique ID prevents double-rendering duplicate notices
 						isDismissible: true,
 						type: 'default',
 					}

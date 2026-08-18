@@ -17,18 +17,18 @@ import BawBabIMaps from './components/maps';
 
 const MIN_MAP_ZOOM = 15;
 const MAX_MAP_ZOOM = 20;
-const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
+const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 
 export default function Edit( { attributes, setAttributes } ) {
     const { zoom, tilt, width, height } = attributes;
 
     // Safely retrieve synchronous window settings across iframe boundaries
     const getSynchronousSettings = () => {
-        if ( typeof window !== 'undefined' && window.bwbimapsSettings ) {
-            return window.bwbimapsSettings;
+        if ( typeof window !== 'undefined' && window.bawbinmapsSettings ) {
+            return window.bawbinmapsSettings;
         }
-        if ( typeof window !== 'undefined' && window.top && window.top.bwbimapsSettings ) {
-            return window.top.bwbimapsSettings;
+        if ( typeof window !== 'undefined' && window.top && window.top.bawbinmapsSettings ) {
+            return window.top.bawbinmapsSettings;
         }
         return {};
     };
@@ -47,7 +47,7 @@ export default function Edit( { attributes, setAttributes } ) {
                     setSettingsData( ( prev ) => ( { ...prev, ...data } ) );
                     
                     if ( typeof window !== 'undefined' ) {
-                        window.bwbimapsSettings = { ...window.bwbimapsSettings, ...data };
+                        window.bawbinmapsSettings = { ...window.bawbinmapsSettings, ...data };
                     }
                 }
             } )

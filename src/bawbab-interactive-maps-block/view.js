@@ -2,7 +2,7 @@ import { createRoot } from '@wordpress/element';
 import BawBabIMaps from './components/maps';
 
 const MIN_MAP_ZOOM = 15;
-const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
+const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 
 const viewBawbabImap = async () => {
     let globalSettings = {};
@@ -11,14 +11,14 @@ const viewBawbabImap = async () => {
         const response = await fetch( ENDPOINT_GET_SETTINGS );
         if ( response.ok ) {
             globalSettings = await response.json();
-            window.bwbimapsSettings = globalSettings;
+            window.bawbinmapsSettings = globalSettings;
         }
     } catch ( err ) {
         console.error( 'Bawbab IMaps: Could not load global settings', err );
     }
 
     const targetContainers = document.querySelectorAll(
-        '.bawbab-imaps-container:not([data-rendered="true"]), .map-shortcode-container:not([data-rendered="true"]), #interactive-map-root:not([data-rendered="true"]), .bwb-interactive-map-root:not([data-rendered="true"])'
+        '.bawbab-imaps-container:not([data-rendered="true"]), .map-shortcode-container:not([data-rendered="true"]), #interactive-map-root:not([data-rendered="true"]), .bawbin-maps-interactive-map-root:not([data-rendered="true"])'
     );
 
     targetContainers.forEach( ( container ) => {

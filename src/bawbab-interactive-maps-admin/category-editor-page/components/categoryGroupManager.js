@@ -184,7 +184,7 @@ export const CategoryGroupManager = ( {
 
                             <FlexItem
                                 style={ { width: '220px' } }
-                                className="bwb-select-control-wrapper"
+                                className="select-control-wrapper"
                             >
                                 <SelectControl
                                     label={ __( 'Layout Type', TEXT_DOMAIN ) }

@@ -1,14 +1,14 @@
 <?php
 /**
  * Database Schema Versioning & Smart Auto-Migration Engine Coordinator
- * File location: /includes/class-smart-db-migration-engine.php
+ * File location: /includes/db/class-bawbin-maps-smart-db-migration-engine.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-class BWB_Smart_DB_Migrator {
+class BAWBIN_Maps_Smart_DB_Migrator {
 
     /**
      * Target schema version string. 
@@ -20,47 +20,47 @@ class BWB_Smart_DB_Migrator {
      * Initialize the migration engine by listening to plugins_loaded
      */
     public static function init() {
-        add_action( 'plugins_loaded', array( __CLASS__, 'smart_schema_upgrade' ) );
+        add_action( 'plugins_loaded', array( __CLASS__, 'bawbin_maps_smart_schema_upgrade' ) );
     }
 
     /**
      * Examines current version records and triggers upgrades sequentially without erasing table structures
      */
-    public static function smart_schema_upgrade() {
+    public static function bawbin_maps_smart_schema_upgrade() {
         // Safe lock: Only allow authorized operations inside the WordPress administration area
         if ( ! is_admin() ) {
             return;
         }
 
-        $stored_version = get_option( 'bwb_maps_version_db_version', '0.0.0' );
+        $stored_version = get_option( 'bawbin_maps_maps_version_db_version', '0.0.0' );
 
         // If stored version is older than target schema version, execute upgrades
         if ( version_compare( $stored_version, self::$schema_version, '<' ) ) {
-            self::run_modular_activations();
-            self::migrate_legacy_columns_to_json();
-            self::migrate_legacy_types_to_dual_counter();
+            self::bawbin_maps_run_modular_activations();
+            self::bawbin_maps_migrate_legacy_columns_to_json();
+            self::bawbin_maps_migrate_legacy_types_to_dual_counter();
             
-            update_option( 'bwb_maps_version_db_version', self::$schema_version );
+            update_option( 'bawbin_maps_maps_version_db_version', self::$schema_version );
         }
     }
 
     /**
      * Executes our modular tables routine systematically
      */
-    private static function run_modular_activations() {
+    private static function bawbin_maps_run_modular_activations() {
         // Trigger General Spatial Table Migration Engine
-        if ( function_exists( 'bwb_create_general_spatial_dbtable' ) ) {
-            bwb_create_general_spatial_dbtable();
+        if ( function_exists( 'bawbin_maps_create_general_spatial_dbtable' ) ) {
+            bawbin_maps_create_general_spatial_dbtable();
         }
 
         // Trigger Navigation Entries Table Migration Engine
-        if ( function_exists( 'bwb_create_nav_entries_dbtable' ) ) {
-            bwb_create_nav_entries_dbtable();
+        if ( function_exists( 'bawbin_maps_create_nav_entries_dbtable' ) ) {
+            bawbin_maps_create_nav_entries_dbtable();
         }
 
         // Trigger Navigation Network Table Migration Engine
-        if ( function_exists( 'bwb_create_nav_network_dbtable' ) ) {
-            bwb_create_nav_network_dbtable();
+        if ( function_exists( 'bawbin_maps_create_nav_network_dbtable' ) ) {
+            bawbin_maps_create_nav_network_dbtable();
         }
     }
 
@@ -68,10 +68,10 @@ class BWB_Smart_DB_Migrator {
      * Converts legacy table columns (sq_ft, baths, fireplace, sunroom) into
      * custom_attributes JSON keys and registers them in attribute_schema options.
      */
-    private static function migrate_legacy_columns_to_json() {
+    private static function bawbin_maps_migrate_legacy_columns_to_json() {
         global $wpdb;
 
-        $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
+        $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
 
         // 1. Inspect physically existing columns in MySQL
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -113,7 +113,7 @@ class BWB_Smart_DB_Migrator {
         }
 
         // 3. Register legacy keys into option array attribute_schema
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) 
             ? $settings['attribute_schema'] 
             : array();
@@ -157,19 +157,19 @@ class BWB_Smart_DB_Migrator {
 
         if ( $has_schema_changes ) {
             $settings['attribute_schema'] = $schema;
-            update_option( 'bwb_imaps_options_data', $settings );
+            update_option( 'bawbin_maps_options_data', $settings );
         }
 
         // 4. Purge cached GeoJSON collections to reflect changes immediately
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
     }
 
     /**
      * Converts any schema items registered under legacy 'bathrooms' type
      * to the generic 'dual_counter' type and updates icon pairs if needed.
      */
-    private static function migrate_legacy_types_to_dual_counter() {
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+    private static function bawbin_maps_migrate_legacy_types_to_dual_counter() {
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) 
             ? $settings['attribute_schema'] 
             : array();
@@ -198,8 +198,8 @@ class BWB_Smart_DB_Migrator {
 
         if ( $has_changes ) {
             $settings['attribute_schema'] = $schema;
-            update_option( 'bwb_imaps_options_data', $settings );
-            wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+            update_option( 'bawbin_maps_options_data', $settings );
+            wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
         }
     }
 }

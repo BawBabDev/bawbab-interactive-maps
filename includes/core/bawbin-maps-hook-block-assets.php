@@ -1,7 +1,7 @@
 <?php
 /**
  * Frontend Public Assets Loader Hook
- * File location: /includes/bwb-imaps-block-assets.php
+ * File location: /includes/bawbin-maps-block-assets.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -22,7 +22,7 @@ import { BatchUpdateModal } from './components/batchUpdateModal';
 import { UnitSidebarList } from './components/unitSidebarList';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
-const ENDPOINT_GET_SETTINGS = '/wp-json/bwb-imaps-federated-api/v1/get-map-settings';
+const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
 
 const formatLabel = ( str ) => {
@@ -93,7 +93,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
         setIsLoading( true );
         try {
             const response = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/get-spatial-data'
+                '/wp-json/bawbin-maps-federated-api/v1/get-spatial-data'
             );
             const data = await response.json();
             const allFeatures = data.features || [];
@@ -492,7 +492,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                 };
 
                 const response = await fetch(
-                    '/wp-json/bwb-imaps-federated-api/v1/update-spatial-meta',
+                    '/wp-json/bawbin-maps-federated-api/v1/update-spatial-meta',
                     {
                         method: 'POST',
                         headers: {
@@ -525,7 +525,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
 
     // Load Settings
     useEffect( () => {
-        const settings = window.bwbimapsSettings;
+        const settings = window.bawbinmapsSettings;
         if ( settings?.googleApiKey && settings?.googleMapId ) {
             setGoogleApiKey( settings.googleApiKey );
             setGoogleMapId( settings.googleMapId );
@@ -552,10 +552,10 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                         setNavBackground( bg );
                         setColorTheme( theme );
 
-                        if ( ! window.bwbimapsSettings )
-                            window.bwbimapsSettings = {};
-                        window.bwbimapsSettings = {
-                            ...window.bwbimapsSettings,
+                        if ( ! window.bawbinmapsSettings )
+                            window.bawbinmapsSettings = {};
+                        window.bawbinmapsSettings = {
+                            ...window.bawbinmapsSettings,
                             googleApiKey: key,
                             googleMapId: id,
                             mapType: type,

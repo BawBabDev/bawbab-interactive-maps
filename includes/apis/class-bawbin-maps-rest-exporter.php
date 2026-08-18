@@ -1,38 +1,38 @@
 <?php
 /**
  * GEOJSON LAYER EXPORTER REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-exporter.php
+ * File: includes/apis/class-bawbin-maps-rest-exporter.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Exporter {
+class BAWBIN_Maps_REST_Exporter {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/export-geojson', array(
             'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'handle_export_geojson' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_export_geojson' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
-    public static function handle_export_geojson( $request ) {
+    public static function bawbin_maps_handle_export_geojson( $request ) {
         global $wpdb;
 
         $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) ?: 'buildings' );
 
         if ( 'entries' === $layer_type ) {
-            $table_name = $wpdb->prefix . 'bwb_nav_entries_data';
+            $table_name = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i", $table_name ), ARRAY_A );
         } elseif ( 'network' === $layer_type ) {
-            $table_name = $wpdb->prefix . 'bwb_nav_network_data';
+            $table_name = $wpdb->prefix . 'bawbin_maps_nav_network_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i", $table_name ), ARRAY_A );
         } else {
-            $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+            $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE layer_type = %s", $table_name, $layer_type ), ARRAY_A );
         }

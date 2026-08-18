@@ -634,7 +634,7 @@ export const GeoJSONImportWizardModal = ( {
 
                                             {/* CUSTOM ATTRIBUTE TYPE SELECTOR */}
                                             <FlexItem style={ { width: '160px' } }>
-                                                <div className="bwb-select-control-wrapper">
+                                                <div className="select-control-wrapper">
                                                     <SelectControl
                                                         value={ activeType }
                                                         options={ FIELD_TYPE_OPTIONS }

@@ -16,7 +16,7 @@ export const useSpatialDataExporter = () => {
             const timestamp = new Date().toISOString().split('T')[0];
             const filename = `spatial-layer-${layerType}-${timestamp}.geojson`;
 
-            const url = `/wp-json/bwb-imaps-federated-api/v1/export-geojson?layer_type=${encodeURIComponent(
+            const url = `/wp-json/bawbin-maps-federated-api/v1/export-geojson?layer_type=${encodeURIComponent(
                 layerType
             )}&_wpnonce=${encodeURIComponent(nonce)}`;
 

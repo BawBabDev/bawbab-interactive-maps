@@ -1,7 +1,7 @@
 <?php
 /**
  * Database tables Setup Handler
- * File: includes/class-bwb-nav-entries-dbtable.php
+ * File: includes/class-bawbin-maps-nav-entries-dbtable.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create the database table for nav entries tables plugin is activated.
  */
-function bwb_create_nav_entries_dbtable() {
+function bawbin_maps_create_nav_entries_dbtable() {
     /**
      * SQL Rules for dbDelta():
      * - You must put each field on its own line in your SQL statement [1].
@@ -23,7 +23,7 @@ function bwb_create_nav_entries_dbtable() {
     global $wpdb;
 
     // Define easy timer table(prefixed with the WP database prefix)
-    $table_entries = $wpdb->prefix . 'bwb_nav_entries_data';
+    $table_entries = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
     
     // Get the correct character collate for the database
     $charset_collate = $wpdb->get_charset_collate();
@@ -44,5 +44,5 @@ function bwb_create_nav_entries_dbtable() {
     dbDelta( $sql_entries );
 
     // Store a database version number in the options table for future migrations
-    add_option('bwb_maps_version_db_version', '1.0.0' );
+    add_option('bawbin_maps_maps_version_db_version', '1.0.0' );
 }

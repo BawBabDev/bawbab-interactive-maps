@@ -17,7 +17,7 @@ export const useAttributeSchema = () => {
         setIsLoadingSchema( true );
         try {
             const response = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/get-attribute-schema'
+                '/wp-json/bawbin-maps-federated-api/v1/get-attribute-schema'
             );
             if ( response.ok ) {
                 const data = await response.json();
@@ -42,7 +42,7 @@ export const useAttributeSchema = () => {
         async ( { key, label, type, icon, config } ) => {
             try {
                 const response = await fetch(
-                    '/wp-json/bwb-imaps-federated-api/v1/update-attribute-schema',
+                    '/wp-json/bawbin-maps-federated-api/v1/update-attribute-schema',
                     {
                         method: 'POST',
                         headers: {
@@ -83,7 +83,7 @@ export const useAttributeSchema = () => {
 
             try {
                 const response = await fetch(
-                    '/wp-json/bwb-imaps-federated-api/v1/reorder-attribute-schema',
+                    '/wp-json/bawbin-maps-federated-api/v1/reorder-attribute-schema',
                     {
                         method: 'POST',
                         headers: {
@@ -125,7 +125,7 @@ export const useAttributeSchema = () => {
 
         try {
             const response = await fetch(
-                '/wp-json/bwb-imaps-federated-api/v1/delete-attribute-key',
+                '/wp-json/bawbin-maps-federated-api/v1/delete-attribute-key',
                 {
                     method: 'POST',
                     headers: {

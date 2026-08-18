@@ -64,7 +64,7 @@ const DrawingSidebar = ( {
 	const activeCurrentImage = isStaticMarker ? localCurrentImage : remoteImage;
 	const setActiveCurrentImage = isStaticMarker ? setLocalCurrentImage : setRemoteImage;
 
-	const mapSettings = window.bwbimapsSettings || {};
+	const mapSettings = window.bawbinmapsSettings || {};
 	const colorTheme = mapSettings.colorTheme;
 	const { width = 0, height = 0 } = mapDimensions || {};
 	const isSmallUI = width < 800 || height < 500;

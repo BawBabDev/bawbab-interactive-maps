@@ -1,14 +1,14 @@
 <?php
 /**
  * Isolated Class Manager for TinyMCE Layout Customizations
- * File location: /includes/integrations/class-bwb-tinymce-veditor-btn.php
+ * File location: /includes/integrations/class-bawbin-maps-tinymce-veditor-btn.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_TinyMCE_Veditor_Button {
+class BAWBIN_Maps_TinyMCE_Veditor_Button {
 
     public static function init() {
         add_action( 'admin_init', array( __CLASS__, 'setup_tinymce_editor' ) );
@@ -76,4 +76,4 @@ class BWB_TinyMCE_Veditor_Button {
 }
 
 // Activate TinyMCE hooks inside WordPress immediately
-BWB_TinyMCE_Veditor_Button::init();
+BAWBIN_Maps_TinyMCE_Veditor_Button::init();

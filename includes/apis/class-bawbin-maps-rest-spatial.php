@@ -1,45 +1,45 @@
 <?php
 /**
  * SPATIAL DATA REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-spatial.php
+ * File: includes/apis/class-bawbin-maps-rest-spatial.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Spatial {
+class BAWBIN_Maps_REST_Spatial {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/get-spatial-data', array(
             'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'handle_get_spatial_data' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_get_spatial_data' ),
             'permission_callback' => '__return_true',
         ) );
 
         register_rest_route( $namespace, '/update-spatial-meta', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_update_spatial_meta' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_update_spatial_meta' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
 
         register_rest_route( $namespace, '/delete-layer/(?P<layer_type>[a-zA-Z0-9_\-]+)', array(
             'methods'             => 'DELETE',
-            'callback'            => array( __CLASS__, 'handle_delete_layer' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_delete_layer' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
-    public static function handle_get_spatial_data() {
+    public static function bawbin_maps_handle_get_spatial_data() {
         global $wpdb;
 
-        $cache_key          = 'bwb_spatial_geojson_collection';
-        $cache_group        = 'bwb_spatial_cache';
+        $cache_key          = 'bawbin_maps_spatial_geojson_collection';
+        $cache_group        = 'bawbin_maps_spatial_cache';
         $geojson_collection = wp_cache_get( $cache_key, $cache_group );
 
         if ( false === $geojson_collection ) {
-            $table_spatial = $wpdb->prefix . 'bwb_general_spatial_data';
-            $table_entries = $wpdb->prefix . 'bwb_nav_entries_data';
+            $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
+            $table_entries = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $spatial_results = $wpdb->get_results( 
@@ -130,9 +130,9 @@ class BWB_IMaps_REST_Spatial {
         return new WP_REST_Response( $geojson_collection, 200 );
     }
 
-    public static function handle_update_spatial_meta( $request ) {
+    public static function bawbin_maps_handle_update_spatial_meta( $request ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+        $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
         
         $fid        = sanitize_text_field( $request->get_param( 'fid' ) );
         $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) );
@@ -232,7 +232,7 @@ class BWB_IMaps_REST_Spatial {
             $parsed_attrs = is_string( $custom_attrs ) ? json_decode( $custom_attrs, true ) : $custom_attrs;
             
             if ( is_array( $parsed_attrs ) ) {
-                BWB_IMaps_REST_Attributes::sync_custom_keys_to_schema( array_keys( $parsed_attrs ) );
+                BAWBIN_Maps_REST_Attributes::bawbin_maps_sync_custom_keys_to_schema( array_keys( $parsed_attrs ) );
             }
 
             $update_data['custom_attributes'] = is_string( $custom_attrs ) ? $custom_attrs : json_encode( $custom_attrs );
@@ -256,12 +256,12 @@ class BWB_IMaps_REST_Spatial {
             return new WP_Error( 'db_update_error', 'Failed to update metadata records inside database.', array( 'status' => 500 ) );
         }
 
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array( 'success' => true ), 200 );
     }
 
-    public static function handle_delete_layer( $data ) {
+    public static function bawbin_maps_handle_delete_layer( $data ) {
         global $wpdb;
         $layer_type = sanitize_text_field( $data['layer_type'] );
 
@@ -271,12 +271,12 @@ class BWB_IMaps_REST_Spatial {
 
         if ( 'entries' === $layer_type ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_entries_data' ) );
+            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bawbin_maps_nav_entries_data' ) );
         } elseif ( 'network' === $layer_type ) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bwb_nav_network_data' ) );
+            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bawbin_maps_nav_network_data' ) );
         } else {
-            $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+            $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $result = $wpdb->delete( $table_name, array( 'layer_type' => $layer_type ) );
         }
@@ -285,8 +285,8 @@ class BWB_IMaps_REST_Spatial {
             return new WP_Error( 'db_error', 'Could not delete layer.', array( 'status' => 400 ) );
         }
 
-        wp_cache_delete( 'bwb_navigation_graph_data', 'bwb_spatial_cache' );
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_navigation_graph_data', 'bawbin_maps_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array(
             'success' => true, 

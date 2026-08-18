@@ -27,7 +27,7 @@ export const useCampusRouting = () => {
 				'📡 [useCampusRouting] Fetching navigation graph data from database...'
 			);
 			const response = await fetch(
-				'/wp-json/bwb-imaps-federated-api/v1/get-navigation-graph'
+				'/wp-json/bawbin-maps-federated-api/v1/get-navigation-graph'
 			);
 			if ( ! response.ok )
 				throw new Error(

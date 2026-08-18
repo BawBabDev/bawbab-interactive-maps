@@ -1,36 +1,36 @@
 <?php
 /**
  * MAP SETTINGS & STYLING REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-settings.php
+ * File: includes/apis/class-bawbin-maps-rest-settings.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Settings {
+class BAWBIN_Maps_REST_Settings {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         // Public endpoint to retrieve general settings, navigation, legend, and styling configurations
         register_rest_route( $namespace, '/get-map-settings', array(
             'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'handle_get_settings' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_get_settings' ),
             'permission_callback' => '__return_true',
         ) );
 
         // Authenticated admin endpoint to update settings, categories, legend, typography, and styling
         register_rest_route( $namespace, '/update-map-settings', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_update_settings' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_update_settings' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
     /**
      * Retrieve all map settings, category maps, legend configs, themes, and typography
      */
-    public static function handle_get_settings() {
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+    public static function bawbin_maps_handle_get_settings() {
+        $settings = get_option( 'bawbin_maps_options_data', array() );
 
         // Preserve exact saved categoryConfig structure without forced non-empty fallbacks
         $saved_category_config = isset( $settings['categoryConfig'] ) && is_array( $settings['categoryConfig'] )
@@ -176,8 +176,8 @@ class BWB_IMaps_REST_Settings {
     /**
      * Update map settings, category maps, legend section configurations, and typography
      */
-    public static function handle_update_settings( $request ) {
-        $existing_settings = get_option( 'bwb_imaps_options_data', array() );
+    public static function bawbin_maps_handle_update_settings( $request ) {
+        $existing_settings = get_option( 'bawbin_maps_options_data', array() );
         $params            = $request->get_json_params() ?: $request->get_body_params();
 
         if ( empty( $params ) ) {
@@ -198,14 +198,14 @@ class BWB_IMaps_REST_Settings {
             }
         }
 
-        if ( function_exists( 'bwb_imaps_sanitize_global_settings' ) ) {
-            $updated_settings = bwb_imaps_sanitize_global_settings( $updated_settings );
+        if ( function_exists( 'bawbin_maps_sanitize_global_settings' ) ) {
+            $updated_settings = bawbin_maps_sanitize_global_settings( $updated_settings );
         }
 
-        $saved = update_option( 'bwb_imaps_options_data', $updated_settings );
+        $saved = update_option( 'bawbin_maps_options_data', $updated_settings );
 
         // Invalidate spatial GeoJSON transient cache so public frontend map updates immediately
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bawbin_maps_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array(
             'success'  => true,
