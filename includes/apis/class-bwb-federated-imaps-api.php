@@ -55,7 +55,6 @@ class BWB_Federated_Imaps_API_Controller {
         BWB_IMaps_REST_Importer::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Attributes::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Navigation::register_routes( self::NAMESPACE );
-        BWB_IMaps_REST_Proxy::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Exporter::register_routes( self::NAMESPACE );
         BWB_IMaps_REST_Settings::register_routes( self::NAMESPACE );
     }
