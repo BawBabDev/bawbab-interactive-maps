@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sanitizes global settings changes and protects core string types
  */
-function bwb_imaps_sanitize_global_settings( $input ) {
+function bawbin_maps_sanitize_global_settings( $input ) {
     if ( ! is_array( $input ) ) {
         return array();
     }
@@ -65,13 +65,13 @@ function bwb_imaps_sanitize_global_settings( $input ) {
 /**
  * Registers global settings with full schema support for REST API
  */
-function bwb_imaps_register_global_settings() {
+function bawbin_maps_register_global_settings() {
     register_setting(
-        'bwb_imaps_settings_group',
-        'bwb_imaps_options_data',
+        'bawbin_maps_settings_group',
+        'bawbin_maps_options_data',
         array(
             'type'              => 'object',
-            'sanitize_callback' => 'bwb_imaps_sanitize_global_settings',
+            'sanitize_callback' => 'bawbin_maps_sanitize_global_settings',
             'show_in_rest'      => array(
                 'schema' => array(
                     'type'                 => 'object',
@@ -123,4 +123,4 @@ function bwb_imaps_register_global_settings() {
         )
     );
 }
-add_action( 'init', 'bwb_imaps_register_global_settings' );
+add_action( 'init', 'bawbin_maps_register_global_settings' );

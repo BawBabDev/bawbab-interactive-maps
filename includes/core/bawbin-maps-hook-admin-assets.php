@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Enqueues compiled React dashboard scripts and stylesheets conditionally based on the active admin screen hook identifier string
  */
-function bwb_imaps_enqueue_admin_assets( $hook ) {
+function bawbin_maps_enqueue_admin_assets( $hook ) {
     // Corrected screen hook identifiers matching parent slug "bawbab-interactive-maps-settings"
     $allowed_pages = array(
         'toplevel_page_bawbab-interactive-maps-settings',
@@ -62,4 +62,4 @@ function bwb_imaps_enqueue_admin_assets( $hook ) {
         }
     }
 }
-add_action( 'admin_enqueue_scripts', 'bwb_imaps_enqueue_admin_assets' );
+add_action( 'admin_enqueue_scripts', 'bawbin_maps_enqueue_admin_assets' );

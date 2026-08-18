@@ -12,9 +12,9 @@ global $wpdb;
 
 //Delete the Custom Database Table
 $tables_to_delete = array(
-    $wpdb->prefix . 'bwb_nav_network_data',
-    $wpdb->prefix . 'bwb_nav_entries_data',
-    $wpdb->prefix . 'bwb_general_spatial_data'
+    $wpdb->prefix . 'bwb_imaps_nav_network_data',
+    $wpdb->prefix . 'bwb_imaps_nav_entries_data',
+    $wpdb->prefix . 'bwb_imaps_general_spatial_data'
 );
 
 // Delete the Settings/Options from wp_options

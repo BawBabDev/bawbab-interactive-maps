@@ -55,7 +55,7 @@ const MapSettingsPage = () => {
 	useEffect( () => {
 		apiFetch( { path: '/wp/v2/settings' } )
 			.then( ( response ) => {
-				const data = response.bwb_imaps_options_data;
+				const data = response.bawbin_maps_options_data;
 				if ( data ) {
 					setMapDescription( data.mapDescription || '' );
 					setMapType( data.mapType || 'roadmap' );
@@ -93,7 +93,7 @@ const MapSettingsPage = () => {
 				const settingsRes = await apiFetch( {
 					path: '/wp/v2/settings',
 				} );
-				currentOptions = settingsRes?.bwb_imaps_options_data || {};
+				currentOptions = settingsRes?.bawbin_maps_options_data || {};
 			} catch ( err ) {
 				console.warn(
 					'Could not fetch existing options before save:',
@@ -113,7 +113,7 @@ const MapSettingsPage = () => {
 				path: '/wp/v2/settings',
 				method: 'POST',
 				data: {
-					bwb_imaps_options_data: {
+					bawbin_maps_options_data: {
 						...currentOptions, // Preserves categoryConfig & attribute_schema!
 						mapDescription: safeString( mapDescription ),
 						mapType: safeString( mapType ),
@@ -129,7 +129,7 @@ const MapSettingsPage = () => {
 
 			// 4. Update window memory object
 			window.bwbimapsSettings = {
-				...window.bwbimapsSettings,
+				...window.bawbinmapsSettings,
 				mapType: safeString( mapType ),
 				colorTheme: safeString( colorTheme ),
 				mapLogo: safeString( mapLogo ),

@@ -8,7 +8,7 @@ const viewBawbabImap = async () => {
 	let globalSettings = { colorTheme: 'blue', mapLogo: '' };
 	try {
 		const response = await fetch(
-			'/wp-json/bwb-imaps-federated-api/v1/map-locations'
+			'/wp-json/bawbin-maps-federated-api/v1/map-locations'
 		);
 		if ( response.ok ) {
 			const data = await response.json();
@@ -17,7 +17,7 @@ const viewBawbabImap = async () => {
 				mapLogo: data.mapLogo || '',
 			};
 			// Set global for components that might peek at it
-			window.bwbimapsSettings = data;
+			window.bawbinmapsSettings = data;
 		}
 	} catch ( err ) {
 		console.error( 'Bawbab IMaps: Could not load global settings', err );

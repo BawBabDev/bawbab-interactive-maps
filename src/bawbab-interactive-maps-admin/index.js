@@ -28,7 +28,7 @@ const App = () => {
  * Initialize the React Admin Interface
  */
 domReady( () => {
-	const rootElement = document.getElementById( 'bwb-imaps-admin-app' );
+	const rootElement = document.getElementById( 'bawbin-maps-admin-app' );
 
 	if ( rootElement ) {
 		const root = createRoot( rootElement );

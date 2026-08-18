@@ -1,42 +1,42 @@
 <?php
 /**
  * DYNAMIC ATTRIBUTES SCHEMA REST ROUTES
- * File: includes/apis/class-bwb-imaps-rest-attributes.php
+ * File: includes/apis/class-bawbin-maps-rest-attributes.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class BWB_IMaps_REST_Attributes {
+class  BAWBIN_Maps_REST_Attributes {
 
-    public static function register_routes( $namespace ) {
+    public static function bawbin_maps_register_routes( $namespace ) {
         register_rest_route( $namespace, '/get-attribute-schema', array(
             'methods'             => 'GET',
-            'callback'            => array( __CLASS__, 'handle_get_attribute_schema' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_get_attribute_schema' ),
             'permission_callback' => '__return_true',
         ) );
 
         register_rest_route( $namespace, '/update-attribute-schema', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_update_attribute_schema' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_update_attribute_schema' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
 
         register_rest_route( $namespace, '/delete-attribute-key', array(
             'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'handle_delete_attribute_key' ),
-            'permission_callback' => array( 'BWB_Federated_Imaps_API_Controller', 'check_admin_permissions' ),
+            'callback'            => array( __CLASS__, 'bawbin_maps_handle_delete_attribute_key' ),
+            'permission_callback' => array( 'BAWBIN_Maps_Federated_API_Controller', 'bawbin_maps_check_admin_permissions' ),
         ) );
     }
 
-    public static function handle_get_attribute_schema() {
+    public static function bawbin_maps_handle_get_attribute_schema() {
         global $wpdb;
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
         if ( empty( $schema ) ) {
-            $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+            $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $results    = $wpdb->get_results(
                 $wpdb->prepare(
@@ -61,7 +61,7 @@ class BWB_IMaps_REST_Attributes {
                 }
 
                 if ( ! empty( $discovered_keys ) ) {
-                    self::sync_custom_keys_to_schema( $discovered_keys );
+                    self::bawbin_maps_sync_custom_keys_to_schema( $discovered_keys );
                     $settings = get_option( 'bwb_imaps_options_data', array() );
                     $schema   = isset( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
                 }
@@ -71,7 +71,7 @@ class BWB_IMaps_REST_Attributes {
         return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
     }
 
-    public static function handle_update_attribute_schema( $request ) {
+    public static function bawbin_maps_handle_update_attribute_schema( $request ) {
         $key   = sanitize_key( $request->get_param( 'key' ) );
         $label = sanitize_text_field( $request->get_param( 'label' ) );
         $type  = sanitize_text_field( $request->get_param( 'type' ) ?: 'text' );
@@ -80,7 +80,7 @@ class BWB_IMaps_REST_Attributes {
             return new WP_Error( 'missing_key', 'Attribute key is required.', array( 'status' => 400 ) );
         }
 
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
         $updated = false;
@@ -102,7 +102,7 @@ class BWB_IMaps_REST_Attributes {
         }
 
         $settings['attribute_schema'] = $schema;
-        update_option( 'bwb_imaps_options_data', $settings );
+        update_option( 'bawbin_maps_options_data', $settings );
 
         return new WP_REST_Response( array( 'success' => true, 'schema' => $schema ), 200 );
     }
@@ -111,7 +111,7 @@ class BWB_IMaps_REST_Attributes {
      * POST Route Callback: Purges a key from the schema registry AND from custom_attributes JSON on ALL MySQL rows.
      * Uses JSON_CONTAINS_PATH to ensure unconditionally full removal across all rows regardless of saved value type.
      */
-    public static function handle_delete_attribute_key( $request ) {
+    public static function bawbin_maps_handle_delete_attribute_key( $request ) {
         global $wpdb;
 
         $key = sanitize_key( $request->get_param( 'key' ) );
@@ -119,8 +119,8 @@ class BWB_IMaps_REST_Attributes {
             return new WP_Error( 'missing_key', 'Attribute key is required for deletion.', array( 'status' => 400 ) );
         }
 
-        // 1. Remove from global options schema array
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        // Remove from global options schema array
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
         $filtered_schema = array_values( array_filter( $schema, function( $item ) use ( $key ) {
@@ -128,10 +128,10 @@ class BWB_IMaps_REST_Attributes {
         } ) );
 
         $settings['attribute_schema'] = $filtered_schema;
-        update_option( 'bwb_imaps_options_data', $settings );
+        update_option( 'bawbin_maps_options_data', $settings );
 
-        // 2. Unconditionally remove key from custom_attributes JSON column across ALL MySQL database rows
-        $table_name = $wpdb->prefix . 'bwb_general_spatial_data';
+        // Unconditionally remove key from custom_attributes JSON column across ALL MySQL database rows
+        $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
         $json_path  = '$.' . $key;
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -144,7 +144,7 @@ class BWB_IMaps_REST_Attributes {
             )
         );
 
-        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bwb_spatial_cache' );
+        wp_cache_delete( 'bwb_spatial_geojson_collection', 'bawbin_maps_spatial_cache' );
 
         return new WP_REST_Response( array( 
             'success' => true, 
@@ -153,10 +153,10 @@ class BWB_IMaps_REST_Attributes {
         ), 200 );
     }
 
-    public static function sync_custom_keys_to_schema( $keys = array() ) {
+    public static function bawbin_maps_sync_custom_keys_to_schema( $keys = array() ) {
         if ( empty( $keys ) ) return;
 
-        $settings = get_option( 'bwb_imaps_options_data', array() );
+        $settings = get_option( 'bawbin_maps_options_data', array() );
         $schema   = isset( $settings['attribute_schema'] ) && is_array( $settings['attribute_schema'] ) ? $settings['attribute_schema'] : array();
 
         $existing_keys = array_column( $schema, 'key' );
@@ -191,7 +191,7 @@ class BWB_IMaps_REST_Attributes {
 
         if ( $has_changes ) {
             $settings['attribute_schema'] = $schema;
-            update_option( 'bwb_imaps_options_data', $settings );
+            update_option( 'bawbin_maps_options_data', $settings );
         }
     }
 }

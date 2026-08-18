@@ -8,13 +8,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'wp_enqueue_scripts', function() {
-    $script_handle = 'bawbab-interactive-maps';
-    $map_settings  = get_option( 'bawbab_imaps_options_data' );
+    $script_handle = 'bawbab-interactive-maps-global-scripts';
+    $map_settings  = get_option( 'bawbin_maps_options_data' );
     
     if ( $map_settings ) {
         wp_add_inline_script(
             $script_handle,
-            'window.bwbimapsSettings = ' . wp_json_encode( $map_settings ) . ';',
+            'window.bawbinmapsSettings = ' . wp_json_encode( $map_settings ) . ';',
             'before'// Injects it right before your script executes
         );
     }

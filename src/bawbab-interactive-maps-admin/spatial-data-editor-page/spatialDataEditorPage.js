@@ -107,7 +107,7 @@ const SpatialDataEditorPage = () => {
 		setIsLoading( true );
 		try {
 			const response = await fetch(
-				'/wp-json/bwb-imaps-federated-api/v1/get-spatial-data'
+				'/wp-json/bawbin-maps-federated-api/v1/get-spatial-data'
 			);
 			const data = await response.json();
 			const allFeatures = data.features || [];
@@ -399,7 +399,7 @@ const SpatialDataEditorPage = () => {
 				};
 
 				const response = await fetch(
-					'/wp-json/bwb-imaps-federated-api/v1/update-spatial-meta',
+					'/wp-json/bawbin-maps-federated-api/v1/update-spatial-meta',
 					{
 						method: 'POST',
 						headers: {
@@ -486,7 +486,7 @@ const SpatialDataEditorPage = () => {
 	};
 
 	useEffect( () => {
-		const settings = window.bwbimapsSettings;
+		const settings = window.bawbinmapsSettings;
 		if ( settings?.googleApiKey && settings?.googleMapId ) {
 			setGoogleApiKey( settings.googleApiKey );
 			setGoogleMapId( settings.googleMapId );
@@ -497,7 +497,7 @@ const SpatialDataEditorPage = () => {
 		} else {
 			apiFetch( { path: '/wp/v2/settings' } )
 				.then( ( response ) => {
-					const data = response.bwb_imaps_options_data;
+					const data = response.bawbin_maps_options_data;
 					if ( data ) {
 						const key = data.googleApiKey || '';
 						const id = data.googleMapId || '';
@@ -513,10 +513,10 @@ const SpatialDataEditorPage = () => {
 						setNavBackground( bg );
 						setColorTheme( theme );
 
-						if ( ! window.bwbimapsSettings )
-							window.bwbimapsSettings = {};
-						window.bwbimapsSettings = {
-							...window.bwbimapsSettings,
+						if ( ! window.bawbinmapsSettings )
+							window.bawbinmapsSettings = {};
+						window.bawbinmapsSettings = {
+							...window.bawbinmapsSettings,
 							googleApiKey: key,
 							googleMapId: id,
 							mapType: type,
