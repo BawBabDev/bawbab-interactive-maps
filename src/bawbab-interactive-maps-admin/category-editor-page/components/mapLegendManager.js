@@ -275,6 +275,55 @@ export const MapLegendManager = ( {
         } );
     };
 
+    // 9b. Add ALL Categories for a Specific Layer to Active Legend
+    const handleAddLayerToLegend = ( layerKey ) => {
+        const catList = availableCategoriesByLayer[ layerKey ] || [];
+        const unassignedCats = catList.filter( ( cat ) => ! cat.isAssigned );
+
+        if ( unassignedCats.length === 0 ) return;
+
+        setLegendConfig( ( prev ) => {
+            let sections = [ ...( prev.sections || [] ) ];
+
+            let targetSec = findMatchingSectionForLayer( sections, layerKey );
+
+            if ( ! targetSec ) {
+                const layerTitle = LAYER_TITLES[ layerKey ] || layerKey.toUpperCase();
+                targetSec = {
+                    id: `sec_layer_${ layerKey }_${ Date.now() }`,
+                    title: layerTitle,
+                    layer_type: layerKey,
+                    items: [],
+                };
+                sections.push( targetSec );
+            }
+
+            const newItems = unassignedCats.map( ( cat, idx ) => {
+                const { compositeKey, label } = cat;
+                const catSlug = compositeKey.includes( '::' )
+                    ? compositeKey.split( '::' )[ 1 ]
+                    : compositeKey;
+
+                return {
+                    id: `leg_${ compositeKey }_${ Date.now() }_${ idx }`,
+                    label: label || catSlug,
+                    type: 'single',
+                    categories: [ compositeKey ],
+                    showInLegend: true,
+                };
+            } );
+
+            const updatedSections = sections.map( ( sec ) => {
+                if ( sec.id === targetSec.id ) {
+                    return { ...sec, items: [ ...sec.items, ...newItems ] };
+                }
+                return sec;
+            } );
+
+            return { ...prev, sections: updatedSections };
+        } );
+    };
+
     // 10. Reset Legend Structure Back to Layer Defaults
     const handleResetLegendToLayers = () => {
         const newSectionsMap = {};
@@ -852,21 +901,45 @@ export const MapLegendManager = ( {
                             Object.keys( availableCategoriesByLayer ).map( ( layerKey ) => {
                                 const catList = availableCategoriesByLayer[ layerKey ];
                                 const layerTitle = LAYER_TITLES[ layerKey ] || layerKey.toUpperCase();
+                                const hasUnassigned = catList.some( ( cat ) => ! cat.isAssigned );
 
                                 return (
                                     <div key={ layerKey } style={ { marginBottom: '16px' } }>
-                                        <div
+                                        <Flex
+                                            align="center"
+                                            justify="space-between"
                                             style={ {
-                                                fontSize: '11px',
-                                                fontWeight: '700',
-                                                color: '#2271b1',
                                                 marginBottom: '6px',
                                                 paddingBottom: '3px',
                                                 borderBottom: '1px solid #e0e0e0',
                                             } }
                                         >
-                                            { layerTitle }
-                                        </div>
+                                            <span
+                                                style={ {
+                                                    fontSize: '11px',
+                                                    fontWeight: '700',
+                                                    color: '#2271b1',
+                                                } }
+                                            >
+                                                { layerTitle }
+                                            </span>
+                                            <Button
+                                                isSmall
+                                                variant="tertiary"
+                                                icon="plus-alt"
+                                                onClick={ () => handleAddLayerToLegend( layerKey ) }
+                                                disabled={ ! hasUnassigned || ! legendConfig.enabled }
+                                                label={ sprintf(
+                                                    __( 'Add all unassigned categories from %s to legend', TEXT_DOMAIN ),
+                                                    layerTitle
+                                                ) }
+                                                style={ {
+                                                    height: '20px',
+                                                    minWidth: '20px',
+                                                    padding: 0,
+                                                } }
+                                            />
+                                        </Flex>
 
                                         <div style={ { display: 'flex', flexDirection: 'column', gap: '6px' } }>
                                             { catList.map( ( cat ) => {
