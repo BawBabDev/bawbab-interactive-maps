@@ -12,7 +12,7 @@ class BWB_TinyMCE_Veditor_Button {
 
     public static function init() {
         add_action( 'admin_init', array( __CLASS__, 'setup_tinymce_editor' ) );
-        add_action( 'admin_head', array( __CLASS__, 'tinymce_button_styles' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_tinymce_button_styles' ) );
     }
 
     public static function setup_tinymce_editor() {
@@ -43,18 +43,35 @@ class BWB_TinyMCE_Veditor_Button {
         return $buttons;
     }
 
-    public static function bwb_imaps_tinymce_button_styles( $hook ) {
-        // Only load on post/page editing screens to keep the dashboard lightweight
+    public static function enqueue_tinymce_button_styles( $hook ) {
+        // Only load on post and page editing screens
         if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
             return;
         }
 
-        // Get the plugin base directory URL (stepping up two levels from /includes/integrations/)
-        $root_dir_url  = plugin_dir_url( dirname( __DIR__, 2 ) . '/bawbab-interactive-maps.php' );
-        $css_file_url  = $root_dir_url . 'assets/bwb-imaps-tinymce-btnstyles.css';
+        // 1. Ensure WordPress built-in Dashicons font stylesheet is enqueued
+        wp_enqueue_style( 'dashicons' );
 
-        // Enqueue the external stylesheet safely
-        wp_enqueue_style('bawbin-maps-tinymce-btnstyles', $css_file_url,  array( 'dashicons' ), '1.0.0');
+        // 2. Attach inline custom TinyMCE button styles safely to the dashicons handle
+        $custom_css = "
+            .mce-btn .mce-ico.mce-i-dashicons-location-alt,
+            .mce-btn .mce-ico.mce-i-dashicons-visibility {
+                font-family: dashicons !important; 
+                font-style: normal !important; 
+                font-weight: 400 !important; 
+                font-size: 18px !important; 
+                line-height: 1 !important; 
+                vertical-align: middle !important; 
+                -webkit-font-smoothing: antialiased;
+            }
+            .mce-btn .mce-ico.mce-i-dashicons-location-alt:before { content: '\\f231' !important; }
+            .mce-btn .mce-ico.mce-i-dashicons-visibility:before { content: '\\f177' !important; }
+            .mce-menubtn button span.mce-txt, 
+            .mce-menubtn button i.mce-ico { vertical-align: middle !important; display: inline-block !important; }
+            .mce-menubtn i.mce-caret { display: inline-block !important; vertical-align: middle !important; margin-top: -2px !important; margin-left: 4px !important; border-top-color: #50575e !important; }
+        ";
+
+        wp_add_inline_style( 'dashicons', $custom_css );
     }
 }
 
