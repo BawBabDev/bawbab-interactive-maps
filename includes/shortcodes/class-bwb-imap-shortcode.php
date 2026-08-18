@@ -103,14 +103,14 @@ class BWB_Imap_Shortcode {
      * Handles map inclusions container markup block wrapper
      */
     public static function map_include_shortcode( $atts, $content = null ) {
-        return '<div class="map-include map-sidebar-content">' . do_shortcode( $content ) . '</div>';
+        return '<div class="map-include map-sidebar-content">' . wp_kses_post( do_shortcode( $content ) ) . '</div>';
     }
 
     /**
      * Handles map exclusions container markup block wrapper
      */
     public static function map_exclude_shortcode( $atts, $content = null ) {
-        return '<div class="map-exclude">' . do_shortcode( $content ) . '</div>';
+        return '<div class="map-exclude">' . wp_kses_post( do_shortcode( $content ) ) . '</div>';
     }
 }
 

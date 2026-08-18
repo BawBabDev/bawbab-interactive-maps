@@ -28,7 +28,6 @@ class BWB_Federated_Imaps_API_Controller {
         require_once $api_dir . 'class-bwb-imaps-rest-importer.php';
         require_once $api_dir . 'class-bwb-imaps-rest-attributes.php';
         require_once $api_dir . 'class-bwb-imaps-rest-navigation.php';
-        require_once $api_dir . 'class-bwb-imaps-rest-proxy.php';
         require_once $api_dir . 'class-bwb-imaps-rest-exporter.php';
         require_once $api_dir . 'class-bwb-imaps-rest-settings.php';
     }

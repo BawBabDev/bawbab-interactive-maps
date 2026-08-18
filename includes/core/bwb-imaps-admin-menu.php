@@ -19,7 +19,7 @@ function bwb_imaps_add_admin_menu() {
         'bawbab-interactive-maps-settings',
         'bwb_imaps_render_admin_page',
         'dashicons-location-alt',
-        25
+        57
     );
 
     // Main settings page
