@@ -358,6 +358,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 <div style={ { flex: 1, height: '100%', minHeight: 0, overflow: 'hidden' } }>
                     { isLoaded ? (
                         <BawBabIMaps
+                            key={ `map-preview-${ refreshTrigger }` }
                             mapTypeProp={ mapType }
                             locations={ locations }
                             mapLogoProp={ mapLogo }

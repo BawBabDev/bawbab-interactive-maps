@@ -83,19 +83,20 @@ export const useWpLinkedContent = (
             } );
         } );
 
-        // 4. Strip inline layout/typography overrides while preserving formatting (bold, italic, underline)
-        doc.querySelectorAll( 'p, ul, ol, li, span, div, blockquote, cite' ).forEach( ( el ) => {
-            if ( el.style ) {
-                el.style.removeProperty( 'font-size' );
-                el.style.removeProperty( 'font-family' );
-                el.style.removeProperty( 'line-height' );
-                el.style.removeProperty( 'margin-top' );
-                el.style.removeProperty( 'margin-bottom' );
-                el.style.removeProperty( 'padding' );
-                el.style.removeProperty( 'border' );
-                el.style.removeProperty( 'background' );
-            }
-        } );
+            // 4. Strip inline layout/typography overrides from ALL elements including headings
+            doc.querySelectorAll( 'p, ul, ol, li, span, div, blockquote, cite, h1, h2, h3, h4, h5, h6' ).forEach( ( el ) => {
+                if ( el.style ) {
+                    el.style.removeProperty( 'font-size' );
+                    el.style.removeProperty( 'font-family' );
+                    el.style.removeProperty( 'font-weight' );
+                    el.style.removeProperty( 'line-height' );
+                    el.style.removeProperty( 'margin-top' );
+                    el.style.removeProperty( 'margin-bottom' );
+                    el.style.removeProperty( 'padding' );
+                    el.style.removeProperty( 'border' );
+                    el.style.removeProperty( 'background' );
+                }
+            } );
 
         // 5. Unwrap unnecessary layout containers (Gutenberg groups, columns, cards) - DO NOT unwrap blockquotes
         doc.querySelectorAll(

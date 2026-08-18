@@ -9,9 +9,11 @@ import {
 } from '@wordpress/components';
 import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { useDispatch } from '@wordpress/data';
+import { store as noticesStore } from '@wordpress/notices';
+
 import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
 import { useSpatialDataExporter } from '../../hooks/useSpatialDataExporter';
-import { useNotify } from '../notices';
 import { GeoJSONImportWizardModal } from '../importWizard';
 
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
@@ -34,9 +36,13 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
     const { inspectGeoJSON, importGeoJSON, deleteLayer, isUploading, message } =
         useSpatialDataImporter();
     const { exportGeoJSON, isExporting, exportError } = useSpatialDataExporter();
-    
-    const { notify } = useNotify();
-    const lastProcessedMessageRef = useRef( null );
+
+    // Standard WordPress Notices Dispatchers
+    const { createSuccessNotice, createErrorNotice } = useDispatch( noticesStore );
+
+    // Track processed message strings to prevent re-render loops
+    const lastProcessedTextRef = useRef( null );
+    const lastExportErrorTextRef = useRef( null );
 
     const handleFileSelect = ( e ) => {
         const file = e.target.files[ 0 ];
@@ -54,14 +60,16 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
     const handleExportLayer = async () => {
         const result = await exportGeoJSON( importType );
         if ( result.success ) {
-            notify( 'success', sprintf( __( 'Exported "%s" layer successfully.', TEXT_DOMAIN ), importType ), { id: 'spatial-export' } );
+            createSuccessNotice(
+                sprintf( __( 'Exported "%s" layer successfully.', TEXT_DOMAIN ), importType )
+            );
         } else if ( result.error ) {
-            notify( 'error', result.error, { id: 'spatial-export' } );
+            createErrorNotice( result.error );
         }
     };
 
     const handleClearLayer = () => {
-        lastProcessedMessageRef.current = null;
+        lastProcessedTextRef.current = null;
         deleteLayer( importType );
     };
 
@@ -71,23 +79,30 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
         if ( input ) input.value = '';
     };
 
+    // Safely forward importer messages to WP notice store ONCE per unique message
     useEffect( () => {
-        if ( message && message !== lastProcessedMessageRef.current ) {
-            lastProcessedMessageRef.current = message;
-            notify( message.type, message.text, { id: 'spatial-import' } );
+        if ( message?.text && message.text !== lastProcessedTextRef.current ) {
+            lastProcessedTextRef.current = message.text;
 
             if ( message.type === 'success' ) {
+                createSuccessNotice( message.text );
                 setPendingFile( null );
-                if ( onUploadSuccess ) onUploadSuccess();
+                if ( typeof onUploadSuccess === 'function' ) {
+                    onUploadSuccess();
+                }
+            } else if ( message.type === 'error' ) {
+                createErrorNotice( message.text );
             }
         }
-    }, [ message, notify, onUploadSuccess ] );
+    }, [ message, createSuccessNotice, createErrorNotice, onUploadSuccess ] );
 
+    // Safely forward export errors to WP notice store ONCE per unique error
     useEffect( () => {
-        if ( exportError ) {
-            notify( 'error', exportError, { id: 'spatial-export-err' } );
+        if ( exportError && exportError !== lastExportErrorTextRef.current ) {
+            lastExportErrorTextRef.current = exportError;
+            createErrorNotice( exportError );
         }
-    }, [ exportError, notify ] );
+    }, [ exportError, createErrorNotice ] );
 
     return (
         <div className="tab-content">

@@ -36,13 +36,13 @@ export const TypographyRowControl = ( {
     const isLineThrough = typographySettings[ decorationKey ] === 'line-through';
 
     return (
-        <div style={ { paddingBottom: '12px', borderBottom: '1px solid #eee' } }>
+        <div style={ { paddingBottom: '10px', borderBottom: '1px solid #eee' } }>
             <div style={ { marginBottom: '6px', fontSize: '11px', fontWeight: 700, color: '#555' } }>
                 { title }
             </div>
-            <Flex align="center" gap={ 2 } wrap={ false }>
-                { /* Short Range Control / Slider + Number Input */ }
-                <FlexItem style={ { flex: '1 1 180px', minWidth: '140px' } }>
+            <Flex align="center" gap={ 1 } wrap={ false } style={ { width: '100%', overflow: 'hidden', padding: '0 2px' } }>
+                { /* Fluid Range Control / Slider + Compressed Number Input */ }
+                <FlexItem style={ { flex: 1, minWidth: 0 } } className="compact-range-control-item">
                     <RangeControl
                         value={ typographySettings[ sizeKey ] || defaultSize }
                         onChange={ ( val ) => updateTypography( sizeKey, val ) }
@@ -54,8 +54,8 @@ export const TypographyRowControl = ( {
                     />
                 </FlexItem>
 
-                { /* Compact Descriptive Weight Dropdown */ }
-                <FlexItem style={ { width: '105px', flexShrink: 0 } }>
+                { /* Compact Font Weight Dropdown with Matched 30px Height */ }
+                <FlexItem style={ { width: '92px', flexShrink: 0 } } className="compact-weight-dropdown">
                     <SelectControl
                         value={ typographySettings[ weightKey ] || defaultWeight }
                         options={ FONT_WEIGHT_OPTIONS }
@@ -80,6 +80,7 @@ export const TypographyRowControl = ( {
                             }
                             disabled={ disabled }
                             label={ __( 'Underline', TEXT_DOMAIN ) }
+                            style={ { height: '30px', minHeight: '30px' } }
                         />
                         <Button
                             isSmall
@@ -93,6 +94,7 @@ export const TypographyRowControl = ( {
                             }
                             disabled={ disabled }
                             label={ __( 'Line-Through', TEXT_DOMAIN ) }
+                            style={ { height: '30px', minHeight: '30px' } }
                         />
                         <Button
                             isSmall
@@ -106,6 +108,7 @@ export const TypographyRowControl = ( {
                             }
                             disabled={ disabled }
                             label={ __( 'Italic', TEXT_DOMAIN ) }
+                            style={ { height: '30px', minHeight: '30px' } }
                         />
                     </Flex>
                 </FlexItem>
