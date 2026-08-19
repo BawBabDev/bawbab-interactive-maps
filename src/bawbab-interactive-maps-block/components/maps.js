@@ -175,6 +175,7 @@ export default function BawBabIMaps( {
      * Evaluates geographic span of bounding box.
      * High span (e.g. US to Belgium) scales zoom down so whole world/region is visible immediately.
      */
+    // 1. Dynamic Minimum Zoom (computed from bounding box span)
     const dynamicMinZoom = useMemo( () => {
         if ( ! floorBounds ) return MIN_MAP_ZOOM;
 
@@ -182,24 +183,26 @@ export default function BawBabIMaps( {
         const lngSpan = Math.abs( floorBounds.east - floorBounds.west );
         const maxSpan = Math.max( latSpan, lngSpan );
 
-        if ( maxSpan > 40 ) return 2;   // Intercontinental (e.g., US to Europe)
+        if ( maxSpan > 40 ) return 2;   // Intercontinental (US to Europe)
         if ( maxSpan > 15 ) return 3;   // Country-wide
         if ( maxSpan > 5 )  return 6;   // Regional
         if ( maxSpan > 1 )  return 9;   // City-wide
         if ( maxSpan > 0.1 ) return 12; // District
 
-        return MIN_MAP_ZOOM; // Local campus zoom (15 or 16)
+        return MIN_MAP_ZOOM; // Local campus zoom
     }, [ floorBounds ] );
 
-    // If explicit zoom prop is passed, use it; otherwise use dynamic bounds scale
-    const parsedZoom = zoom !== null ? Number.parseInt( zoom, 10 ) : NaN;
+    // 2. Initial Zoom Resolution: Custom prop wins if valid, otherwise dynamicMinZoom
+    const parsedZoom = zoom !== null && zoom !== undefined ? Number.parseInt( zoom, 10 ) : NaN;
     const initialZoom = ! Number.isNaN( parsedZoom ) && parsedZoom > 0
-        ? parsedZoom
+        ? Math.max( dynamicMinZoom, parsedZoom ) // Keep at or above minZoom to prevent map restriction crashes
         : dynamicMinZoom;
 
-    const initialTilt = Number.isNaN( Number.parseInt( tilt, 10 ) )
-        ? 0
-        : Math.min( Math.max( 0, Number.parseInt( tilt, 10 ) ), MAX_MAP_TILT );
+    // 3. Initial Tilt Resolution
+    const parsedTilt = Number.parseInt( tilt, 10 );
+    const initialTilt = ! Number.isNaN( parsedTilt )
+        ? Math.min( Math.max( 0, parsedTilt ), MAX_MAP_TILT )
+        : 0;
     const isFloorMode = activeFloor !== 0;
 
     const overlayBounds = viewportBounds || floorBounds;
@@ -461,7 +464,7 @@ export default function BawBabIMaps( {
                                 />
 
                                 <Map
-                                    key={ `map-${ locations.length }-${ spatialFeatures.length }-${ dynamicMinZoom }` }
+                                    key={ `map-${ locations.length }-${ initialZoom }-${ initialTilt }-${ dynamicMinZoom }` }
                                     mapTypeId={ MAP_TYPE }
                                     defaultCenter={ defaultCenter }
                                     defaultZoom={ initialZoom }

@@ -15,14 +15,13 @@ import {
 } from '@wordpress/components';
 import BawBabIMaps from './components/maps';
 
-const MIN_MAP_ZOOM = 15;
-const MAX_MAP_ZOOM = 20;
+const MIN_BLOCK_ZOOM = 2; // Allow zooming all the way out to global scale in block options
+const MAX_BLOCK_ZOOM = 20;
 const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 
 export default function Edit( { attributes, setAttributes } ) {
     const { zoom, tilt, width, height } = attributes;
 
-    // Safely retrieve synchronous window settings across iframe boundaries
     const getSynchronousSettings = () => {
         if ( typeof window !== 'undefined' && window.bawbinmapsSettings ) {
             return window.bawbinmapsSettings;
@@ -39,7 +38,6 @@ export default function Edit( { attributes, setAttributes } ) {
     const [ isLoading, setIsLoading ] = useState( ! initialSettings.googleApiKey );
 
     useEffect( () => {
-        // Fetch map settings via REST API
         fetch( ENDPOINT_GET_SETTINGS )
             .then( ( res ) => ( res.ok ? res.json() : {} ) )
             .then( ( data ) => {
@@ -59,16 +57,16 @@ export default function Edit( { attributes, setAttributes } ) {
 
     const blockProps = useBlockProps();
 
-    // Extract settings with fallback to synchronous window object
     const googleApiKey = settingsData?.googleApiKey || initialSettings.googleApiKey || '';
     const googleMapId = settingsData?.googleMapId || initialSettings.googleMapId || '';
     const locations = settingsData?.locations || initialSettings.locations || [];
     const colorTheme = settingsData?.colorTheme || initialSettings.colorTheme || 'blue';
     const mapLogo = settingsData?.mapLogo || initialSettings.mapLogo || '';
+    const mapTitle = settingsData?.mapTitle || initialSettings.mapTitle || '';
+    const mapDescription = settingsData?.mapDescription || initialSettings.mapDescription || '';
     const navBackground = settingsData?.navBackground || initialSettings.navBackground || '';
     const mapType = settingsData?.mapType || initialSettings.mapType || 'hybrid';
 
-    // BLOCK RENDERING: Do NOT mount BawBabIMaps if Google API key is missing or still loading
     if ( isLoading || ! googleApiKey ) {
         return (
             <div { ...blockProps }>
@@ -94,31 +92,32 @@ export default function Edit( { attributes, setAttributes } ) {
 
     return (
         <div { ...blockProps }>
-            { /* Inspector Controls */ }
             <InspectorControls>
                 <PanelBody
                     title={ __(
-                        'Map display Settings',
+                        'Map Display Settings',
                         'bawbab-interactive-maps'
                     ) }
                 >
                     <RangeControl
                         label={ __( 'Default Zoom Level', 'bawbab-interactive-maps' ) }
                         value={ attributes.zoom }
-                        onChange={ ( val ) =>
-                            setAttributes( {
-                                zoom: Math.max( MIN_MAP_ZOOM, val ),
-                            } )
-                        }
-                        min={ MIN_MAP_ZOOM }
-                        max={ MAX_MAP_ZOOM }
+                        onChange={ ( val ) => setAttributes( { zoom: val } ) }
+                        min={ MIN_BLOCK_ZOOM }
+                        max={ MAX_BLOCK_ZOOM }
+                        help={ __(
+                            'Custom zoom level for this block instance. Overrides automatic bounding calculation when set.',
+                            'bawbab-interactive-maps'
+                        ) }
                     />
                     <RangeControl
                         label={ __( 'Tilt Angle', 'bawbab-interactive-maps' ) }
                         value={ attributes.tilt }
                         onChange={ ( val ) => setAttributes( { tilt: val } ) }
                         min={ 0 }
-                        max={ 90 }
+                        max={ 67.5 }
+                        step={ 2.5 }
+                        help={ __( 'Applies a 3D perspective angle to the map camera.', 'bawbab-interactive-maps' ) }
                     />
                     <TextControl
                         label={ __( 'Map Width', 'bawbab-interactive-maps' ) }
@@ -133,7 +132,7 @@ export default function Edit( { attributes, setAttributes } ) {
                         label={ __( 'Map Height', 'bawbab-interactive-maps' ) }
                         value={ attributes.height }
                         onChange={ ( val ) => setAttributes( { height: val } ) }
-                        help={ __( 'e.g., 400px', 'bawbab-interactive-maps' ) }
+                        help={ __( 'e.g., 650px or 80vh', 'bawbab-interactive-maps' ) }
                     />
                     <p style={ { fontSize: '11px', color: '#757575' } }>
                         { __(
@@ -155,15 +154,16 @@ export default function Edit( { attributes, setAttributes } ) {
                 </PanelBody>
             </InspectorControls>
 
-            { /* Visual Map Renderer */ }
             <BawBabIMaps
-                key={ `gutenberg-map-${ googleApiKey }-${ googleMapId }` }
+                key={ `gutenberg-map-${ googleApiKey }-${ googleMapId }-${ attributes.zoom }-${ attributes.tilt }` }
                 locations={ locations }
                 zoom={ zoom }
                 tilt={ tilt }
                 width={ attributes.width }
                 height={ attributes.height }
                 mapLogoProp={ mapLogo }
+                mapTitleProp={ mapTitle }
+                mapDescriptionProp={ mapDescription }
                 navBackgroundProp={ navBackground }
                 colorThemeProp={ colorTheme }
                 apiKeyProp={ googleApiKey }
