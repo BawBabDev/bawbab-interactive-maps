@@ -191,7 +191,7 @@
 .map-floor-btn { width: 100%; aspect-ratio: 1; border-radius: 8px; font-size: var(--map-controls-floor-size, 11px); font-weight: var(--map-controls-floor-weight, 800); font-style: var(--map-controls-floor-style, normal); text-decoration: var(--map-controls-floor-decoration, none); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, border-color 0.15s, color 0.15s; letter-spacing: 0.02em; font-family: var(--map-font-family); }
 
 /* --- SLIDERS & CHECKBOXES --- */
-.subtle-slider { -webkit-appearance: none; width: 100%; height: 2px; background: #eee; outline: none; border-radius: 2px; margin: 6px 0; }
+.subtle-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 2px; background: #eee; outline: none; border-radius: 2px; margin: 6px 0; }
 .subtle-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; background: #999; cursor: pointer; border-radius: 50%; border: 1px solid #fff; }
 .cb-wrapper { width: 16px; height: 16px; border: 1.5px solid #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; background: #fff; flex-shrink: 0; }
 .cb-wrapper.is-checked { background: #000; }

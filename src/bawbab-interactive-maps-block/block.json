@@ -1,27 +1,25 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "bawbab-interactive-maps/bawbab-interactive-maps-block",
-	"version": "0.1.0",
-	"title": "BawBab Interactive Map Widget",
-	"category": "widgets",
-	"icon": "location-alt",
-	"description": "BawBab Interactive Maps Widget to add your interactive map on your sitefront.",
-	"example": {},
-	"supports": {
-		"html": false
-	},
-	"attributes": {
-		"zoom": { "type": "number", "default": 16 },
-		"mapType": { "type": "string", "default": "roadmap" },
-		"tilt": { "type": "number", "default": 0 },
-		"width": { "type": "string", "default": "100%" },
-		"height": { "type": "string", "default": "80vh" }
-	},
-
-	"textdomain": "bawbab-interactive-map",
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./style.scss",
-	"style": "file:./style-index.css",
-	"viewScript": "file:./view.js"
+    "apiVersion": 3,
+    "name": "bawbab-interactive-maps/bawbab-interactive-maps-block",
+    "version": "0.1.0",
+    "title": "BawBab Interactive Map Widget",
+    "category": "widgets",
+    "icon": "location-alt",
+    "description": "BawBab Interactive Maps Widget to add your interactive map on your sitefront.",
+    "example": {},
+    "supports": {
+        "html": false
+    },
+    "attributes": {
+        "zoom": { "type": "number", "default": 16 },
+        "mapType": { "type": "string", "default": "roadmap" },
+        "tilt": { "type": "number", "default": 0 },
+        "width": { "type": "string", "default": "100%" },
+        "height": { "type": "string", "default": "80vh" }
+    },
+    "textdomain": "bawbab-interactive-map",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./style.scss",
+    "style": "file:./style-index.css",
+    "viewScript": "file:./view.js"
 }

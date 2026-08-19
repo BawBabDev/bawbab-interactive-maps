@@ -32,8 +32,15 @@ class BAWBIN_Maps_Smart_DB_Migrator {
 
         // Check for legacy db version flags if new version flag isn't set yet
         $stored_version = get_option( 'bawbin_maps_maps_version_db_version', null );
+
         if ( false === $stored_version || null === $stored_version ) {
-            $stored_version = get_option( 'bwb_maps_version_db_version', get_option( 'bawb_maps_version_db_version', '0.0.0' ) );
+            $stored_version = get_option(
+                'foulkeways_map_db_version',
+                get_option(
+                    'bwb_maps_version_db_version',
+                    get_option( 'bawb_maps_version_db_version', '0.0.0' )
+                )
+            );
         }
 
         // Trigger migration if stored version is older than current schema target
@@ -48,39 +55,45 @@ class BAWBIN_Maps_Smart_DB_Migrator {
     }
 
     /**
-     * Safely renames legacy DB tables and transfers options to the new prefix
+     * Safely renames legacy DB tables (including Foulkeways tables) and transfers options
      */
     private static function bawbin_maps_migrate_legacy_prefixes() {
         global $wpdb;
 
-        // 1. Array of legacy table suffixes to migrate to new prefix
-        $tables_to_migrate = array(
-            'general_spatial_data',
-            'nav_entries',
-            'nav_network',
+        // Map specific legacy table names to current table names
+        $table_mappings = array(
+            'general_spatial_data' => array(
+                $wpdb->prefix . 'foulkeways_spatial_data',
+                $wpdb->prefix . 'bwb_maps_general_spatial_data',
+                $wpdb->prefix . 'bawb_maps_general_spatial_data',
+                $wpdb->prefix . 'bwb_general_spatial_data',
+            ),
+            'nav_entries'          => array(
+                $wpdb->prefix . 'foulkeways_nav_entries',
+                $wpdb->prefix . 'bwb_maps_nav_entries',
+                $wpdb->prefix . 'bawb_maps_nav_entries',
+                $wpdb->prefix . 'bwb_nav_entries',
+            ),
+            'nav_network'          => array(
+                $wpdb->prefix . 'foulkeways_nav_network',
+                $wpdb->prefix . 'bwb_maps_nav_network',
+                $wpdb->prefix . 'bawb_maps_nav_network',
+                $wpdb->prefix . 'bwb_nav_network',
+            ),
         );
 
-        $legacy_prefixes = array(
-            $wpdb->prefix . 'bwb_maps_',
-            $wpdb->prefix . 'bawb_maps_',
-            $wpdb->prefix . 'bwb_',
-        );
-
-        foreach ( $tables_to_migrate as $table_suffix ) {
+        foreach ( $table_mappings as $table_suffix => $legacy_table_candidates ) {
             $new_table_name = $wpdb->prefix . 'bawbin_maps_' . $table_suffix;
 
-            // Check if target table already exists
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $new_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new_table_name ) );
 
             if ( $new_table_exists === $new_table_name ) {
-                continue;
+                continue; // Target table already exists
             }
 
-            // Search for existing legacy tables and rename them
-            foreach ( $legacy_prefixes as $legacy_prefix ) {
-                $old_table_name = $legacy_prefix . $table_suffix;
-
+            // Search for existing legacy tables and rename the first match found
+            foreach ( $legacy_table_candidates as $old_table_name ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $old_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table_name ) );
 
@@ -94,7 +107,13 @@ class BAWBIN_Maps_Smart_DB_Migrator {
 
         // 2. Transfer legacy option settings if new options don't exist yet
         if ( false === get_option( 'bawbin_maps_options_data', false ) ) {
-            $legacy_options = array( 'bwb_maps_options_data', 'bawb_maps_options_data', 'bwb_options_data' );
+            $legacy_options = array(
+                'foulkeways_map_data',
+                'bwb_maps_options_data',
+                'bawb_maps_options_data',
+                'bwb_options_data',
+            );
+
             foreach ( $legacy_options as $legacy_opt ) {
                 $old_data = get_option( $legacy_opt, false );
                 if ( false !== $old_data ) {
@@ -123,7 +142,8 @@ class BAWBIN_Maps_Smart_DB_Migrator {
     }
 
     /**
-     * Converts legacy table columns into custom_attributes JSON keys
+     * Converts legacy table columns (sq_ft, baths, fireplace, sunroom) into
+     * custom_attributes JSON keys and registers them in attribute_schema options.
      */
     private static function bawbin_maps_migrate_legacy_columns_to_json() {
         global $wpdb;
