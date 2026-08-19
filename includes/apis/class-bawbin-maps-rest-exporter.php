@@ -98,7 +98,7 @@ class BAWBIN_Maps_REST_Exporter {
             'features' => $features,
         );
 
-        $filename = sprintf( 'spatial-layer-%s-%s.geojson', $layer_type, date( 'Y-m-d' ) );
+        $filename = sprintf( 'spatial-layer-%s-%s.geojson', $layer_type, gmdate( 'Y-m-d' ) );
 
         header( 'Content-Type: application/json; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename="' . $filename . '"' );

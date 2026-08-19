@@ -98,8 +98,8 @@ class BAWBIN_Maps_Smart_DB_Migrator {
                 $old_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table_name ) );
 
                 if ( $old_table_exists === $old_table_name ) {
-                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-                    $wpdb->query( "RENAME TABLE {$old_table_name} TO {$new_table_name}" );
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+                    $wpdb->query( $wpdb->prepare( 'RENAME TABLE %i TO %i', $old_table_name, $new_table_name ) );
                     break;
                 }
             }
@@ -150,8 +150,8 @@ class BAWBIN_Maps_Smart_DB_Migrator {
 
         $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $existing_columns = $wpdb->get_col( "DESCRIBE {$table_spatial}", 0 );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        $existing_columns = $wpdb->get_col( $wpdb->prepare( 'DESCRIBE %i', $table_spatial ), 0 );
         if ( empty( $existing_columns ) ) {
             return;
         }
@@ -161,7 +161,7 @@ class BAWBIN_Maps_Smart_DB_Migrator {
 
         if ( ! empty( $keys_to_migrate ) ) {
             foreach ( $keys_to_migrate as $key ) {
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
                 $wpdb->query(
                     $wpdb->prepare(
                         "UPDATE %i 
