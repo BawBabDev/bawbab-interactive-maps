@@ -9,6 +9,8 @@ import { InfoTab } from './tabs/infoTab';
 import TypographyTab from './tabs/typographyTab';
 
 const AdminSidebar = ( {
+    mapTitle,
+    setMapTitle,
     mapDescription,
     setMapDescription,
     mapType,
@@ -171,6 +173,8 @@ const AdminSidebar = ( {
             >
                 { activeTab === 'map' && (
                     <MapsTab
+                        mapTitle={ mapTitle }
+                        setMapTitle={ setMapTitle }
                         mapDescription={ mapDescription }
                         setMapDescription={ setMapDescription }
                         mapType={ mapType }

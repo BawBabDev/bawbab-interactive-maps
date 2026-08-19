@@ -8,15 +8,21 @@ export const MapSearch = ( {
     onSelect,
     navBackgroundProp,
     logoProp,
+    mapTitleProp,
+    mapDescriptionProp,
 } ) => {
     const [ searchQuery, setSearchQuery ] = useState( '' );
     const [ isSearchFocused, setIsSearchFocused ] = useState( false );
     const [ isBurgerOpen, setIsBurgerOpen ] = useState( false );
-    const mapSettings = window.Settings || {};
+    const mapSettings = window.bawbinmapsSettings || {};
     const colorTheme = mapSettings.colorTheme;
-    const mapLogo = logoProp || window.Settings?.mapLogo || '';
+    const mapLogo = logoProp || mapSettings.mapLogo || '';
     const navBackground =
-        navBackgroundProp || window.Settings?.navBackground || '';
+        navBackgroundProp || mapSettings.navBackground || '';
+
+    // Ensure props take absolute priority over window globals
+    const mapTitle = mapTitleProp ?? mapSettings.mapTitle ?? __( 'Interactive Map', 'bawbab-interactive-maps' );
+    const mapDescription = mapDescriptionProp ?? mapSettings.mapDescription ?? '';
 
     // Flat list for global search input
     const allNamedFeatures = useMemo( () => {
@@ -59,7 +65,7 @@ export const MapSearch = ( {
     }, [ searchQuery, allNamedFeatures ] );
 
     return (
-        <div className={ `map-theme-${ colorTheme }` }>
+        <div className={ `map-theme-${ colorTheme }` } style={ { width: '100%' } }>
             <div
                 className="map-navbar"
                 style={ {
@@ -68,6 +74,7 @@ export const MapSearch = ( {
                         : 'none',
                 } }
             >
+                { /* SECTION 1: BURGER BUTTON (IMMUTABLE) */ }
                 <button
                     className={ `burger-btn ${ isBurgerOpen ? 'active' : '' }` }
                     onClick={ () => setIsBurgerOpen( ! isBurgerOpen ) }
@@ -77,25 +84,47 @@ export const MapSearch = ( {
                     <span></span>
                 </button>
 
+                { /* SECTION 2: LOGO + DIVIDER 1 + FLEXIBLE TITLE/SUBTITLE */ }
                 <div className="nav-logo-section">
-                    { mapLogo ? (
-                        <img
-                            src={ mapLogo }
-                            alt={ __( 'Map Logo', 'bawbab-interactive-maps' ) }
-                            style={ {
-                                maxHeight: '40px',
-                                width: 'auto',
-                                display: 'block',
-                            } }
-                        />
-                    ) : (
-                        <strong>
-                            { __(
-                                'Explore the campus map',
-                                'bawbab-interactive-maps'
-                            ) }
-                        </strong>
+                    { mapLogo && (
+                        <>
+                            <img
+                                src={ mapLogo }
+                                alt={ __( 'Map Logo', 'bawbab-interactive-maps' ) }
+                            />
+                            <div className="nav-divider" />
+                        </>
                     ) }
+
+                    <div
+                        className="map-header-text-block"
+                        style={ {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            lineHeight: '1.2',
+                            flex: '1 1 auto',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                        } }
+                    >
+                        { mapTitle && (
+                            <span
+                                className="map-navbar-title"
+                                title={ mapTitle }
+                            >
+                                { mapTitle }
+                            </span>
+                        ) }
+                        { mapDescription && (
+                            <span
+                                className="map-navbar-subtitle"
+                                title={ mapDescription }
+                            >
+                                { mapDescription }
+                            </span>
+                        ) }
+                    </div>
                 </div>
 
                 <SearchList
@@ -106,7 +135,10 @@ export const MapSearch = ( {
                     onCloseMenu={ () => setIsBurgerOpen( false ) }
                 />
 
-                <div className="nav-search-section">
+                { /* SECTION 3: DIVIDER 2 + FIXED SEARCH INPUT */ }
+                <div className="nav-divider" />
+
+                <div className="nav-search-section" style={ { flexShrink: 0 } }>
                     <input
                         type="text"
                         placeholder={ __(

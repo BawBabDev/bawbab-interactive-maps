@@ -32,10 +32,11 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         isLoaded,
         isSaving,
         saveSettings,
-        refetchSettings, // Hook helper to restore saved state from REST API
+        refetchSettings,
     } = useMapSettings();
 
     const {
+        mapTitle,
         mapDescription,
         mapType,
         locations,
@@ -48,6 +49,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
     } = settings;
 
     const {
+        setMapTitle,
         setMapDescription,
         setMapType,
         setMapLogo,
@@ -64,6 +66,15 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         updateTypography,
         resetTypography,
     } = useTypographySettings( typography || {} );
+
+    // Synchronize mapTitle and mapDescription to window object in real time for immediate map preview re-renders
+    useEffect( () => {
+        window.bawbinmapsSettings = {
+            ...window.bawbinmapsSettings,
+            mapTitle: mapTitle || '',
+            mapDescription: mapDescription || '',
+        };
+    }, [ mapTitle, mapDescription ] );
 
     // Baseline snapshot for dirty-state detection
     const initialSnapshotRef = useRef( null );
@@ -82,6 +93,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         } );
 
         return JSON.stringify( {
+            mapTitle: data.mapTitle || '',
             mapDescription: data.mapDescription || '',
             mapType: data.mapType || 'hybrid',
             mapLogo: data.mapLogo || '',
@@ -199,7 +211,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
     const handleConfirmCancel = async () => {
         setShowCancelModal( false );
 
-        // Check if user changed API key or Map ID prior to clicking discard
         const credentialsTouched =
             googleApiKey !== savedCredentialsRef.current.apiKey ||
             googleMapId !== savedCredentialsRef.current.mapId;
@@ -217,11 +228,11 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
         let restoredData = null;
 
-        // Restore clean data from REST API or fallback store
         if ( typeof refetchSettings === 'function' ) {
             restoredData = await refetchSettings();
         } else {
             restoredData = window.bawbinmapsSettings || {};
+            setMapTitle( restoredData.mapTitle || '' );
             setMapDescription( restoredData.mapDescription || '' );
             setMapType( restoredData.mapType || 'hybrid' );
             setMapLogo( restoredData.mapLogo || '' );
@@ -232,7 +243,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
             setTypography( restoredData.typography || {} );
         }
 
-        // Re-align snapshot baseline to the restored dataset and deactivate action buttons
         const cleanState = restoredData || settings;
         initialSnapshotRef.current = getSettingsSnapshot( cleanState );
         setIsDirty( false );
@@ -264,7 +274,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 overflow: 'hidden',
             } }
         >
-            { /* HIDE WP FOOTER AND LOCK WINDOW FROM SCROLLING */ }
             <style>{ `
                 #wpfooter { display: none !important; }
                 #wpbody-content { padding-bottom: 0 !important; }
@@ -277,7 +286,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 style={ { marginBottom: '8px', flexShrink: 0 } }
             />
 
-            { /* PAGE TITLE HEADER */ }
             <div style={ { flexShrink: 0 } }>
                 <h1
                     className="wp-heading-inline"
@@ -288,7 +296,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 <hr className="wp-header-end" />
             </div>
 
-            { /* MAIN WORKSPACE CONTAINER PANEL */ }
             <div
                 style={ {
                     marginTop: '8px',
@@ -303,7 +310,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                     flexDirection: 'row',
                 } }
             >
-                { /* LEFT SIDEBAR CONTAINER (FIXED 500PX WIDTH) */ }
                 <div
                     style={ {
                         flex: '0 0 500px',
@@ -316,9 +322,10 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                         overflow: 'hidden',
                     } }
                 >
-                    { /* SCROLLABLE ADMIN SIDEBAR TAB CONTENT */ }
                     <div style={ { flex: 1, minHeight: 0, overflow: 'hidden' } }>
                         <AdminSidebar
+                            mapTitle={ mapTitle }
+                            setMapTitle={ setMapTitle }
                             mapDescription={ mapDescription }
                             setMapDescription={ setMapDescription }
                             mapType={ mapType }
@@ -348,7 +355,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                         />
                     </div>
 
-                    { /* STATIC ACTION FOOTER PINNED AT BOTTOM LEFT */ }
                     <div
                         style={ {
                             padding: '12px 20px',
@@ -367,7 +373,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                                 boxSizing: 'border-box',
                             } }
                         >
-                            { /* LEFT: DISCARD CHANGES */ }
                             <Button
                                 variant="secondary"
                                 onClick={ () => setShowCancelModal( true ) }
@@ -387,7 +392,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                                 { __( 'Discard Changes', TEXT_DOMAIN ) }
                             </Button>
 
-                            { /* RIGHT: SAVE ALL CHANGES */ }
                             <Button
                                 variant="primary"
                                 onClick={ () => setShowConfirmModal( true ) }
@@ -413,7 +417,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                     </div>
                 </div>
 
-                { /* RIGHT MAP PREVIEW CONTAINER */ }
                 <div style={ { flex: 1, height: '100%', minHeight: 0, overflow: 'hidden' } }>
                     { isLoaded ? (
                         <BawBabIMaps
@@ -421,6 +424,8 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                             mapTypeProp={ mapType }
                             locations={ locations }
                             mapLogoProp={ mapLogo }
+                            mapTitleProp={ mapTitle }
+                            mapDescriptionProp={ mapDescription }
                             navBackgroundProp={ navBackground }
                             colorThemeProp={ colorTheme }
                             apiKeyProp={ googleApiKey }
@@ -444,7 +449,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 </div>
             </div>
 
-            { /* GENERIC CONFIRMATION MODAL */ }
             <ConfirmModal
                 isOpen={ showConfirmModal }
                 title={ __( 'Save Map Settings', TEXT_DOMAIN ) }
@@ -458,7 +462,6 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 isBusy={ isSaving }
             />
 
-            { /* GENERIC CANCELLATION MODAL */ }
             <CancelModal
                 isOpen={ showCancelModal }
                 title={ __( 'Discard Map Changes', TEXT_DOMAIN ) }

@@ -12,6 +12,7 @@ export const useMapSettings = () => {
     // Synchronously read inline window object injected by PHP on page load
     const initialWindow = window.bawbinmapsSettings || {};
 
+    const [ mapTitle, setMapTitle ] = useState( initialWindow.mapTitle || '' );
     const [ mapDescription, setMapDescription ] = useState( initialWindow.mapDescription || '' );
     const [ mapType, setMapType ] = useState( initialWindow.mapType || 'hybrid' );
     const [ locations, setLocations ] = useState( initialWindow.locations || [] );
@@ -38,39 +39,42 @@ export const useMapSettings = () => {
         typeof val === 'string' ? val : val?.url || '';
 
     // Asynchronously sync latest REST database state in background
-    useEffect( () => {
-        const fetchMapSettings = async () => {
-            try {
-                const response = await fetch( ENDPOINT_GET );
-                if ( response.ok ) {
-                    const data = await response.json();
-                    setMapDescription( data.mapDescription || '' );
-                    setMapType( data.mapType || 'hybrid' );
-                    setLocations( data.locations || [] );
-                    setMapLogo( data.mapLogo || '' );
-                    setColorTheme( data.colorTheme || 'blue' );
-                    setNavBackground( data.navBackground || '' );
-                    setGoogleApiKey( data.googleApiKey || '' );
-                    setGoogleMapId( data.googleMapId || '' );
-                    setTypography( data.typography || {} );
+    const fetchMapSettings = async () => {
+        try {
+            const response = await fetch( ENDPOINT_GET );
+            if ( response.ok ) {
+                const data = await response.json();
+                setMapTitle( data.mapTitle || '' );
+                setMapDescription( data.mapDescription || '' );
+                setMapType( data.mapType || 'hybrid' );
+                setLocations( data.locations || [] );
+                setMapLogo( data.mapLogo || '' );
+                setColorTheme( data.colorTheme || 'blue' );
+                setNavBackground( data.navBackground || '' );
+                setGoogleApiKey( data.googleApiKey || '' );
+                setGoogleMapId( data.googleMapId || '' );
+                setTypography( data.typography || {} );
 
-                    initialCredentialsRef.current = {
-                        apiKey: data.googleApiKey || '',
-                        mapId: data.googleMapId || '',
-                    };
+                initialCredentialsRef.current = {
+                    apiKey: data.googleApiKey || '',
+                    mapId: data.googleMapId || '',
+                };
 
-                    window.bawbinmapsSettings = {
-                        ...window.bawbinmapsSettings,
-                        ...data,
-                    };
-                }
-            } catch ( err ) {
-                console.error( 'Error fetching map settings:', err );
-            } finally {
-                setIsLoaded( true );
+                window.bawbinmapsSettings = {
+                    ...window.bawbinmapsSettings,
+                    ...data,
+                };
+                return data;
             }
-        };
+        } catch ( err ) {
+            console.error( 'Error fetching map settings:', err );
+        } finally {
+            setIsLoaded( true );
+        }
+        return null;
+    };
 
+    useEffect( () => {
         fetchMapSettings();
     }, [] );
 
@@ -83,6 +87,7 @@ export const useMapSettings = () => {
             const cleanMapId = safeString( googleMapId ).trim();
 
             const payload = {
+                mapTitle: safeString( mapTitle ),
                 mapDescription: safeString( mapDescription ),
                 mapType: safeString( mapType ),
                 locations: Array.isArray( locations ) ? locations : [],
@@ -113,6 +118,8 @@ export const useMapSettings = () => {
             // Sync window object in memory
             window.bawbinmapsSettings = {
                 ...window.bawbinmapsSettings,
+                mapTitle: safeString( mapTitle ),
+                mapDescription: safeString( mapDescription ),
                 mapType: safeString( mapType ),
                 colorTheme: safeString( colorTheme ),
                 mapLogo: safeString( mapLogo ),
@@ -187,6 +194,7 @@ export const useMapSettings = () => {
 
     return {
         settings: {
+            mapTitle,
             mapDescription,
             mapType,
             locations,
@@ -198,6 +206,7 @@ export const useMapSettings = () => {
             typography,
         },
         setters: {
+            setMapTitle,
             setMapDescription,
             setMapType,
             setLocations,
@@ -218,5 +227,6 @@ export const useMapSettings = () => {
         isLoaded,
         isSaving,
         saveSettings,
+        refetchSettings: fetchMapSettings,
     };
 };

@@ -38,7 +38,7 @@ class BAWBIN_Maps_REST_Settings {
             : array();
 
         $default_category_config = array(
-            'groups'       => array(),
+            'groups'      => array(),
             'categoryMap'  => array(),
             'legendConfig' => array(
                 'enabled'            => true,
@@ -94,7 +94,7 @@ class BAWBIN_Maps_REST_Settings {
             'drawerBodyDecoration'        => 'none',
 
             'drawerQuoteFontSize'         => 14,
-            'drawerQuoteFontWeight'       => '400',
+            'drawerQuoteFontWeight'        => '400',
             'drawerQuoteFontStyle'        => 'italic',
             'drawerQuoteDecoration'       => 'none',
 
@@ -154,10 +154,22 @@ class BAWBIN_Maps_REST_Settings {
             'searchResultCatFontWeight'   => '700',
             'searchResultCatFontStyle'    => 'normal',
             'searchResultCatDecoration'   => 'none',
+
+            // --- MAP HEADER TITLE & DESCRIPTION DEFAULTS ---
+            'mapTitleFontSize'            => 16,
+            'mapTitleFontWeight'          => '700',
+            'mapTitleFontStyle'           => 'normal',
+            'mapTitleDecoration'          => 'none',
+
+            'mapDescriptionFontSize'      => 11,
+            'mapDescriptionFontWeight'    => '400',
+            'mapDescriptionFontStyle'     => 'normal',
+            'mapDescriptionDecoration'    => 'none',
         );
 
         $payload = array(
-            'mapDescription'   => $settings['mapDescription'] ?? 'Bawbab Interactive Maps',
+            'mapTitle'         => $settings['mapTitle'] ?? 'Bawbab Interactive Maps',
+            'mapDescription'   => $settings['mapDescription'] ?? '',
             'mapType'          => $settings['mapType'] ?? 'hybrid',
             'mapLogo'          => $settings['mapLogo'] ?? '',
             'colorTheme'       => ! empty( $settings['colorTheme'] ) ? $settings['colorTheme'] : 'blue',

@@ -18,6 +18,17 @@ const DEFAULT_TYPOGRAPHY = {
     legendSectionDecoration: 'none',
     legendItemDecoration: 'none',
 
+    // --- MAP TITLE & DESCRIPTION DEFAULTS ---
+    mapTitleFontSize: 16,
+    mapTitleFontWeight: '700',
+    mapTitleFontStyle: 'normal',
+    mapTitleDecoration: 'none',
+
+    mapDescriptionFontSize: 11,
+    mapDescriptionFontWeight: '400',
+    mapDescriptionFontStyle: 'normal',
+    mapDescriptionDecoration: 'none',
+
     // --- DRAWER CATEGORY LABEL ---
     drawerCategoryFontSize: 11,
     drawerCategoryFontWeight: '700',
@@ -164,6 +175,17 @@ export const useTypographySettings = ( initialSettings = {} ) => {
         '--map-legend-header-decoration': settings.legendHeaderDecoration,
         '--map-legend-section-decoration': settings.legendSectionDecoration,
         '--map-legend-item-decoration': settings.legendItemDecoration,
+
+        // --- MAP TITLE & DESCRIPTION ---
+        '--map-navbar-title-size': `${ settings.mapTitleFontSize }px`,
+        '--map-navbar-title-weight': settings.mapTitleFontWeight,
+        '--map-navbar-title-style': settings.mapTitleFontStyle,
+        '--map-navbar-title-decoration': settings.mapTitleDecoration,
+
+        '--map-navbar-subtitle-size': `${ settings.mapDescriptionFontSize }px`,
+        '--map-navbar-subtitle-weight': settings.mapDescriptionFontWeight,
+        '--map-navbar-subtitle-style': settings.mapDescriptionFontStyle,
+        '--map-navbar-subtitle-decoration': settings.mapDescriptionDecoration,
 
         // --- DRAWER CATEGORY ---
         '--map-drawer-category-size': `${ settings.drawerCategoryFontSize }px`,

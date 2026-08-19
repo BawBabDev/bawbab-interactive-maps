@@ -12,10 +12,7 @@ import { TypographyRowControl } from '../typographyRowControl';
 const TEXT_DOMAIN = 'bawbab-interactive-maps';
 
 const FONT_FAMILY_OPTIONS = [
-    {
-        label: __( 'System Sans-Serif (Default)', TEXT_DOMAIN ),
-        value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-    },
+    { label: __( 'System Sans-Serif (Default)', TEXT_DOMAIN ), value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif'},
     { label: __( 'Arial / Helvetica', TEXT_DOMAIN ), value: 'Arial, Helvetica, sans-serif' },
     { label: __( 'Georgia / Serif', TEXT_DOMAIN ), value: 'Georgia, "Times New Roman", serif' },
     { label: __( 'Trebuchet MS', TEXT_DOMAIN ), value: '"Trebuchet MS", "Lucida Sans Unicode", sans-serif' },
@@ -92,7 +89,7 @@ export const TypographyTab = ( {
                     onChange={ ( val ) => updateTypography( 'fontFamily', val ) }
                     disabled={ disabled }
                     help={ __(
-                        'Applies across all public map overlays, side drawer content, search, and legend text.',
+                        'Applies across all public map overlays, navbar titles, side drawer content, search, and legend text.',
                         TEXT_DOMAIN
                     ) }
                     __nextHasNoMarginBottom
@@ -459,6 +456,53 @@ export const TypographyTab = ( {
                             defaultWeight="700"
                             styleKey="searchResultCatFontStyle"
                             decorationKey="searchResultCatDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+                    </Flex>
+                </PanelBody>
+            </div>
+
+            { /* SECTION 5: MAP HEADER TITLE & DESCRIPTION TYPOGRAPHY */ }
+            <div
+                style={ {
+                    marginBottom: '20px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                } }
+            >
+                <PanelBody
+                    title={ __( '5. Map Header Title & Subtitle Typography', TEXT_DOMAIN ) }
+                    initialOpen={ false }
+                >
+                    <Flex direction="column" gap={ 3 }>
+                        <TypographyRowControl
+                            title={ __( 'Map Header Title', TEXT_DOMAIN ) }
+                            sizeKey="mapTitleFontSize"
+                            defaultSize={ 16 }
+                            minSize={ 10 }
+                            maxSize={ 32 }
+                            weightKey="mapTitleFontWeight"
+                            defaultWeight="700"
+                            styleKey="mapTitleFontStyle"
+                            decorationKey="mapTitleDecoration"
+                            typographySettings={ typographySettings }
+                            updateTypography={ updateTypography }
+                            disabled={ disabled }
+                        />
+
+                        <TypographyRowControl
+                            title={ __( 'Map Header Subtitle / Description', TEXT_DOMAIN ) }
+                            sizeKey="mapDescriptionFontSize"
+                            defaultSize={ 11 }
+                            minSize={ 8 }
+                            maxSize={ 22 }
+                            weightKey="mapDescriptionFontWeight"
+                            defaultWeight="400"
+                            styleKey="mapDescriptionFontStyle"
+                            decorationKey="mapDescriptionDecoration"
                             typographySettings={ typographySettings }
                             updateTypography={ updateTypography }
                             disabled={ disabled }
