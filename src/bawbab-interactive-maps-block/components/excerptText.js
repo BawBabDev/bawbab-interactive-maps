@@ -1,8 +1,6 @@
 import React from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const ExcerptText = ( { selectedLoc, wpData } ) => {
     const stripInlineMedia = ( html ) => {
         if ( ! html ) return '';
@@ -40,7 +38,7 @@ export const ExcerptText = ( { selectedLoc, wpData } ) => {
     } else {
         renderContentHTML = `<p class="description-text">${ __(
             'No description available.',
-            TEXT_DOMAIN
+            'bawbab-interactive-maps'
         ) }</p>`;
     }
 
@@ -86,7 +84,7 @@ export const ExcerptText = ( { selectedLoc, wpData } ) => {
                     >
                         { __(
                             'Read full details on website',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }{ ' ' }
                         <span>&rarr;</span>
                     </a>

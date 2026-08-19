@@ -8,8 +8,6 @@ import {
 } from '@wordpress/components';
 import { FeatureSearchFilter } from './featureSearchFilter';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const UnitSidebarList = ( {
     selectedLayer,
     setSelectedLayer,
@@ -49,7 +47,7 @@ export const UnitSidebarList = ( {
 
         // Prioritize code as primary identifier, falling back to name
         let itemLabel = f.properties.code
-            ? `${ __( 'Unit', TEXT_DOMAIN ) } ${ f.properties.code }`
+            ? `${ __( 'Unit', 'bawbab-interactive-maps' ) } ${ f.properties.code }`
             : f.properties.name;
             
         if ( ! itemLabel ) {
@@ -174,7 +172,7 @@ export const UnitSidebarList = ( {
                         >
                             { __(
                                 'No units found matching your search or active filters.',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ) }
                         </p>
                     </div>
@@ -285,7 +283,7 @@ export const UnitSidebarList = ( {
                             padding: '0 4px',
                         } }
                     >
-                        { __( 'Discard', TEXT_DOMAIN ) }
+                        { __( 'Discard', 'bawbab-interactive-maps' ) }
                     </Button>
 
                     { /* SAVE ALL CHANGES BUTTON */ }
@@ -310,8 +308,8 @@ export const UnitSidebarList = ( {
                         } }
                     >
                         { isSaving
-                            ? __( 'Saving...', TEXT_DOMAIN )
-                            : __( 'Save All', TEXT_DOMAIN ) }
+                            ? __( 'Saving...', 'bawbab-interactive-maps' )
+                            : __( 'Save All', 'bawbab-interactive-maps' ) }
                     </Button>
 
                     { /* BATCH SYNC BUTTON */ }
@@ -339,7 +337,7 @@ export const UnitSidebarList = ( {
                                 : 'none',
                         } }
                     >
-                        { __( 'Apply to Other Features', TEXT_DOMAIN ) }
+                        { __( 'Apply to Other Features', 'bawbab-interactive-maps' ) }
                     </Button>
                 </Flex>
             </div>

@@ -7,8 +7,6 @@
 import { useState, useCallback } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const useSpatialDataImporter = () => {
 	const [ isUploading, setIsUploading ] = useState( false );
 	const [ message, setMessage ] = useState( null );
@@ -21,7 +19,7 @@ export const useSpatialDataImporter = () => {
 		if ( ! file )
 			return {
 				success: false,
-				message: __( 'No file provided.', TEXT_DOMAIN ),
+				message: __( 'No file provided.', 'bawbab-interactive-maps' ),
 			};
 
 		const formData = new FormData();
@@ -42,7 +40,7 @@ export const useSpatialDataImporter = () => {
 		} catch ( error ) {
 			return {
 				success: false,
-				message: __( 'Network error inspecting file.', TEXT_DOMAIN ),
+				message: __( 'Network error inspecting file.', 'bawbab-interactive-maps' ),
 			};
 		}
 	}, [] );
@@ -112,7 +110,7 @@ export const useSpatialDataImporter = () => {
 						type: 'error',
 						text: __(
 							'Server error: Invalid response format.',
-							TEXT_DOMAIN
+							'bawbab-interactive-maps'
 						),
 					} );
 					return;
@@ -129,7 +127,7 @@ export const useSpatialDataImporter = () => {
 						text: sprintf(
 							__(
 								'Import complete: %1$d features processed.',
-								TEXT_DOMAIN
+								'bawbab-interactive-maps'
 							),
 							result.imported
 						),
@@ -139,7 +137,7 @@ export const useSpatialDataImporter = () => {
 						type: 'error',
 						text:
 							result.message ||
-							__( 'Import failed.', TEXT_DOMAIN ),
+							__( 'Import failed.', 'bawbab-interactive-maps' ),
 					} );
 				}
 			} catch ( error ) {
@@ -149,7 +147,7 @@ export const useSpatialDataImporter = () => {
 				);
 				setMessage( {
 					type: 'error',
-					text: __( 'Network error occurred.', TEXT_DOMAIN ),
+					text: __( 'Network error occurred.', 'bawbab-interactive-maps' ),
 				} );
 			} finally {
 				setIsUploading( false );
@@ -168,7 +166,7 @@ export const useSpatialDataImporter = () => {
 		const confirmPhrase = sprintf(
 			__(
 				'Are you sure you want to delete ALL data for the %1$s layer?',
-				TEXT_DOMAIN
+				'bawbab-interactive-maps'
 			),
 			layerType
 		);
@@ -194,7 +192,7 @@ export const useSpatialDataImporter = () => {
 				setMessage( {
 					type: 'success',
 					text: sprintf(
-						__( 'Layer %1$s deleted successfully.', TEXT_DOMAIN ),
+						__( 'Layer %1$s deleted successfully.', 'bawbab-interactive-maps' ),
 						layerType
 					),
 				} );
@@ -202,13 +200,13 @@ export const useSpatialDataImporter = () => {
 			} else {
 				setMessage( {
 					type: 'error',
-					text: __( 'Failed to delete layer.', TEXT_DOMAIN ),
+					text: __( 'Failed to delete layer.', 'bawbab-interactive-maps' ),
 				} );
 			}
 		} catch ( error ) {
 			setMessage( {
 				type: 'error',
-				text: __( 'Network error occurred.', TEXT_DOMAIN ),
+				text: __( 'Network error occurred.', 'bawbab-interactive-maps' ),
 			} );
 		} finally {
 			setIsUploading( false );

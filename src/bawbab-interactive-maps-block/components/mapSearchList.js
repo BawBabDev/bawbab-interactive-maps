@@ -6,8 +6,6 @@ import {
     DEFAULT_CATEGORY_MAPPINGS,
 } from '../../bawbab-interactive-maps-admin/category-editor-page/constants/defaultCategories';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 /**
  * SearchList Component
  */
@@ -203,7 +201,7 @@ const SearchList = ( {
                     className="nav-tab-btn"
                     onClick={ ( e ) => toggleTab( e, tab.id ) }
                 >
-                    { __( tab.title, TEXT_DOMAIN ) }{ ' ' }
+                    { __( tab.title, 'bawbab-interactive-maps' ) }{ ' ' }
                     <span className="chevron"></span>
                 </button>
                 <div className="nav-dropdown">

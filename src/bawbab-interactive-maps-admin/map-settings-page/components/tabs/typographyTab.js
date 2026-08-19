@@ -9,15 +9,13 @@ import {
 } from '@wordpress/components';
 import { TypographyRowControl } from '../typographyRowControl';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const FONT_FAMILY_OPTIONS = [
-    { label: __( 'System Sans-Serif (Default)', TEXT_DOMAIN ), value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif'},
-    { label: __( 'Arial / Helvetica', TEXT_DOMAIN ), value: 'Arial, Helvetica, sans-serif' },
-    { label: __( 'Georgia / Serif', TEXT_DOMAIN ), value: 'Georgia, "Times New Roman", serif' },
-    { label: __( 'Trebuchet MS', TEXT_DOMAIN ), value: '"Trebuchet MS", "Lucida Sans Unicode", sans-serif' },
-    { label: __( 'Verdana', TEXT_DOMAIN ), value: 'Verdana, Geneva, sans-serif' },
-    { label: __( 'Courier New / Monospace', TEXT_DOMAIN ), value: '"Courier New", Courier, monospace' },
+    { label: __( 'System Sans-Serif (Default)', 'bawbab-interactive-maps' ), value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif'},
+    { label: __( 'Arial / Helvetica', 'bawbab-interactive-maps' ), value: 'Arial, Helvetica, sans-serif' },
+    { label: __( 'Georgia / Serif', 'bawbab-interactive-maps' ), value: 'Georgia, "Times New Roman", serif' },
+    { label: __( 'Trebuchet MS', 'bawbab-interactive-maps' ), value: '"Trebuchet MS", "Lucida Sans Unicode", sans-serif' },
+    { label: __( 'Verdana', 'bawbab-interactive-maps' ), value: 'Verdana, Geneva, sans-serif' },
+    { label: __( 'Courier New / Monospace', 'bawbab-interactive-maps' ), value: '"Courier New", Courier, monospace' },
 ];
 
 export const TypographyTab = ( {
@@ -41,14 +39,14 @@ export const TypographyTab = ( {
                     display="block"
                     style={ { fontWeight: '700', marginBottom: '4px' } }
                 >
-                    { __( 'Global Typography & Font Management', TEXT_DOMAIN ) }
+                    { __( 'Global Typography & Font Management', 'bawbab-interactive-maps' ) }
                 </Text>
                 <Text
                     variant="caption"
                     display="block"
                     style={ { color: '#666', fontSize: '12px', marginBottom: '14px' } }
                 >
-                    { __( 'Configure typography rules across map components.', TEXT_DOMAIN ) }
+                    { __( 'Configure typography rules across map components.', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 { resetTypography && (
@@ -67,7 +65,7 @@ export const TypographyTab = ( {
                             gap: '6px',
                         } }
                     >
-                        { __( 'Reset All to Defaults', TEXT_DOMAIN ) }
+                        { __( 'Reset All to Defaults', 'bawbab-interactive-maps' ) }
                     </Button>
                 ) }
             </div>
@@ -83,14 +81,14 @@ export const TypographyTab = ( {
                 } }
             >
                 <SelectControl
-                    label={ __( 'Global Font Family', TEXT_DOMAIN ) }
+                    label={ __( 'Global Font Family', 'bawbab-interactive-maps' ) }
                     value={ typographySettings.fontFamily }
                     options={ FONT_FAMILY_OPTIONS }
                     onChange={ ( val ) => updateTypography( 'fontFamily', val ) }
                     disabled={ disabled }
                     help={ __(
                         'Applies across all public map overlays, navbar titles, side drawer content, search, and legend text.',
-                        TEXT_DOMAIN
+                        'bawbab-interactive-maps'
                     ) }
                     __nextHasNoMarginBottom
                 />
@@ -106,12 +104,12 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '1. Map Legend Typography', TEXT_DOMAIN ) }
+                    title={ __( '1. Map Legend Typography', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Legend Title Header', TEXT_DOMAIN ) }
+                            title={ __( 'Legend Title Header', 'bawbab-interactive-maps' ) }
                             sizeKey="legendHeaderFontSize"
                             defaultSize={ 13 }
                             minSize={ 10 }
@@ -126,7 +124,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Section Group Headers', TEXT_DOMAIN ) }
+                            title={ __( 'Section Group Headers', 'bawbab-interactive-maps' ) }
                             sizeKey="legendSectionFontSize"
                             defaultSize={ 10 }
                             minSize={ 8 }
@@ -141,7 +139,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Individual Legend Entry Labels', TEXT_DOMAIN ) }
+                            title={ __( 'Individual Legend Entry Labels', 'bawbab-interactive-maps' ) }
                             sizeKey="legendItemFontSize"
                             defaultSize={ 11 }
                             minSize={ 8 }
@@ -168,12 +166,12 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '2. Side Drawer & Content Typography', TEXT_DOMAIN ) }
+                    title={ __( '2. Side Drawer & Content Typography', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Category Header Label', TEXT_DOMAIN ) }
+                            title={ __( 'Category Header Label', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerCategoryFontSize"
                             defaultSize={ 11 }
                             minSize={ 8 }
@@ -188,7 +186,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Main Location Title (H2)', TEXT_DOMAIN ) }
+                            title={ __( 'Main Location Title (H2)', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerTitleFontSize"
                             defaultSize={ 28 }
                             minSize={ 16 }
@@ -203,7 +201,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Secondary Subtitle / Unit Name', TEXT_DOMAIN ) }
+                            title={ __( 'Secondary Subtitle / Unit Name', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerSubtitleFontSize"
                             defaultSize={ 16 }
                             minSize={ 12 }
@@ -218,7 +216,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'WP Content Headings (H1 - H3)', TEXT_DOMAIN ) }
+                            title={ __( 'WP Content Headings (H1 - H3)', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerHeadingFontSize"
                             defaultSize={ 20 }
                             minSize={ 14 }
@@ -233,7 +231,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Body Paragraphs & Bullet Points', TEXT_DOMAIN ) }
+                            title={ __( 'Body Paragraphs & Bullet Points', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerBodyFontSize"
                             defaultSize={ 14 }
                             minSize={ 10 }
@@ -248,7 +246,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Blockquotes & Citations', TEXT_DOMAIN ) }
+                            title={ __( 'Blockquotes & Citations', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerQuoteFontSize"
                             defaultSize={ 14 }
                             minSize={ 10 }
@@ -263,7 +261,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Unit Specs Numbers', TEXT_DOMAIN ) }
+                            title={ __( 'Unit Specs Numbers', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerSpecsNumberFontSize"
                             defaultSize={ 14 }
                             minSize={ 10 }
@@ -278,7 +276,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Unit Specs Labels', TEXT_DOMAIN ) }
+                            title={ __( 'Unit Specs Labels', 'bawbab-interactive-maps' ) }
                             sizeKey="drawerSpecsLabelFontSize"
                             defaultSize={ 9 }
                             minSize={ 7 }
@@ -305,12 +303,12 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '3. Map Overlay Controls Typography', TEXT_DOMAIN ) }
+                    title={ __( '3. Map Overlay Controls Typography', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Layer Toggler Header Title', TEXT_DOMAIN ) }
+                            title={ __( 'Layer Toggler Header Title', 'bawbab-interactive-maps' ) }
                             sizeKey="controlsHeaderFontSize"
                             defaultSize={ 12 }
                             minSize={ 9 }
@@ -325,7 +323,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Layer Item Row Labels', TEXT_DOMAIN ) }
+                            title={ __( 'Layer Item Row Labels', 'bawbab-interactive-maps' ) }
                             sizeKey="controlsItemFontSize"
                             defaultSize={ 11 }
                             minSize={ 8 }
@@ -340,7 +338,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Floor Switcher Button Labels', TEXT_DOMAIN ) }
+                            title={ __( 'Floor Switcher Button Labels', 'bawbab-interactive-maps' ) }
                             sizeKey="controlsFloorFontSize"
                             defaultSize={ 11 }
                             minSize={ 8 }
@@ -367,12 +365,12 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '4. Search Input & Search Menu Typography', TEXT_DOMAIN ) }
+                    title={ __( '4. Search Input & Search Menu Typography', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Search Menu Top-Level Tab Buttons', TEXT_DOMAIN ) }
+                            title={ __( 'Search Menu Top-Level Tab Buttons', 'bawbab-interactive-maps' ) }
                             sizeKey="searchTabFontSize"
                             defaultSize={ 14 }
                             minSize={ 10 }
@@ -387,7 +385,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Search Menu Group Header Accordions', TEXT_DOMAIN ) }
+                            title={ __( 'Search Menu Group Header Accordions', 'bawbab-interactive-maps' ) }
                             sizeKey="searchGroupHeaderFontSize"
                             defaultSize={ 13 }
                             minSize={ 9 }
@@ -402,7 +400,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Search Menu Sub-List Row Items', TEXT_DOMAIN ) }
+                            title={ __( 'Search Menu Sub-List Row Items', 'bawbab-interactive-maps' ) }
                             sizeKey="searchItemFontSize"
                             defaultSize={ 12 }
                             minSize={ 8 }
@@ -417,7 +415,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Search Input Placeholder & Text', TEXT_DOMAIN ) }
+                            title={ __( 'Search Input Placeholder & Text', 'bawbab-interactive-maps' ) }
                             sizeKey="searchInputFontSize"
                             defaultSize={ 13 }
                             minSize={ 10 }
@@ -432,7 +430,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Autocomplete Result Title Text', TEXT_DOMAIN ) }
+                            title={ __( 'Autocomplete Result Title Text', 'bawbab-interactive-maps' ) }
                             sizeKey="searchResultTitleFontSize"
                             defaultSize={ 12 }
                             minSize={ 8 }
@@ -447,7 +445,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Autocomplete Result Category Label', TEXT_DOMAIN ) }
+                            title={ __( 'Autocomplete Result Category Label', 'bawbab-interactive-maps' ) }
                             sizeKey="searchResultCatFontSize"
                             defaultSize={ 9 }
                             minSize={ 7 }
@@ -474,12 +472,12 @@ export const TypographyTab = ( {
                 } }
             >
                 <PanelBody
-                    title={ __( '5. Map Header Title & Subtitle Typography', TEXT_DOMAIN ) }
+                    title={ __( '5. Map Header Title & Subtitle Typography', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                 >
                     <Flex direction="column" gap={ 3 }>
                         <TypographyRowControl
-                            title={ __( 'Map Header Title', TEXT_DOMAIN ) }
+                            title={ __( 'Map Header Title', 'bawbab-interactive-maps' ) }
                             sizeKey="mapTitleFontSize"
                             defaultSize={ 16 }
                             minSize={ 10 }
@@ -494,7 +492,7 @@ export const TypographyTab = ( {
                         />
 
                         <TypographyRowControl
-                            title={ __( 'Map Header Subtitle / Description', TEXT_DOMAIN ) }
+                            title={ __( 'Map Header Subtitle / Description', 'bawbab-interactive-maps' ) }
                             sizeKey="mapDescriptionFontSize"
                             defaultSize={ 11 }
                             minSize={ 8 }

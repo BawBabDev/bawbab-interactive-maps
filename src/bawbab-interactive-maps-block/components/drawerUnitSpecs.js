@@ -3,8 +3,6 @@ import { renderIconBySlug } from '../../bawbab-interactive-maps-admin/spatial-da
 import { useAttributeSchema } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/hooks/useAttributeSchema';
 import { formatDualCounter } from '../../bawbab-interactive-maps-admin/spatial-data-editor-page/utils/dualCounterHelper';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const formatFieldLabel = (str) => {
     if (!str) return '';
     return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -95,25 +93,25 @@ export const UnitSpecs = ({ specs }) => {
 
             if (!majorSubcategory) {
                 if (key === 'baths') {
-                    majorSubcategory = __('Shower', TEXT_DOMAIN);
+                    majorSubcategory = __('Shower', 'bawbab-interactive-maps');
                 } else if (mode === 'time') {
-                    majorSubcategory = __('hr', TEXT_DOMAIN);
+                    majorSubcategory = __('hr', 'bawbab-interactive-maps');
                 } else if (mode === 'measurement') {
-                    majorSubcategory = __('ft', TEXT_DOMAIN);
+                    majorSubcategory = __('ft', 'bawbab-interactive-maps');
                 } else {
-                    majorSubcategory = __('Major', TEXT_DOMAIN);
+                    majorSubcategory = __('Major', 'bawbab-interactive-maps');
                 }
             }
 
             if (!minorSubcategory) {
                 if (key === 'baths') {
-                    minorSubcategory = __('Bathroom', TEXT_DOMAIN);
+                    minorSubcategory = __('Bathroom', 'bawbab-interactive-maps');
                 } else if (mode === 'time') {
-                    minorSubcategory = __('min', TEXT_DOMAIN);
+                    minorSubcategory = __('min', 'bawbab-interactive-maps');
                 } else if (mode === 'measurement') {
-                    minorSubcategory = __('in', TEXT_DOMAIN);
+                    minorSubcategory = __('in', 'bawbab-interactive-maps');
                 } else {
-                    minorSubcategory = __('Minor', TEXT_DOMAIN);
+                    minorSubcategory = __('Minor', 'bawbab-interactive-maps');
                 }
             }
 

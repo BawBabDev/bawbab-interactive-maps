@@ -11,8 +11,6 @@ import { useMapSettings } from './hooks/useMapSettings';
 import { useTypographySettings } from './hooks/useTypographySettings';
 import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 /**
  * MapSettingsPage Component
  */
@@ -185,7 +183,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                 createSuccessNotice(
                     __(
                         'Google Maps API credentials updated! Reloading page...',
-                        TEXT_DOMAIN
+                        'bawbab-interactive-maps'
                     ),
                     { type: 'snackbar' }
                 );
@@ -195,13 +193,13 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
             } else {
                 triggerMapRefresh();
                 createSuccessNotice(
-                    __( 'Settings saved successfully!', TEXT_DOMAIN ),
+                    __( 'Settings saved successfully!', 'bawbab-interactive-maps' ),
                     { type: 'snackbar' }
                 );
             }
         } else {
             createErrorNotice(
-                __( 'Error saving settings: ', TEXT_DOMAIN ) +
+                __( 'Error saving settings: ', 'bawbab-interactive-maps' ) +
                     ( result.error?.message || '' )
             );
         }
@@ -217,7 +215,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
         if ( credentialsTouched ) {
             createSuccessNotice(
-                __( 'Restoring map API credentials... Reloading page...', TEXT_DOMAIN ),
+                __( 'Restoring map API credentials... Reloading page...', 'bawbab-interactive-maps' ),
                 { type: 'snackbar' }
             );
             setTimeout( () => {
@@ -254,7 +252,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
         triggerMapRefresh();
 
         createSuccessNotice(
-            __( 'Unsaved changes discarded.', TEXT_DOMAIN ),
+            __( 'Unsaved changes discarded.', 'bawbab-interactive-maps' ),
             { type: 'snackbar' }
         );
     };
@@ -291,7 +289,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                     className="wp-heading-inline"
                     style={ { marginBottom: '8px' } }
                 >
-                    { __( 'Bawbab Interactive Map Settings', TEXT_DOMAIN ) }
+                    { __( 'Bawbab Interactive Map Settings', 'bawbab-interactive-maps' ) }
                 </h1>
                 <hr className="wp-header-end" />
             </div>
@@ -389,7 +387,7 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                                     pointerEvents: isDirty ? 'auto' : 'none',
                                 } }
                             >
-                                { __( 'Discard Changes', TEXT_DOMAIN ) }
+                                { __( 'Discard Changes', 'bawbab-interactive-maps' ) }
                             </Button>
 
                             <Button
@@ -410,8 +408,8 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
                                 } }
                             >
                                 { isSaving
-                                    ? __( 'Saving...', TEXT_DOMAIN )
-                                    : __( 'Save All Changes', TEXT_DOMAIN ) }
+                                    ? __( 'Saving...', 'bawbab-interactive-maps' )
+                                    : __( 'Save All Changes', 'bawbab-interactive-maps' ) }
                             </Button>
                         </div>
                     </div>
@@ -451,12 +449,12 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
             <ConfirmModal
                 isOpen={ showConfirmModal }
-                title={ __( 'Save Map Settings', TEXT_DOMAIN ) }
+                title={ __( 'Save Map Settings', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to save and apply all map settings and typography changes?',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Save Changes', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Save Changes', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmSave }
                 onCancel={ () => setShowConfirmModal( false ) }
                 isBusy={ isSaving }
@@ -464,12 +462,12 @@ const MapSettingsPage = ( { onDirtyStateChange } ) => {
 
             <CancelModal
                 isOpen={ showCancelModal }
-                title={ __( 'Discard Map Changes', TEXT_DOMAIN ) }
+                title={ __( 'Discard Map Changes', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to discard your unsaved modifications?',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Discard Changes', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Discard Changes', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmCancel }
                 onCancel={ () => setShowCancelModal( false ) }
             />

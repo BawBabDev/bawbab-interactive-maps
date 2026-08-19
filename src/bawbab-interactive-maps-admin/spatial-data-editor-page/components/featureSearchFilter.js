@@ -10,15 +10,13 @@ import {
     Dashicon,
 } from '@wordpress/components';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const LAYER_OPTIONS = [
-    { label: __( 'All Map Layers', TEXT_DOMAIN ), value: 'all' },
-    { label: __( 'Buildings Layer', TEXT_DOMAIN ), value: 'buildings' },
-    { label: __( 'Land Use Layer', TEXT_DOMAIN ), value: 'land_use' },
-    { label: __( 'Pathways Layer', TEXT_DOMAIN ), value: 'paths' },
-    { label: __( 'Parcels Layer', TEXT_DOMAIN ), value: 'parcels' },
-    { label: __( 'Entries Layer', TEXT_DOMAIN ), value: 'entries' },
+    { label: __( 'All Map Layers', 'bawbab-interactive-maps' ), value: 'all' },
+    { label: __( 'Buildings Layer', 'bawbab-interactive-maps' ), value: 'buildings' },
+    { label: __( 'Land Use Layer', 'bawbab-interactive-maps' ), value: 'land_use' },
+    { label: __( 'Pathways Layer', 'bawbab-interactive-maps' ), value: 'paths' },
+    { label: __( 'Parcels Layer', 'bawbab-interactive-maps' ), value: 'parcels' },
+    { label: __( 'Entries Layer', 'bawbab-interactive-maps' ), value: 'entries' },
 ];
 
 export const FeatureSearchFilter = ( {
@@ -47,7 +45,7 @@ export const FeatureSearchFilter = ( {
         >
             <div style={ { marginBottom: '10px' } }>
                 <SelectControl
-                    label={ __( 'Target Map Layer', TEXT_DOMAIN ) }
+                    label={ __( 'Target Map Layer', 'bawbab-interactive-maps' ) }
                     value={ selectedLayer }
                     options={ LAYER_OPTIONS }
                     onChange={ ( val ) => setSelectedLayer( val ) }
@@ -60,7 +58,7 @@ export const FeatureSearchFilter = ( {
                     <SearchControl
                         value={ searchQuery }
                         onChange={ setSearchQuery }
-                        placeholder={ __( 'Search units...', TEXT_DOMAIN ) }
+                        placeholder={ __( 'Search units...', 'bawbab-interactive-maps' ) }
                         __nextHasNoMarginBottom
                     />
                 </FlexItem>
@@ -68,7 +66,7 @@ export const FeatureSearchFilter = ( {
                 <FlexItem>
                     <Button
                         onClick={ () => setIsFilterOpen( ( prev ) => ! prev ) }
-                        label={ __( 'Toggle Filters', TEXT_DOMAIN ) }
+                        label={ __( 'Toggle Filters', 'bawbab-interactive-maps' ) }
                         showTooltip
                         style={ {
                             height: '40px',
@@ -112,7 +110,7 @@ export const FeatureSearchFilter = ( {
                     } }
                 >
                     <SelectControl
-                        label={ __( 'Category', TEXT_DOMAIN ) }
+                        label={ __( 'Category', 'bawbab-interactive-maps' ) }
                         value={ filterCategory }
                         options={ categories }
                         onChange={ ( val ) => setFilterCategory( val ) }
@@ -137,7 +135,7 @@ export const FeatureSearchFilter = ( {
                                     marginBottom: '8px',
                                 } }
                             >
-                                { __( 'Dynamic Custom Filters', TEXT_DOMAIN ) }
+                                { __( 'Dynamic Custom Filters', 'bawbab-interactive-maps' ) }
                             </strong>
 
                             <div
@@ -193,7 +191,7 @@ export const FeatureSearchFilter = ( {
                                                     step="0.5"
                                                     placeholder={ __(
                                                         'Min',
-                                                        TEXT_DOMAIN
+                                                        'bawbab-interactive-maps'
                                                     ) }
                                                     value={ currentVal.min || '' }
                                                     onChange={ ( val ) =>
@@ -218,7 +216,7 @@ export const FeatureSearchFilter = ( {
                                                     step="0.5"
                                                     placeholder={ __(
                                                         'Max',
-                                                        TEXT_DOMAIN
+                                                        'bawbab-interactive-maps'
                                                     ) }
                                                     value={ currentVal.max || '' }
                                                     onChange={ ( val ) =>

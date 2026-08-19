@@ -47,8 +47,6 @@ import {
 } from '../constants/mapConstants';
 import { useMapUrlParams } from '../hooks/useMapUrlParams';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export default function BawBabIMaps( {
     colorThemeProp,
     mapLogoProp,
@@ -279,7 +277,7 @@ export default function BawBabIMaps( {
             const dynamicPinLocationObject = {
                 name: `${ __(
                     'Pinned Location',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) } (${ clickedLat.toFixed( 4 ) }, ${ clickedLng.toFixed(
                     4
                 ) })`,

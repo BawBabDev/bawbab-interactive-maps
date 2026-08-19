@@ -1,8 +1,6 @@
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const useSpatialDataExporter = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [exportError, setExportError] = useState(null);
@@ -31,7 +29,7 @@ export const useSpatialDataExporter = () => {
                 throw new Error(
                     sprintf(
                         /* translators: %s: HTTP status error text */
-                        __('Export failed with status: %s', TEXT_DOMAIN),
+                        __('Export failed with status: %s', 'bawbab-interactive-maps'),
                         response.statusText
                     )
                 );
@@ -53,7 +51,7 @@ export const useSpatialDataExporter = () => {
             return { success: true, filename };
         } catch (err) {
             console.error('GeoJSON Export Error:', err);
-            const errorMsg = err.message || __('Failed to export GeoJSON layer.', TEXT_DOMAIN);
+            const errorMsg = err.message || __('Failed to export GeoJSON layer.', 'bawbab-interactive-maps');
             setExportError(errorMsg);
             return { success: false, error: errorMsg };
         } finally {

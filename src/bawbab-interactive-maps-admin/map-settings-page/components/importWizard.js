@@ -12,13 +12,11 @@ import {
 import { useState, useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const FIELD_TYPE_OPTIONS = [
-    { label: __('Text', TEXT_DOMAIN), value: 'text' },
-    { label: __('Number', TEXT_DOMAIN), value: 'number' },
-    { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
-    { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
+    { label: __('Text', 'bawbab-interactive-maps'), value: 'text' },
+    { label: __('Number', 'bawbab-interactive-maps'), value: 'number' },
+    { label: __('Boolean', 'bawbab-interactive-maps'), value: 'boolean' },
+    { label: __('Dual Counter', 'bawbab-interactive-maps'), value: 'dual_counter' },
 ];
 
 /**
@@ -152,69 +150,69 @@ export const GeoJSONImportWizardModal = ( {
     const standardFields = [
         {
             key: 'fid',
-            label: __( 'Feature ID (fid)', TEXT_DOMAIN ),
+            label: __( 'Feature ID (fid)', 'bawbab-interactive-maps' ),
             required: true,
         },
         {
             key: 'lat',
-            label: __( 'Latitude (Center / Label)', TEXT_DOMAIN ),
+            label: __( 'Latitude (Center / Label)', 'bawbab-interactive-maps' ),
             required: false,
             supportsAuto: true,
         },
         {
             key: 'lng',
-            label: __( 'Longitude (Center / Label)', TEXT_DOMAIN ),
+            label: __( 'Longitude (Center / Label)', 'bawbab-interactive-maps' ),
             required: false,
             supportsAuto: true,
         },
         {
             key: 'floor',
-            label: __( 'Floor Number', TEXT_DOMAIN ),
+            label: __( 'Floor Number', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'name',
-            label: __( 'Name / Group Label', TEXT_DOMAIN ),
+            label: __( 'Name / Group Label', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'code',
-            label: __( 'Unit / Room Code', TEXT_DOMAIN ),
+            label: __( 'Unit / Room Code', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'category',
-            label: __( 'Category Slug', TEXT_DOMAIN ),
+            label: __( 'Category Slug', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'fill_color',
-            label: __( 'Fill Color (HEX)', TEXT_DOMAIN ),
+            label: __( 'Fill Color (HEX)', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'wp_page_id',
-            label: __( 'Linked WP Page ID', TEXT_DOMAIN ),
+            label: __( 'Linked WP Page ID', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'is_interactive',
-            label: __( 'Interactive Flag (0/1)', TEXT_DOMAIN ),
+            label: __( 'Interactive Flag (0/1)', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'show_label',
-            label: __( 'Show Label Flag (0/1)', TEXT_DOMAIN ),
+            label: __( 'Show Label Flag (0/1)', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'title',
-            label: __( 'Side Drawer Title', TEXT_DOMAIN ),
+            label: __( 'Side Drawer Title', 'bawbab-interactive-maps' ),
             required: false,
         },
         {
             key: 'description',
-            label: __( 'Description Text', TEXT_DOMAIN ),
+            label: __( 'Description Text', 'bawbab-interactive-maps' ),
             required: false,
         },
     ];
@@ -299,12 +297,12 @@ export const GeoJSONImportWizardModal = ( {
                     setCustomTypes( initialTypes );
                 } else if ( isMounted ) {
                     setInspectionError(
-                        res.message || __( 'Failed to inspect GeoJSON structure.', TEXT_DOMAIN )
+                        res.message || __( 'Failed to inspect GeoJSON structure.', 'bawbab-interactive-maps' )
                     );
                 }
             } catch ( err ) {
                 if ( isMounted ) {
-                    setInspectionError( __( 'Network error during file inspection.', TEXT_DOMAIN ) );
+                    setInspectionError( __( 'Network error during file inspection.', 'bawbab-interactive-maps' ) );
                 }
             } finally {
                 if ( isMounted ) setIsInspecting( false );
@@ -348,7 +346,7 @@ export const GeoJSONImportWizardModal = ( {
 
     const handleImportSubmit = async () => {
         if ( ! enabledStandardFields.fid || ! standardMapping.fid ) {
-            alert( __( 'Please map a column to the required Feature ID (fid).', TEXT_DOMAIN ) );
+            alert( __( 'Please map a column to the required Feature ID (fid).', 'bawbab-interactive-maps' ) );
             return;
         }
 
@@ -392,7 +390,7 @@ export const GeoJSONImportWizardModal = ( {
     };
 
     const propertySelectOptions = [
-        { label: __( '-- Select GeoJSON Column --', TEXT_DOMAIN ), value: '' },
+        { label: __( '-- Select GeoJSON Column --', 'bawbab-interactive-maps' ), value: '' },
         ...detectedKeys.map( ( key ) => ( {
             label: `${ key } ${
                 sampleProps[ key ] !== undefined
@@ -411,7 +409,7 @@ export const GeoJSONImportWizardModal = ( {
     return (
         <Modal
             title={ sprintf(
-                __( 'Import Wizard: %s Layer', TEXT_DOMAIN ),
+                __( 'Import Wizard: %s Layer', 'bawbab-interactive-maps' ),
                 layerType.toUpperCase()
             ) }
             onRequestClose={ onClose }
@@ -421,7 +419,7 @@ export const GeoJSONImportWizardModal = ( {
                 <div style={ { padding: '40px 0', textAlign: 'center' } }>
                     <Spinner />
                     <p style={ { marginTop: '10px', color: '#666' } }>
-                        { __( 'Inspecting GeoJSON structure...', TEXT_DOMAIN ) }
+                        { __( 'Inspecting GeoJSON structure...', 'bawbab-interactive-maps' ) }
                     </p>
                 </div>
             ) : inspectionError ? (
@@ -431,7 +429,7 @@ export const GeoJSONImportWizardModal = ( {
                     </Notice>
                     <Flex justify="end" style={ { marginTop: '20px' } }>
                         <Button variant="secondary" onClick={ onClose }>
-                            { __( 'Close', TEXT_DOMAIN ) }
+                            { __( 'Close', 'bawbab-interactive-maps' ) }
                         </Button>
                     </Flex>
                 </div>
@@ -445,7 +443,7 @@ export const GeoJSONImportWizardModal = ( {
                         { sprintf(
                             __(
                                 'Found %1$d features with %2$d attributes in GeoJSON.',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ),
                             totalFeatures,
                             detectedKeys.length
@@ -460,7 +458,7 @@ export const GeoJSONImportWizardModal = ( {
                                 marginBottom: '10px',
                             } }
                         >
-                            { __( '1. System Fields Mapping', TEXT_DOMAIN ) }
+                            { __( '1. System Fields Mapping', 'bawbab-interactive-maps' ) }
                         </h3>
                         <p
                             style={ {
@@ -471,7 +469,7 @@ export const GeoJSONImportWizardModal = ( {
                         >
                             { __(
                                 'Check fields to update in the database. Unchecked fields will be ignored on import.',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ) }
                         </p>
                         <div
@@ -526,7 +524,7 @@ export const GeoJSONImportWizardModal = ( {
                                             <Flex align="center" gap={ 2 }>
                                                 { field.supportsAuto && isChecked && (
                                                     <ToggleControl
-                                                        label={ __( 'Auto-Compute Centroid', TEXT_DOMAIN ) }
+                                                        label={ __( 'Auto-Compute Centroid', 'bawbab-interactive-maps' ) }
                                                         checked={ isAuto }
                                                         onChange={ ( val ) =>
                                                             setAutoComputeCoords( ( prev ) => ( {
@@ -569,14 +567,14 @@ export const GeoJSONImportWizardModal = ( {
                         >
                             { __(
                                 '2. Dynamic GeoJSON Custom Attributes (Check & Assign Type)',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ) }
                         </h3>
                         { dynamicKeys.length === 0 ? (
                             <p style={ { fontStyle: 'italic', color: '#888' } }>
                                 { __(
                                     'All GeoJSON attributes are mapped to system fields above.',
-                                    TEXT_DOMAIN
+                                    'bawbab-interactive-maps'
                                 ) }
                             </p>
                         ) : (
@@ -673,7 +671,7 @@ export const GeoJSONImportWizardModal = ( {
                             onClick={ onClose }
                             disabled={ isExecuting }
                         >
-                            { __( 'Cancel', TEXT_DOMAIN ) }
+                            { __( 'Cancel', 'bawbab-interactive-maps' ) }
                         </Button>
                         <Button
                             variant="primary"
@@ -686,8 +684,8 @@ export const GeoJSONImportWizardModal = ( {
                             }
                         >
                             { isExecuting
-                                ? __( 'Importing...', TEXT_DOMAIN )
-                                : __( 'Execute Import', TEXT_DOMAIN ) }
+                                ? __( 'Importing...', 'bawbab-interactive-maps' )
+                                : __( 'Execute Import', 'bawbab-interactive-maps' ) }
                         </Button>
                     </Flex>
                 </div>

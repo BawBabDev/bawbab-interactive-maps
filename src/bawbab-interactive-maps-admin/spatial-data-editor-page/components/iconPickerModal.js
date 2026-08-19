@@ -8,8 +8,6 @@ import {
     LEGACY_ICON_NAMES 
 } from '../constants/iconRegistry';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const renderModalIcon = (iconName) => {
     const icon = renderIconBySlug(iconName, { size: 20 });
     if (!icon) return null;
@@ -67,7 +65,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
 
     return (
         <Modal 
-            title={__('Select Field Icon', TEXT_DOMAIN)} 
+            title={__('Select Field Icon', 'bawbab-interactive-maps')} 
             onRequestClose={onClose}
             style={{ maxWidth: '640px', width: '100%' }}
         >
@@ -76,8 +74,8 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
                 <Flex gap={2} align="end">
                     <FlexItem style={{ flex: 1 }}>
                         <TextControl
-                            label={__('Search Icons', TEXT_DOMAIN)}
-                            placeholder={__('Search among all 1,500+ icons...', TEXT_DOMAIN)}
+                            label={__('Search Icons', 'bawbab-interactive-maps')}
+                            placeholder={__('Search among all 1,500+ icons...', 'bawbab-interactive-maps')}
                             value={search}
                             onChange={setSearch}
                             style={{ height: '36px' }}
@@ -87,7 +85,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
 
                     <FlexItem style={{ width: '190px' }} className="select-control-wrapper">
                         <SelectControl
-                            label={__('Filter Category', TEXT_DOMAIN)}
+                            label={__('Filter Category', 'bawbab-interactive-maps')}
                             value={activeCategory}
                             options={categorySelectOptions}
                             onChange={setActiveCategory}
@@ -131,7 +129,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
                         }}
                     >
                         <span style={{ fontSize: '18px', color: '#999' }}>Ø</span>
-                        <span style={{ fontSize: '11px', color: '#666' }}>{__('No Icon', TEXT_DOMAIN)}</span>
+                        <span style={{ fontSize: '11px', color: '#666' }}>{__('No Icon', 'bawbab-interactive-maps')}</span>
                     </button>
 
                     {filteredIconNames.map(iconName => {
@@ -171,7 +169,7 @@ export const IconPickerModal = ({ isOpen, onClose, onSelectIcon, currentIconKey 
 
                 <Flex justify="flex-end" style={{ marginTop: '5px' }}>
                     <Button variant="secondary" onClick={onClose}>
-                        {__('Cancel', TEXT_DOMAIN)}
+                        {__('Cancel', 'bawbab-interactive-maps')}
                     </Button>
                 </Flex>
             </div>

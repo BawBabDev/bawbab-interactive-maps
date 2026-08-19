@@ -9,8 +9,6 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const CategoryGroupManager = ( {
     groups,
     setGroups,
@@ -32,7 +30,7 @@ export const CategoryGroupManager = ( {
     const handleRemoveGroup = ( groupId ) => {
         if ( groups.length <= 1 ) {
             alert(
-                __( 'You must keep at least one category group.', TEXT_DOMAIN )
+                __( 'You must keep at least one category group.', 'bawbab-interactive-maps' )
             );
             return;
         }
@@ -73,7 +71,7 @@ export const CategoryGroupManager = ( {
                     marginBottom: '8px',
                 } }
             >
-                { __( 'Category Navigation Groups', TEXT_DOMAIN ) }
+                { __( 'Category Navigation Groups', 'bawbab-interactive-maps' ) }
             </h2>
             <Text
                 variant="caption"
@@ -85,7 +83,7 @@ export const CategoryGroupManager = ( {
             >
                 { __(
                     'Groups structure top-level navigation tabs and side drawer accordions on the public map.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
             </Text>
 
@@ -104,7 +102,7 @@ export const CategoryGroupManager = ( {
                     display="block"
                     style={ { fontWeight: '600', marginBottom: '12px' } }
                 >
-                    { __( 'Create New Category Group', TEXT_DOMAIN ) }
+                    { __( 'Create New Category Group', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 <div
@@ -116,10 +114,10 @@ export const CategoryGroupManager = ( {
                 >
                     <div style={ { flex: 1 } }>
                         <TextControl
-                            label={ __( 'Group Title', TEXT_DOMAIN ) }
+                            label={ __( 'Group Title', 'bawbab-interactive-maps' ) }
                             placeholder={ __(
                                 'e.g. Wellness Centers or Dining',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ) }
                             value={ newGroupTitle }
                             onChange={ setNewGroupTitle }
@@ -138,7 +136,7 @@ export const CategoryGroupManager = ( {
                             padding: '0 16px',
                         } }
                     >
-                        { __( 'Add Group', TEXT_DOMAIN ) }
+                        { __( 'Add Group', 'bawbab-interactive-maps' ) }
                     </Button>
                 </div>
             </div>
@@ -168,7 +166,7 @@ export const CategoryGroupManager = ( {
                         >
                             <FlexItem style={ { flex: 1 } }>
                                 <TextControl
-                                    label={ __( 'Group Title', TEXT_DOMAIN ) }
+                                    label={ __( 'Group Title', 'bawbab-interactive-maps' ) }
                                     value={ group.title }
                                     onChange={ ( val ) =>
                                         handleUpdateGroup(
@@ -187,20 +185,20 @@ export const CategoryGroupManager = ( {
                                 className="select-control-wrapper"
                             >
                                 <SelectControl
-                                    label={ __( 'Layout Type', TEXT_DOMAIN ) }
+                                    label={ __( 'Layout Type', 'bawbab-interactive-maps' ) }
                                     value={ group.displayType || 'flat' }
                                     options={ [
                                         {
                                             label: __(
                                                 'Nested Accordion (Grouped)',
-                                                TEXT_DOMAIN
+                                                'bawbab-interactive-maps'
                                             ),
                                             value: 'grouped',
                                         },
                                         {
                                             label: __(
                                                 'Flat List (Single Items)',
-                                                TEXT_DOMAIN
+                                                'bawbab-interactive-maps'
                                             ),
                                             value: 'flat',
                                         },
@@ -238,7 +236,7 @@ export const CategoryGroupManager = ( {
                                     }
                                     label={ __(
                                         'Delete Group',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                     ) }
                                     style={ {
                                         height: '36px',

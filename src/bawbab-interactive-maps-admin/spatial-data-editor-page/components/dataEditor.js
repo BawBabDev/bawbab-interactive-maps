@@ -20,8 +20,6 @@ import { __, sprintf } from '@wordpress/i18n';
 import { useCategoryManager } from '../../category-editor-page/hooks/useCategoryManager';
 import { AttributeConfigModal } from './attributeConfigModal';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const formatFieldLabel = ( str ) => {
     if ( ! str ) return '';
     return str
@@ -169,7 +167,7 @@ const PropertyInputControl = ( {
                         variant={ isTrue ? 'primary' : 'secondary' }
                         onClick={ () => onChange( true ) }
                     >
-                        { __( 'Yes', TEXT_DOMAIN ) }
+                        { __( 'Yes', 'bawbab-interactive-maps' ) }
                     </Button>
                     <Button
                         isSmall
@@ -185,7 +183,7 @@ const PropertyInputControl = ( {
                                 : undefined
                         }
                     >
-                        { __( 'No', TEXT_DOMAIN ) }
+                        { __( 'No', 'bawbab-interactive-maps' ) }
                     </Button>
                     <Button
                         isSmall
@@ -196,7 +194,7 @@ const PropertyInputControl = ( {
                             color: isNullOrUnset ? '#333' : undefined,
                         } }
                     >
-                        { __( 'Unset', TEXT_DOMAIN ) }
+                        { __( 'Unset', 'bawbab-interactive-maps' ) }
                     </Button>
                 </ButtonGroup>
             </Flex>
@@ -225,7 +223,7 @@ const PropertyInputControl = ( {
                         icon="no-alt"
                         isSmall
                         onClick={ onClear }
-                        label={ __( 'Clear Value', TEXT_DOMAIN ) }
+                        label={ __( 'Clear Value', 'bawbab-interactive-maps' ) }
                         showTooltip
                         style={ {
                             height: '32px',
@@ -544,7 +542,7 @@ const DataEditor = ( {
                 } }
             >
                 <Text variant="title.medium" display="block">
-                    { __( 'Internal ID:', TEXT_DOMAIN ) } { localProps.fid }
+                    { __( 'Internal ID:', 'bawbab-interactive-maps' ) } { localProps.fid }
                 </Text>
             </div>
 
@@ -566,12 +564,12 @@ const DataEditor = ( {
                     display="block"
                     style={ { fontWeight: '600', marginBottom: '12px' } }
                 >
-                    { __( 'Linked WordPress Page', TEXT_DOMAIN ) }
+                    { __( 'Linked WordPress Page', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 <div style={ { marginBottom: '12px' } }>
                     <ComboboxControl
-                        label={ __( 'Select Page', TEXT_DOMAIN ) }
+                        label={ __( 'Select Page', 'bawbab-interactive-maps' ) }
                         value={ linkedPageId ? linkedPageId.toString() : '' }
                         onChange={ ( val ) => updateDraft( { wp_page_id: val } ) }
                         options={ pages }
@@ -580,7 +578,7 @@ const DataEditor = ( {
                 </div>
 
                 <PanelBody
-                    title={ __( 'Advanced Settings (Media Overrides)', TEXT_DOMAIN ) }
+                    title={ __( 'Advanced Settings (Media Overrides)', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                     style={ { marginTop: '10px', border: '1px solid #e0e0e0', borderRadius: '4px', background: '#fff' } }
                 >
@@ -593,7 +591,7 @@ const DataEditor = ( {
                             } }
                         >
                             <ToggleControl
-                                label={ __( 'Hide Linked Page Video', TEXT_DOMAIN ) }
+                                label={ __( 'Hide Linked Page Video', 'bawbab-interactive-maps' ) }
                                 checked={ hidePageVideo }
                                 onChange={ ( val ) =>
                                     updateDraft( { hide_page_video: val } )
@@ -602,7 +600,7 @@ const DataEditor = ( {
                             { ! hidePageVideo && (
                                 <div style={ { marginTop: '12px' } }>
                                     <TextControl
-                                        label={ __( 'Custom Video URL', TEXT_DOMAIN ) }
+                                        label={ __( 'Custom Video URL', 'bawbab-interactive-maps' ) }
                                         value={ customVideoUrl }
                                         onChange={ ( val ) =>
                                             updateDraft( { custom_video_url: val } )
@@ -617,7 +615,7 @@ const DataEditor = ( {
                             <ToggleControl
                                 label={ __(
                                     'Hide Linked Page Floorplan',
-                                    TEXT_DOMAIN
+                                    'bawbab-interactive-maps'
                                 ) }
                                 checked={ hidePageFloorplan }
                                 onChange={ ( val ) =>
@@ -637,7 +635,7 @@ const DataEditor = ( {
                                         <TextControl
                                             label={ __(
                                                 'Custom Floorplan URL',
-                                                TEXT_DOMAIN
+                                                'bawbab-interactive-maps'
                                             ) }
                                             value={ customFloorplanUrl }
                                             onChange={ ( val ) =>
@@ -655,7 +653,7 @@ const DataEditor = ( {
                                             const frame = window.wp.media( {
                                                 title: __(
                                                     'Select Custom Floorplan',
-                                                    TEXT_DOMAIN
+                                                    'bawbab-interactive-maps'
                                                 ),
                                                 multiple: false,
                                             } );
@@ -698,21 +696,21 @@ const DataEditor = ( {
                     display="block"
                     style={ { fontWeight: '600', marginBottom: '12px' } }
                 >
-                    { __( 'Core Identification & Canvas Label', TEXT_DOMAIN ) }
+                    { __( 'Core Identification & Canvas Label', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 <div style={ { marginBottom: '12px' } }>
                     <TextControl
                         label={ __(
                             'Display Title (Overrides WP Page Title in Side Drawer)',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                         value={ customTitle }
                         onChange={ ( val ) => updateDraft( { title: val } ) }
                         placeholder={ featureName || localProps.name }
                         help={ __(
                             'Public header shown inside side drawer popups when selected.',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                         __nextHasNoMarginBottom
                     />
@@ -720,7 +718,7 @@ const DataEditor = ( {
 
                 <div style={ { marginBottom: '12px' } }>
                     <TextareaControl
-                        label={ __( 'Custom Description', TEXT_DOMAIN ) }
+                        label={ __( 'Custom Description', 'bawbab-interactive-maps' ) }
                         value={ desc }
                         onChange={ ( val ) => updateDraft( { description: val } ) }
                         rows={ 4 }
@@ -739,7 +737,7 @@ const DataEditor = ( {
                             <ToggleControl
                                 label={ __(
                                     'Append to WP Page Content',
-                                    TEXT_DOMAIN
+                                    'bawbab-interactive-maps'
                                 ) }
                                 checked={ appendDescription }
                                 onChange={ ( val ) =>
@@ -751,7 +749,7 @@ const DataEditor = ( {
                 </div>
 
                 <PanelBody
-                    title={ __( 'Advanced Settings (Name & Code)', TEXT_DOMAIN ) }
+                    title={ __( 'Advanced Settings (Name & Code)', 'bawbab-interactive-maps' ) }
                     initialOpen={ false }
                     style={ { border: '1px solid #e0e0e0', borderRadius: '4px', background: '#fff' } }
                 >
@@ -759,29 +757,29 @@ const DataEditor = ( {
                         <Flex gap={ 3 }>
                             <FlexItem style={ { flex: 1 } }>
                                 <TextControl
-                                    label={ __( 'Feature Name', TEXT_DOMAIN ) }
+                                    label={ __( 'Feature Name', 'bawbab-interactive-maps' ) }
                                     value={ featureName }
                                     onChange={ ( val ) => updateDraft( { name: val } ) }
                                     placeholder={ __(
                                         'e.g. Building A or Main Entrance',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                     ) }
                                     help={ __(
                                         'Primary name used in navigation and map labels.',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                     ) }
                                     __nextHasNoMarginBottom
                                 />
                             </FlexItem>
                             <FlexItem style={ { flex: '0 0 180px' } }>
                                 <TextControl
-                                    label={ __( 'Unit / Room Code', TEXT_DOMAIN ) }
+                                    label={ __( 'Unit / Room Code', 'bawbab-interactive-maps' ) }
                                     value={ featureCode }
                                     onChange={ ( val ) => updateDraft( { code: val } ) }
-                                    placeholder={ __( 'e.g. 101A', TEXT_DOMAIN ) }
+                                    placeholder={ __( 'e.g. 101A', 'bawbab-interactive-maps' ) }
                                     help={ __(
                                         'Room or unit code label.',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                     ) }
                                     __nextHasNoMarginBottom
                                 />
@@ -808,18 +806,18 @@ const DataEditor = ( {
                     display="block"
                     style={ { fontWeight: '600', marginBottom: '12px' } }
                 >
-                    { __( 'Feature Category & Styling', TEXT_DOMAIN ) }
+                    { __( 'Feature Category & Styling', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 <div style={ { marginBottom: '15px', paddingBottom: '12px', borderBottom: '1px solid #eee' } }>
                     <SelectControl
-                        label={ __( 'Feature Category', TEXT_DOMAIN ) }
+                        label={ __( 'Feature Category', 'bawbab-interactive-maps' ) }
                         value={ currentCategory }
                         options={ categoryOptions }
                         onChange={ ( val ) => updateDraft( { category: val } ) }
                         help={ __(
                             'Determines default group placement and color theme.',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                         __nextHasNoMarginBottom
                     />
@@ -838,7 +836,7 @@ const DataEditor = ( {
                             display="block"
                             style={ { fontWeight: '600' } }
                         >
-                            { __( 'Unit Custom Fill Color', TEXT_DOMAIN ) }
+                            { __( 'Unit Custom Fill Color', 'bawbab-interactive-maps' ) }
                         </Text>
                         <Text
                             variant="caption"
@@ -847,12 +845,12 @@ const DataEditor = ( {
                             { hasCustomFillColor
                                 ? __(
                                         'Custom color override activated for this unit.',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                   )
                                 : sprintf(
                                         __(
                                             'Using global category color (%s). Toggle on to set a custom color.',
-                                            TEXT_DOMAIN
+                                            'bawbab-interactive-maps'
                                         ),
                                         globalCategoryColor
                                   ) }
@@ -877,7 +875,7 @@ const DataEditor = ( {
                     >
                         <FlexItem style={ { flex: 1 } }>
                             <TextControl
-                                label={ __( 'Hex Color Code', TEXT_DOMAIN ) }
+                                label={ __( 'Hex Color Code', 'bawbab-interactive-maps' ) }
                                 value={ activeFillColor }
                                 onChange={ ( val ) =>
                                     updateDraft( { fill_color: val } )
@@ -956,7 +954,7 @@ const DataEditor = ( {
                         variant="label"
                         style={ { fontWeight: '600', margin: 0 } }
                     >
-                        { __( 'Custom Feature Properties', TEXT_DOMAIN ) }
+                        { __( 'Custom Feature Properties', 'bawbab-interactive-maps' ) }
                     </Text>
                     
                     {/* BUTTON GROUP PINNED TO THE TOP RIGHT */}
@@ -975,7 +973,7 @@ const DataEditor = ( {
                             onClick={ onOpenSchema }
                             style={ { margin: 0, flexShrink: 0 } }
                         >
-                            { __( 'Configure', TEXT_DOMAIN ) }
+                            { __( 'Configure', 'bawbab-interactive-maps' ) }
                         </Button>
                         <Button
                             variant="secondary"
@@ -984,7 +982,7 @@ const DataEditor = ( {
                             onClick={ () => setShowAddPropModal( true ) }
                             style={ { margin: 0, flexShrink: 0 } }
                         >
-                            { __( 'Add Property', TEXT_DOMAIN ) }
+                            { __( 'Add Property', 'bawbab-interactive-maps' ) }
                         </Button>
                     </div>
                 </div>
@@ -996,7 +994,7 @@ const DataEditor = ( {
                     >
                         { __(
                             'No custom attributes associated with this feature.',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                     </Text>
                 ) : (
@@ -1060,7 +1058,7 @@ const DataEditor = ( {
                     display="block"
                     style={ { fontWeight: '600', marginBottom: '12px' } }
                 >
-                    { __( 'Map Interaction & Display Settings', TEXT_DOMAIN ) }
+                    { __( 'Map Interaction & Display Settings', 'bawbab-interactive-maps' ) }
                 </Text>
                 <div
                     style={ {
@@ -1072,7 +1070,7 @@ const DataEditor = ( {
                     <ToggleControl
                         label={ __(
                             'Feature is Interactive (Clickable on map)',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                         checked={ isInteractive }
                         onChange={ ( val ) =>
@@ -1082,7 +1080,7 @@ const DataEditor = ( {
                     <ToggleControl
                         label={ __(
                             'Display Name/Code Label on Map Canvas',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ) }
                         checked={ showLabel }
                         onChange={ ( val ) =>
@@ -1099,7 +1097,7 @@ const DataEditor = ( {
                     display="block"
                     style={ { marginBottom: '10px' } }
                 >
-                    { __( 'Custom Gallery', TEXT_DOMAIN ) }
+                    { __( 'Custom Gallery', 'bawbab-interactive-maps' ) }
                 </Text>
 
                 { currentGallery.length > 0 && (
@@ -1170,7 +1168,7 @@ const DataEditor = ( {
                     icon="upload"
                     onClick={ () => {
                         const frame = window.wp.media( {
-                            title: __( 'Manage Gallery', TEXT_DOMAIN ),
+                            title: __( 'Manage Gallery', 'bawbab-interactive-maps' ),
                             multiple: true,
                         } );
                         frame.on( 'select', () => {
@@ -1190,7 +1188,7 @@ const DataEditor = ( {
                     } }
                     style={ { width: '100%', justifyContent: 'center' } }
                 >
-                    { __( 'Manage Images', TEXT_DOMAIN ) }
+                    { __( 'Manage Images', 'bawbab-interactive-maps' ) }
                 </Button>
             </div>
 

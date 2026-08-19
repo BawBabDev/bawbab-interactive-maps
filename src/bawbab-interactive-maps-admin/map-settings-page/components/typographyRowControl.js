@@ -7,14 +7,12 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const FONT_WEIGHT_OPTIONS = [
-    { label: __( 'Regular', TEXT_DOMAIN ), value: '400' },
-    { label: __( 'Medium', TEXT_DOMAIN ), value: '500' },
-    { label: __( 'Semi-Bold', TEXT_DOMAIN ), value: '600' },
-    { label: __( 'Bold', TEXT_DOMAIN ), value: '700' },
-    { label: __( 'Heavy Bold', TEXT_DOMAIN ), value: '800' },
+    { label: __( 'Regular', 'bawbab-interactive-maps' ), value: '400' },
+    { label: __( 'Medium', 'bawbab-interactive-maps' ), value: '500' },
+    { label: __( 'Semi-Bold', 'bawbab-interactive-maps' ), value: '600' },
+    { label: __( 'Bold', 'bawbab-interactive-maps' ), value: '700' },
+    { label: __( 'Heavy Bold', 'bawbab-interactive-maps' ), value: '800' },
 ];
 
 export const TypographyRowControl = ( {
@@ -79,7 +77,7 @@ export const TypographyRowControl = ( {
                                 )
                             }
                             disabled={ disabled }
-                            label={ __( 'Underline', TEXT_DOMAIN ) }
+                            label={ __( 'Underline', 'bawbab-interactive-maps' ) }
                             style={ { height: '30px', minHeight: '30px' } }
                         />
                         <Button
@@ -93,7 +91,7 @@ export const TypographyRowControl = ( {
                                 )
                             }
                             disabled={ disabled }
-                            label={ __( 'Line-Through', TEXT_DOMAIN ) }
+                            label={ __( 'Line-Through', 'bawbab-interactive-maps' ) }
                             style={ { height: '30px', minHeight: '30px' } }
                         />
                         <Button
@@ -107,7 +105,7 @@ export const TypographyRowControl = ( {
                                 )
                             }
                             disabled={ disabled }
-                            label={ __( 'Italic', TEXT_DOMAIN ) }
+                            label={ __( 'Italic', 'bawbab-interactive-maps' ) }
                             style={ { height: '30px', minHeight: '30px' } }
                         />
                     </Flex>

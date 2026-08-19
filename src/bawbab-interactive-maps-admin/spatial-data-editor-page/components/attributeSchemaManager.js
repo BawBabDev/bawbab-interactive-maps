@@ -11,37 +11,35 @@ import { renderIconBySlug, LEGACY_ICON_NAMES } from '../constants/iconRegistry';
 import { normalizeFieldType } from '../utils/dualCounterHelper';
 import { useAttributeSchema } from '../hooks/useAttributeSchema';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const FIELD_TYPE_OPTIONS = [
-    { label: __('Text', TEXT_DOMAIN), value: 'text' },
-    { label: __('Number', TEXT_DOMAIN), value: 'number' },
-    { label: __('Boolean', TEXT_DOMAIN), value: 'boolean' },
-    { label: __('Dual Counter', TEXT_DOMAIN), value: 'dual_counter' },
+    { label: __('Text', 'bawbab-interactive-maps'), value: 'text' },
+    { label: __('Number', 'bawbab-interactive-maps'), value: 'number' },
+    { label: __('Boolean', 'bawbab-interactive-maps'), value: 'boolean' },
+    { label: __('Dual Counter', 'bawbab-interactive-maps'), value: 'dual_counter' },
 ];
 
 const LAYOUT_OPTIONS = [
-    { label: __('Grid (2 Per Row)', TEXT_DOMAIN), value: 'half' },
-    { label: __('Full Width (1 Line)', TEXT_DOMAIN), value: 'full' },
+    { label: __('Grid (2 Per Row)', 'bawbab-interactive-maps'), value: 'half' },
+    { label: __('Full Width (1 Line)', 'bawbab-interactive-maps'), value: 'full' },
 ];
 
 const DUAL_MODE_OPTIONS = [
-    { label: __('Category Split (e.g. Shower / Bathroom)', TEXT_DOMAIN), value: 'split' },
-    { label: __('Time Breakdown (Hours / Minutes)', TEXT_DOMAIN), value: 'time' },
-    { label: __('Measurement (Feet / Inches)', TEXT_DOMAIN), value: 'measurement' },
+    { label: __('Category Split (e.g. Shower / Bathroom)', 'bawbab-interactive-maps'), value: 'split' },
+    { label: __('Time Breakdown (Hours / Minutes)', 'bawbab-interactive-maps'), value: 'time' },
+    { label: __('Measurement (Feet / Inches)', 'bawbab-interactive-maps'), value: 'measurement' },
 ];
 
 const TIME_UNIT_OPTIONS = [
-    { label: __('Hours & Minutes (1 hr 30 min)', TEXT_DOMAIN), value: 'hours_minutes' },
-    { label: __('Minutes & Seconds (1 min 30 sec)', TEXT_DOMAIN), value: 'minutes_seconds' },
-    { label: __('Days & Hours (1 d 12 hr)', TEXT_DOMAIN), value: 'days_hours' },
+    { label: __('Hours & Minutes (1 hr 30 min)', 'bawbab-interactive-maps'), value: 'hours_minutes' },
+    { label: __('Minutes & Seconds (1 min 30 sec)', 'bawbab-interactive-maps'), value: 'minutes_seconds' },
+    { label: __('Days & Hours (1 d 12 hr)', 'bawbab-interactive-maps'), value: 'days_hours' },
 ];
 
 const MEASUREMENT_UNIT_OPTIONS = [
-    { label: __('Feet & Inches (6\' 7")', TEXT_DOMAIN), value: 'feet_inches' },
-    { label: __('Miles & Feet (1 mi 500 ft)', TEXT_DOMAIN), value: 'miles_feet' },
-    { label: __('Kilometers & Meters (1 km 500 m)', TEXT_DOMAIN), value: 'km_meters' },
-    { label: __('Meters & Centimeters (1 m 50 cm)', TEXT_DOMAIN), value: 'meters_cm' },
+    { label: __('Feet & Inches (6\' 7")', 'bawbab-interactive-maps'), value: 'feet_inches' },
+    { label: __('Miles & Feet (1 mi 500 ft)', 'bawbab-interactive-maps'), value: 'miles_feet' },
+    { label: __('Kilometers & Meters (1 km 500 m)', 'bawbab-interactive-maps'), value: 'km_meters' },
+    { label: __('Meters & Centimeters (1 m 50 cm)', 'bawbab-interactive-maps'), value: 'meters_cm' },
 ];
 
 const createKeySlug = (label) => {
@@ -298,23 +296,23 @@ export const AttributeSchemaManager = ({
     return (
         <div className="tab-content">
             <h2 variant="title.medium" display="block" style={{ fontSize: '16px', fontWeight: '700', marginTop: 0, marginBottom: '8px' }}>
-                {__('Custom Attributes Schema Manager', TEXT_DOMAIN)}
+                {__('Custom Attributes Schema Manager', 'bawbab-interactive-maps')}
             </h2>
             <Text variant="caption" display="block" style={{ color: '#666', marginBottom: '20px' }}>
-                {__('Manage custom fields across all map features. Use the arrow buttons to reorder how custom fields appear inside the side drawer.', TEXT_DOMAIN)}
+                {__('Manage custom fields across all map features. Use the arrow buttons to reorder how custom fields appear inside the side drawer.', 'bawbab-interactive-maps')}
             </Text>
 
             {/* REGISTER NEW FIELD FORM */}
             <div style={{ padding: '16px', background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '6px', marginBottom: '25px' }}>
                 <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '12px' }}>
-                    {__('Register New Custom Field', TEXT_DOMAIN)}
+                    {__('Register New Custom Field', 'bawbab-interactive-maps')}
                 </Text>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: formGridColumns, gap: '12px', alignItems: 'end' }}>
                         <div>
                             <TextControl
-                                label={__('Field Display Label', TEXT_DOMAIN)}
+                                label={__('Field Display Label', 'bawbab-interactive-maps')}
                                 placeholder="e.g. Duration, Square Feet, or Fireplace"
                                 value={newLabel}
                                 onChange={setNewLabel}
@@ -325,7 +323,7 @@ export const AttributeSchemaManager = ({
 
                         <div className="select-control-wrapper">
                             <SelectControl
-                                label={__('Field Type', TEXT_DOMAIN)}
+                                label={__('Field Type', 'bawbab-interactive-maps')}
                                 value={normalizeFieldType(newType)}
                                 options={FIELD_TYPE_OPTIONS}
                                 onChange={handleTypeChange}
@@ -338,7 +336,7 @@ export const AttributeSchemaManager = ({
                         {!isNewSplit && (
                             <div className="select-control-wrapper">
                                 <SelectControl
-                                    label={__('Display Layout', TEXT_DOMAIN)}
+                                    label={__('Display Layout', 'bawbab-interactive-maps')}
                                     value={newLayout}
                                     options={LAYOUT_OPTIONS}
                                     onChange={setNewLayout}
@@ -350,7 +348,7 @@ export const AttributeSchemaManager = ({
 
                         <div>
                             <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: '#666', display: 'block', marginBottom: '4px' }}>
-                                {isNewSplit ? __('Icons (Major / Minor)', TEXT_DOMAIN) : __('Icon', TEXT_DOMAIN)}
+                                {isNewSplit ? __('Icons (Major / Minor)', 'bawbab-interactive-maps') : __('Icon', 'bawbab-interactive-maps')}
                             </label>
 
                             {isNewSplit ? (
@@ -359,20 +357,20 @@ export const AttributeSchemaManager = ({
                                         variant="secondary"
                                         onClick={() => handleOpenIconPicker(null, 'primary')}
                                         style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                        label={__('Select Major Unit Icon', TEXT_DOMAIN)}
+                                        label={__('Select Major Unit Icon', 'bawbab-interactive-maps')}
                                         showTooltip
                                     >
-                                        {renderStyledIcon(newIconPrimary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', TEXT_DOMAIN)}</span>}
+                                        {renderStyledIcon(newIconPrimary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', 'bawbab-interactive-maps')}</span>}
                                     </Button>
                                     <span style={{ fontSize: '12px', color: '#888' }}>/</span>
                                     <Button
                                         variant="secondary"
                                         onClick={() => handleOpenIconPicker(null, 'secondary')}
                                         style={{ height: '36px', minHeight: '36px', flex: 1, justifyContent: 'center', padding: '0 8px' }}
-                                        label={__('Select Minor Unit Icon', TEXT_DOMAIN)}
+                                        label={__('Select Minor Unit Icon', 'bawbab-interactive-maps')}
                                         showTooltip
                                     >
-                                        {renderStyledIcon(newIconSecondary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', TEXT_DOMAIN)}</span>}
+                                        {renderStyledIcon(newIconSecondary, 18) || <span style={{ fontSize: '11px', color: '#999' }}>{__('Choose', 'bawbab-interactive-maps')}</span>}
                                     </Button>
                                 </Flex>
                             ) : (
@@ -387,7 +385,7 @@ export const AttributeSchemaManager = ({
                                             <span style={{ fontSize: '12px', color: '#333', textTransform: 'capitalize' }}>{newIconPrimary}</span>
                                         </span>
                                     ) : (
-                                        <span>{__('Choose Icon', TEXT_DOMAIN)}</span>
+                                        <span>{__('Choose Icon', 'bawbab-interactive-maps')}</span>
                                     )}
                                 </Button>
                             )}
@@ -401,7 +399,7 @@ export const AttributeSchemaManager = ({
                                 disabled={!newLabel.trim() || isSubmitting}
                                 style={{ height: '36px', minHeight: '36px', padding: '0 16px' }}
                             >
-                                {__('Add Field', TEXT_DOMAIN)}
+                                {__('Add Field', 'bawbab-interactive-maps')}
                             </Button>
                         </div>
                     </div>
@@ -412,7 +410,7 @@ export const AttributeSchemaManager = ({
                             <Flex gap={2} align="end">
                                 <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                     <SelectControl
-                                        label={__('Dual Counter Mode', TEXT_DOMAIN)}
+                                        label={__('Dual Counter Mode', 'bawbab-interactive-maps')}
                                         value={newDualMode}
                                         options={DUAL_MODE_OPTIONS}
                                         onChange={(mode) => {
@@ -427,7 +425,7 @@ export const AttributeSchemaManager = ({
                                 {newDualMode === 'time' && (
                                     <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                         <SelectControl
-                                            label={__('Main Time Unit', TEXT_DOMAIN)}
+                                            label={__('Main Time Unit', 'bawbab-interactive-maps')}
                                             value={newMainUnit}
                                             options={TIME_UNIT_OPTIONS}
                                             onChange={setNewMainUnit}
@@ -440,7 +438,7 @@ export const AttributeSchemaManager = ({
                                 {newDualMode === 'measurement' && (
                                     <FlexItem style={{ flex: 1 }} className="select-control-wrapper">
                                         <SelectControl
-                                            label={__('Distance Unit', TEXT_DOMAIN)}
+                                            label={__('Distance Unit', 'bawbab-interactive-maps')}
                                             value={newMainUnit}
                                             options={MEASUREMENT_UNIT_OPTIONS}
                                             onChange={setNewMainUnit}
@@ -454,8 +452,8 @@ export const AttributeSchemaManager = ({
                                     <>
                                         <FlexItem style={{ flex: 1 }}>
                                             <TextControl
-                                                label={__('Major Label', TEXT_DOMAIN)}
-                                                placeholder={__('e.g. Shower', TEXT_DOMAIN)}
+                                                label={__('Major Label', 'bawbab-interactive-maps')}
+                                                placeholder={__('e.g. Shower', 'bawbab-interactive-maps')}
                                                 value={newMajorLabel}
                                                 onChange={setNewMajorLabel}
                                                 style={{ height: '36px', minHeight: '36px' }}
@@ -464,8 +462,8 @@ export const AttributeSchemaManager = ({
                                         </FlexItem>
                                         <FlexItem style={{ flex: 1 }}>
                                             <TextControl
-                                                label={__('Minor Label', TEXT_DOMAIN)}
-                                                placeholder={__('e.g. Bathroom', TEXT_DOMAIN)}
+                                                label={__('Minor Label', 'bawbab-interactive-maps')}
+                                                placeholder={__('e.g. Bathroom', 'bawbab-interactive-maps')}
                                                 value={newMinorLabel}
                                                 onChange={setNewMinorLabel}
                                                 style={{ height: '36px', minHeight: '36px' }}
@@ -481,7 +479,7 @@ export const AttributeSchemaManager = ({
 
                 {derivedKey && (
                     <div style={{ marginTop: '8px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
-                        {sprintf(__('Database Key Slug: %s', TEXT_DOMAIN), derivedKey)}
+                        {sprintf(__('Database Key Slug: %s', 'bawbab-interactive-maps'), derivedKey)}
                     </div>
                 )}
             </div>
@@ -491,18 +489,18 @@ export const AttributeSchemaManager = ({
                 <Flex justify="center" style={{ padding: '40px' }}><Spinner /></Flex>
             ) : localSchema.length === 0 ? (
                 <p style={{ fontStyle: 'italic', color: '#888', textAlign: 'center', padding: '20px' }}>
-                    {__('No custom attribute keys registered yet. Create one above or import a GeoJSON dataset.', TEXT_DOMAIN)}
+                    {__('No custom attribute keys registered yet. Create one above or import a GeoJSON dataset.', 'bawbab-interactive-maps')}
                 </p>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 110px 100px 100px 100px', gap: '12px', padding: '0 12px 6px', borderBottom: '2px solid #e0e0e0', fontWeight: '600', fontSize: '12px', color: '#555' }}>
-                        <span>{__('Order', TEXT_DOMAIN)}</span>
-                        <span>{__('Display Label', TEXT_DOMAIN)}</span>
-                        <span>{__('Database Slug', TEXT_DOMAIN)}</span>
-                        <span>{__('Type', TEXT_DOMAIN)}</span>
-                        <span>{__('Layout', TEXT_DOMAIN)}</span>
-                        <span>{__('Icon(s)', TEXT_DOMAIN)}</span>
-                        <span style={{ textAlign: 'right' }}>{__('Actions', TEXT_DOMAIN)}</span>
+                        <span>{__('Order', 'bawbab-interactive-maps')}</span>
+                        <span>{__('Display Label', 'bawbab-interactive-maps')}</span>
+                        <span>{__('Database Slug', 'bawbab-interactive-maps')}</span>
+                        <span>{__('Type', 'bawbab-interactive-maps')}</span>
+                        <span>{__('Layout', 'bawbab-interactive-maps')}</span>
+                        <span>{__('Icon(s)', 'bawbab-interactive-maps')}</span>
+                        <span style={{ textAlign: 'right' }}>{__('Actions', 'bawbab-interactive-maps')}</span>
                     </div>
 
                     {localSchema.map((item, index) => {
@@ -528,7 +526,7 @@ export const AttributeSchemaManager = ({
                                         icon="arrow-up-alt2"
                                         disabled={index === 0}
                                         onClick={() => handleMoveItem(index, -1)}
-                                        label={__('Move Up', TEXT_DOMAIN)}
+                                        label={__('Move Up', 'bawbab-interactive-maps')}
                                         style={{ minWidth: '24px', padding: 0 }}
                                     />
                                     <Button
@@ -537,7 +535,7 @@ export const AttributeSchemaManager = ({
                                         icon="arrow-down-alt2"
                                         disabled={index === localSchema.length - 1}
                                         onClick={() => handleMoveItem(index, 1)}
-                                        label={__('Move Down', TEXT_DOMAIN)}
+                                        label={__('Move Down', 'bawbab-interactive-maps')}
                                         style={{ minWidth: '24px', padding: 0 }}
                                     />
                                 </Flex>
@@ -550,7 +548,7 @@ export const AttributeSchemaManager = ({
                                 </span>
 
                                 <span style={{ fontSize: '11px', color: '#555', textTransform: 'capitalize' }}>
-                                    {layoutMode === 'full' ? __('Full Width', TEXT_DOMAIN) : __('Grid (2/row)', TEXT_DOMAIN)}
+                                    {layoutMode === 'full' ? __('Full Width', 'bawbab-interactive-maps') : __('Grid (2/row)', 'bawbab-interactive-maps')}
                                 </span>
                                 
                                 <Flex align="center" gap={1}>
@@ -571,7 +569,7 @@ export const AttributeSchemaManager = ({
                                         icon="admin-generic"
                                         isSmall
                                         onClick={() => setEditingAttribute(item)}
-                                        label={__('Configure Attribute', TEXT_DOMAIN)}
+                                        label={__('Configure Attribute', 'bawbab-interactive-maps')}
                                         showTooltip
                                     />
 
@@ -580,7 +578,7 @@ export const AttributeSchemaManager = ({
                                         icon="trash"
                                         isSmall
                                         onClick={() => setDeletingKey(item.key)}
-                                        label={__('Delete Field Globally', TEXT_DOMAIN)}
+                                        label={__('Delete Field Globally', 'bawbab-interactive-maps')}
                                         showTooltip
                                     />
                                 </Flex>
@@ -624,12 +622,12 @@ export const AttributeSchemaManager = ({
             {/* CUSTOM DELETE CONFIRMATION MODAL */}
             <ConfirmModal
                 isOpen={Boolean(deletingKey)}
-                title={__('Delete Field Globally', TEXT_DOMAIN)}
+                title={__('Delete Field Globally', 'bawbab-interactive-maps')}
                 message={sprintf(
-                    __('Are you sure you want to delete the field "%s"? This action will permanently remove it from all features and cannot be undone.', TEXT_DOMAIN),
+                    __('Are you sure you want to delete the field "%s"? This action will permanently remove it from all features and cannot be undone.', 'bawbab-interactive-maps'),
                     deletingKey || ''
                 )}
-                confirmLabel={__('Delete Field', TEXT_DOMAIN)}
+                confirmLabel={__('Delete Field', 'bawbab-interactive-maps')}
                 onConfirm={handleConfirmDelete}
                 onCancel={() => setDeletingKey(null)}
                 isBusy={isDeleting}

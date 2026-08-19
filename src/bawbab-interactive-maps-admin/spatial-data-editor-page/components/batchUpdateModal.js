@@ -2,8 +2,6 @@ import { useState, useMemo } from '@wordpress/element';
 import { Modal, Button, SelectControl, CheckboxControl, Flex, __experimentalText as Text } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 // Fields strictly protected from bulk editing
 const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
 
@@ -60,19 +58,19 @@ export const BatchUpdateModal = ({
                 if (PROTECTED_FIELDS.includes(key) || key === '_dirtyKeys') return;
 
                 let label = key;
-                if (key === 'title') label = __('Display Title', TEXT_DOMAIN);
-                else if (key === 'wp_page_id') label = __('Linked WP Page', TEXT_DOMAIN);
-                else if (key === 'use_custom_color') label = __('Use Custom Fill Color', TEXT_DOMAIN);
-                else if (key === 'fill_color') label = __('Custom Fill Color', TEXT_DOMAIN);
-                else if (key === 'description') label = __('Custom Description', TEXT_DOMAIN);
-                else if (key === 'append_description') label = __('Append to WP Page Content', TEXT_DOMAIN);
-                else if (key === 'is_interactive') label = __('Feature is Interactive', TEXT_DOMAIN);
-                else if (key === 'show_label') label = __('Display Label on Map', TEXT_DOMAIN);
-                else if (key === 'hide_page_video') label = __('Hide Page Video', TEXT_DOMAIN);
-                else if (key === 'custom_video_url') label = __('Custom Video URL', TEXT_DOMAIN);
-                else if (key === 'hide_page_floorplan') label = __('Hide Page Floorplan', TEXT_DOMAIN);
-                else if (key === 'custom_floorplan_url') label = __('Custom Floorplan URL', TEXT_DOMAIN);
-                else if (key === 'gallery') label = __('Custom Gallery', TEXT_DOMAIN);
+                if (key === 'title') label = __('Display Title', 'bawbab-interactive-maps');
+                else if (key === 'wp_page_id') label = __('Linked WP Page', 'bawbab-interactive-maps');
+                else if (key === 'use_custom_color') label = __('Use Custom Fill Color', 'bawbab-interactive-maps');
+                else if (key === 'fill_color') label = __('Custom Fill Color', 'bawbab-interactive-maps');
+                else if (key === 'description') label = __('Custom Description', 'bawbab-interactive-maps');
+                else if (key === 'append_description') label = __('Append to WP Page Content', 'bawbab-interactive-maps');
+                else if (key === 'is_interactive') label = __('Feature is Interactive', 'bawbab-interactive-maps');
+                else if (key === 'show_label') label = __('Display Label on Map', 'bawbab-interactive-maps');
+                else if (key === 'hide_page_video') label = __('Hide Page Video', 'bawbab-interactive-maps');
+                else if (key === 'custom_video_url') label = __('Custom Video URL', 'bawbab-interactive-maps');
+                else if (key === 'hide_page_floorplan') label = __('Hide Page Floorplan', 'bawbab-interactive-maps');
+                else if (key === 'custom_floorplan_url') label = __('Custom Floorplan URL', 'bawbab-interactive-maps');
+                else if (key === 'gallery') label = __('Custom Gallery', 'bawbab-interactive-maps');
 
                 fields.push({
                     key,
@@ -127,7 +125,7 @@ export const BatchUpdateModal = ({
         if (currentCategory) {
             options.push({
                 label: sprintf(
-                    __('All units in Category: "%s" (%d units)', TEXT_DOMAIN),
+                    __('All units in Category: "%s" (%d units)', 'bawbab-interactive-maps'),
                     categoryInfo.label || currentCategory,
                     targetCounts.categoryCount
                 ),
@@ -138,7 +136,7 @@ export const BatchUpdateModal = ({
         if (matchedGroup) {
             options.push({
                 label: sprintf(
-                    __('All units in Category Group: "%s" (%d units)', TEXT_DOMAIN),
+                    __('All units in Category Group: "%s" (%d units)', 'bawbab-interactive-maps'),
                     matchedGroup.title,
                     targetCounts.groupCount
                 ),
@@ -149,7 +147,7 @@ export const BatchUpdateModal = ({
         if (currentName) {
             options.push({
                 label: sprintf(
-                    __('All units sharing Name: "%s" (%d units)', TEXT_DOMAIN),
+                    __('All units sharing Name: "%s" (%d units)', 'bawbab-interactive-maps'),
                     currentName,
                     targetCounts.nameCount
                 ),
@@ -194,18 +192,18 @@ export const BatchUpdateModal = ({
 
     return (
         <Modal
-            title={__('Apply Changes to Other Features (Batch Draft)', TEXT_DOMAIN)}
+            title={__('Apply Changes to Other Features (Batch Draft)', 'bawbab-interactive-maps')}
             onRequestClose={onClose}
             style={{ maxWidth: '580px', width: '100%' }}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <Text display="block" style={{ fontSize: '13px', color: '#555' }}>
-                    {__('Select the target group scope and check which modified fields you want to propagate to other features. (Changes will be staged as drafts until you save.)', TEXT_DOMAIN)}
+                    {__('Select the target group scope and check which modified fields you want to propagate to other features. (Changes will be staged as drafts until you save.)', 'bawbab-interactive-maps')}
                 </Text>
 
                 {/* 1. SCOPE SELECTION DROPDOWN */}
                 <SelectControl
-                    label={__('Target Feature Group', TEXT_DOMAIN)}
+                    label={__('Target Feature Group', 'bawbab-interactive-maps')}
                     value={scopeType}
                     options={scopeOptions}
                     onChange={setScopeType}
@@ -215,12 +213,12 @@ export const BatchUpdateModal = ({
                 {/* 2. MODIFIED FIELDS TO SYNC CHECKLIST */}
                 <div style={{ padding: '12px', background: '#f9f9f9', border: '1px solid #d0d7de', borderRadius: '4px' }}>
                     <Text variant="label" display="block" style={{ fontWeight: '600', marginBottom: '8px' }}>
-                        {__('Select Fields to Propagate:', TEXT_DOMAIN)}
+                        {__('Select Fields to Propagate:', 'bawbab-interactive-maps')}
                     </Text>
 
                     {modifiedFieldList.length === 0 ? (
                         <Text variant="caption" style={{ color: '#888', fontStyle: 'italic' }}>
-                            {__('No modified fields found in active draft. Change a field in the editor first.', TEXT_DOMAIN)}
+                            {__('No modified fields found in active draft. Change a field in the editor first.', 'bawbab-interactive-maps')}
                         </Text>
                     ) : (
                         <div 
@@ -258,14 +256,14 @@ export const BatchUpdateModal = ({
                 {/* ACTION BUTTONS */}
                 <Flex justify="flex-end" gap={2} style={{ marginTop: '10px' }}>
                     <Button variant="tertiary" onClick={onClose}>
-                        {__('Cancel', TEXT_DOMAIN)}
+                        {__('Cancel', 'bawbab-interactive-maps')}
                     </Button>
                     <Button 
                         variant="primary" 
                         onClick={handleApplyBatch}
                         disabled={!hasSelectedFields || modifiedFieldList.length === 0}
                     >
-                        {__('Apply to Group Drafts', TEXT_DOMAIN)}
+                        {__('Apply to Group Drafts', 'bawbab-interactive-maps')}
                     </Button>
                 </Flex>
             </div>

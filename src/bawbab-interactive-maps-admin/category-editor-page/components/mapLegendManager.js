@@ -19,14 +19,12 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const LAYER_TITLES = {
-    buildings: __( 'Buildings', TEXT_DOMAIN ),
-    land_use: __( 'Land Use', TEXT_DOMAIN ),
-    paths: __( 'Pathways', TEXT_DOMAIN ),
-    parcels: __( 'Parcels', TEXT_DOMAIN ),
-    entries: __( 'Entries & Doors', TEXT_DOMAIN ),
+    buildings: __( 'Buildings', 'bawbab-interactive-maps' ),
+    land_use: __( 'Land Use', 'bawbab-interactive-maps' ),
+    paths: __( 'Pathways', 'bawbab-interactive-maps' ),
+    parcels: __( 'Parcels', 'bawbab-interactive-maps' ),
+    entries: __( 'Entries & Doors', 'bawbab-interactive-maps' ),
 };
 
 export const MapLegendManager = ( {
@@ -448,12 +446,12 @@ export const MapLegendManager = ( {
                     marginBottom: '8px',
                 } }
             >
-                { __( 'Map Legend Customizer', TEXT_DOMAIN ) }
+                { __( 'Map Legend Customizer', 'bawbab-interactive-maps' ) }
             </h2>
             <Text variant="caption" display="block" style={ { color: '#666', marginBottom: '20px' } }>
                 { __(
                     'Organize active legend sections on the left or assign available layer categories from the right palette.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
             </Text>
 
@@ -470,7 +468,7 @@ export const MapLegendManager = ( {
             >
                 <Flex direction="column" gap={ 2 } align="stretch">
                     <ToggleControl
-                        label={ __( 'Enable Public Legend', TEXT_DOMAIN ) }
+                        label={ __( 'Enable Public Legend', 'bawbab-interactive-maps' ) }
                         checked={ Boolean( legendConfig.enabled ) }
                         onChange={ ( val ) =>
                             setLegendConfig( ( prev ) => ( {
@@ -482,7 +480,7 @@ export const MapLegendManager = ( {
                     />
 
                     <ToggleControl
-                        label={ __( 'Show Section Titles', TEXT_DOMAIN ) }
+                        label={ __( 'Show Section Titles', 'bawbab-interactive-maps' ) }
                         checked={ legendConfig.showSectionHeaders !== false }
                         onChange={ ( val ) =>
                             setLegendConfig( ( prev ) => ( {
@@ -522,7 +520,7 @@ export const MapLegendManager = ( {
                                     color: '#444',
                                 } }
                             >
-                                { __( 'Active Legend Layout', TEXT_DOMAIN ) }
+                                { __( 'Active Legend Layout', 'bawbab-interactive-maps' ) }
                             </h3>
 
                             <Button
@@ -532,7 +530,7 @@ export const MapLegendManager = ( {
                                 onClick={ handleResetLegendToLayers }
                                 disabled={ ! legendConfig.enabled }
                             >
-                                { __( 'Reset to Layer Defaults', TEXT_DOMAIN ) }
+                                { __( 'Reset to Layer Defaults', 'bawbab-interactive-maps' ) }
                             </Button>
                         </Flex>
 
@@ -551,7 +549,7 @@ export const MapLegendManager = ( {
                                 <p style={ { margin: '0 0 8px 0', fontSize: '13px' } }>
                                     { __(
                                         'No sections in legend. Add a section below or pick a category from available layers on the right.',
-                                        TEXT_DOMAIN
+                                        'bawbab-interactive-maps'
                                     ) }
                                 </p>
                             </div>
@@ -589,7 +587,7 @@ export const MapLegendManager = ( {
                                                 <div
                                                     title={ __(
                                                         'Toggle visibility for all items in this section',
-                                                        TEXT_DOMAIN
+                                                        'bawbab-interactive-maps'
                                                     ) }
                                                     style={ {
                                                         display: 'flex',
@@ -627,7 +625,7 @@ export const MapLegendManager = ( {
                                                     isSmall
                                                     icon="trash"
                                                     onClick={ () => handleRemoveSection( section.id ) }
-                                                    label={ __( 'Delete Section', TEXT_DOMAIN ) }
+                                                    label={ __( 'Delete Section', 'bawbab-interactive-maps' ) }
                                                 />
                                             </Flex>
                                         </div>
@@ -647,7 +645,7 @@ export const MapLegendManager = ( {
                                                 >
                                                     { __(
                                                         'Empty group (Hidden on public map until items are added).',
-                                                        TEXT_DOMAIN
+                                                        'bawbab-interactive-maps'
                                                     ) }
                                                 </p>
                                             ) : (
@@ -707,7 +705,7 @@ export const MapLegendManager = ( {
                                                                         } }
                                                                     >
                                                                         { sprintf(
-                                                                            __( '[Merged %d]', TEXT_DOMAIN ),
+                                                                            __( '[Merged %d]', 'bawbab-interactive-maps' ),
                                                                             item.categories.length
                                                                         ) }
                                                                     </span>
@@ -796,7 +794,7 @@ export const MapLegendManager = ( {
                                                                                 item.id
                                                                             )
                                                                         }
-                                                                        label={ __( 'Unmerge', TEXT_DOMAIN ) }
+                                                                        label={ __( 'Unmerge', 'bawbab-interactive-maps' ) }
                                                                     />
                                                                 ) : (
                                                                     <Button
@@ -809,7 +807,7 @@ export const MapLegendManager = ( {
                                                                                 item.id
                                                                             )
                                                                         }
-                                                                        label={ __( 'Remove from Legend', TEXT_DOMAIN ) }
+                                                                        label={ __( 'Remove from Legend', 'bawbab-interactive-maps' ) }
                                                                     />
                                                                 ) }
                                                             </div>
@@ -835,7 +833,7 @@ export const MapLegendManager = ( {
                         >
                             <div style={ { flex: 1 } }>
                                 <TextControl
-                                    label={ __( 'Add Custom Legend Section', TEXT_DOMAIN ) }
+                                    label={ __( 'Add Custom Legend Section', 'bawbab-interactive-maps' ) }
                                     placeholder="e.g. Residential, Amenities, Facilities"
                                     value={ newSectionTitle }
                                     onChange={ setNewSectionTitle }
@@ -850,7 +848,7 @@ export const MapLegendManager = ( {
                                 disabled={ ! newSectionTitle.trim() }
                                 style={ { height: '36px' } }
                             >
-                                { __( 'Add Section', TEXT_DOMAIN ) }
+                                { __( 'Add Section', 'bawbab-interactive-maps' ) }
                             </Button>
                         </div>
                     </div>
@@ -879,7 +877,7 @@ export const MapLegendManager = ( {
                                     color: '#444',
                                 } }
                             >
-                                { __( 'Available Categories', TEXT_DOMAIN ) }
+                                { __( 'Available Categories', 'bawbab-interactive-maps' ) }
                             </h3>
 
                             <Button
@@ -889,13 +887,13 @@ export const MapLegendManager = ( {
                                 onClick={ () => setShowMergeModal( true ) }
                                 disabled={ ! legendConfig.enabled }
                             >
-                                { __( 'Merge Categories', TEXT_DOMAIN ) }
+                                { __( 'Merge Categories', 'bawbab-interactive-maps' ) }
                             </Button>
                         </Flex>
 
                         { Object.keys( availableCategoriesByLayer ).length === 0 ? (
                             <p style={ { fontSize: '12px', color: '#888', fontStyle: 'italic' } }>
-                                { __( 'No layer categories discovered.', TEXT_DOMAIN ) }
+                                { __( 'No layer categories discovered.', 'bawbab-interactive-maps' ) }
                             </p>
                         ) : (
                             Object.keys( availableCategoriesByLayer ).map( ( layerKey ) => {
@@ -930,7 +928,7 @@ export const MapLegendManager = ( {
                                                 onClick={ () => handleAddLayerToLegend( layerKey ) }
                                                 disabled={ ! hasUnassigned || ! legendConfig.enabled }
                                                 label={ sprintf(
-                                                    __( 'Add all unassigned categories from %s to legend', TEXT_DOMAIN ),
+                                                    __( 'Add all unassigned categories from %s to legend', 'bawbab-interactive-maps' ),
                                                     layerTitle
                                                 ) }
                                                 style={ {
@@ -994,7 +992,7 @@ export const MapLegendManager = ( {
                                                                 variant="tertiary"
                                                                 icon="plus-alt"
                                                                 onClick={ () => handleAddCategoryToLegend( compositeKey ) }
-                                                                label={ __( 'Add to Legend', TEXT_DOMAIN ) }
+                                                                label={ __( 'Add to Legend', 'bawbab-interactive-maps' ) }
                                                                 style={ {
                                                                     height: '24px',
                                                                     minWidth: '24px',
@@ -1018,20 +1016,20 @@ export const MapLegendManager = ( {
             { /* MODAL: MERGE CATEGORIES */ }
             { showMergeModal && (
                 <Modal
-                    title={ __( 'Merge Categories into Single Legend Entry', TEXT_DOMAIN ) }
+                    title={ __( 'Merge Categories into Single Legend Entry', 'bawbab-interactive-maps' ) }
                     onRequestClose={ () => setShowMergeModal( false ) }
                     style={ { maxWidth: '500px', width: '100%' } }
                 >
                     <div style={ { display: 'flex', flexDirection: 'column', gap: '15px' } }>
                         <TextControl
-                            label={ __( 'Unified Legend Entry Label', TEXT_DOMAIN ) }
+                            label={ __( 'Unified Legend Entry Label', 'bawbab-interactive-maps' ) }
                             placeholder="e.g. Indoor Pathing Systems"
                             value={ mergeLabel }
                             onChange={ setMergeLabel }
                         />
 
                         <SelectControl
-                            label={ __( 'Target Legend Section Group', TEXT_DOMAIN ) }
+                            label={ __( 'Target Legend Section Group', 'bawbab-interactive-maps' ) }
                             value={ targetSectionId }
                             options={ ( legendConfig.sections || [] ).map( ( s ) => ( {
                                 label: s.title,
@@ -1051,7 +1049,7 @@ export const MapLegendManager = ( {
                                     marginBottom: '8px',
                                 } }
                             >
-                                { __( 'Select Categories to Merge (At least 2)', TEXT_DOMAIN ) }
+                                { __( 'Select Categories to Merge (At least 2)', 'bawbab-interactive-maps' ) }
                             </label>
                             <div
                                 style={ {
@@ -1077,7 +1075,7 @@ export const MapLegendManager = ( {
                                                     catInfo.layer_type || 'buildings'
                                                 }] ${
                                                     isAlreadyMerged
-                                                        ? __( '(Already Merged)', TEXT_DOMAIN )
+                                                        ? __( '(Already Merged)', 'bawbab-interactive-maps' )
                                                         : ''
                                                 }` }
                                                 checked={ isChecked }
@@ -1110,7 +1108,7 @@ export const MapLegendManager = ( {
                             } }
                         >
                             <Button variant="tertiary" onClick={ () => setShowMergeModal( false ) }>
-                                { __( 'Cancel', TEXT_DOMAIN ) }
+                                { __( 'Cancel', 'bawbab-interactive-maps' ) }
                             </Button>
                             <Button
                                 variant="primary"
@@ -1119,7 +1117,7 @@ export const MapLegendManager = ( {
                                     ! mergeLabel.trim() || selectedMergeCats.length < 2
                                 }
                             >
-                                { __( 'Merge into Single Item', TEXT_DOMAIN ) }
+                                { __( 'Merge into Single Item', 'bawbab-interactive-maps' ) }
                             </Button>
                         </Flex>
                     </div>

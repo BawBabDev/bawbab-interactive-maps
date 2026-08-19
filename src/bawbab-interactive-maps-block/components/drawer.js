@@ -9,8 +9,6 @@ import { CampusNavigation } from './campusNavigation';
 import { FloorPlanBlock } from './floorPlanBlock';
 import { ExcerptText } from './excerptText';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const DrawingSidebar = ( {
 	isOpen,
 	selectedLoc,
@@ -97,10 +95,10 @@ const DrawingSidebar = ( {
 		selectedLoc?.title ||
 		wpData?.title?.rendered ||
 		selectedLoc?.name ||
-		__( 'Untitled Location', TEXT_DOMAIN );
+		__( 'Untitled Location', 'bawbab-interactive-maps' );
 
 	const secondaryTitle = selectedLoc?.code
-		? `${ __( 'Unit', TEXT_DOMAIN ) } ${ selectedLoc.code }`
+		? `${ __( 'Unit', 'bawbab-interactive-maps' ) } ${ selectedLoc.code }`
 		: wpData && selectedLoc?.name && selectedLoc.name !== displayTitle
 		? selectedLoc.name
 		: null;

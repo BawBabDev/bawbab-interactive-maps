@@ -11,14 +11,12 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const LAYER_LABELS = {
-    buildings: __( 'Buildings Layer', TEXT_DOMAIN ),
-    land_use: __( 'Land Use Layer', TEXT_DOMAIN ),
-    paths: __( 'Pathways Layer', TEXT_DOMAIN ),
-    parcels: __( 'Parcels Layer', TEXT_DOMAIN ),
-    entries: __( 'Entries Layer', TEXT_DOMAIN ),
+    buildings: __( 'Buildings Layer', 'bawbab-interactive-maps' ),
+    land_use: __( 'Land Use Layer', 'bawbab-interactive-maps' ),
+    paths: __( 'Pathways Layer', 'bawbab-interactive-maps' ),
+    parcels: __( 'Parcels Layer', 'bawbab-interactive-maps' ),
+    entries: __( 'Entries Layer', 'bawbab-interactive-maps' ),
 };
 
 export const CategoryMappingTable = ( {
@@ -57,7 +55,7 @@ export const CategoryMappingTable = ( {
             alert(
                 __(
                     'A category with this database slug already exists in this layer.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 )
             );
             return;
@@ -84,7 +82,7 @@ export const CategoryMappingTable = ( {
         {
             label: __(
                 '-- Unassigned / Hidden from Public Menu --',
-                TEXT_DOMAIN
+                'bawbab-interactive-maps'
             ),
             value: '',
         },
@@ -122,7 +120,7 @@ export const CategoryMappingTable = ( {
             >
                 { __(
                     'Spatial Categories Configuration (Grouped by Layer)',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
             </h2>
 
@@ -134,7 +132,7 @@ export const CategoryMappingTable = ( {
                 <Text variant="caption" style={ { color: '#666' } }>
                     { __(
                         'Categories map 1-to-1 to navigation groups and set feature colors for each layer.',
-                        TEXT_DOMAIN
+                        'bawbab-interactive-maps'
                     ) }
                 </Text>
                 <Button
@@ -143,7 +141,7 @@ export const CategoryMappingTable = ( {
                     onClick={ () => setShowAddCatModal( true ) }
                     style={ { height: '36px', minHeight: '36px' } }
                 >
-                    { __( 'Add Category', TEXT_DOMAIN ) }
+                    { __( 'Add Category', 'bawbab-interactive-maps' ) }
                 </Button>
             </Flex>
 
@@ -158,7 +156,7 @@ export const CategoryMappingTable = ( {
                 >
                     { __(
                         'No categories found. Click "Add Category" above or import spatial features.',
-                        TEXT_DOMAIN
+                        'bawbab-interactive-maps'
                     ) }
                 </p>
             ) : (
@@ -201,7 +199,7 @@ export const CategoryMappingTable = ( {
                                     } }
                                 >
                                     { sprintf(
-                                        __( '%d categories', TEXT_DOMAIN ),
+                                        __( '%d categories', 'bawbab-interactive-maps' ),
                                         items.length
                                     ) }
                                 </span>
@@ -222,16 +220,16 @@ export const CategoryMappingTable = ( {
                                 } }
                             >
                                 <span>
-                                    { __( 'Database Slug', TEXT_DOMAIN ) }
+                                    { __( 'Database Slug', 'bawbab-interactive-maps' ) }
                                 </span>
                                 <span>
-                                    { __( 'Display Label', TEXT_DOMAIN ) }
+                                    { __( 'Display Label', 'bawbab-interactive-maps' ) }
                                 </span>
                                 <span>
-                                    { __( 'Assigned Group', TEXT_DOMAIN ) }
+                                    { __( 'Assigned Group', 'bawbab-interactive-maps' ) }
                                 </span>
                                 <span style={ { textAlign: 'center' } }>
-                                    { __( 'Color', TEXT_DOMAIN ) }
+                                    { __( 'Color', 'bawbab-interactive-maps' ) }
                                 </span>
                             </div>
 
@@ -376,7 +374,7 @@ export const CategoryMappingTable = ( {
             { /* MODAL: ADD CUSTOM CATEGORY */ }
             { showAddCatModal && (
                 <Modal
-                    title={ __( 'Add New Category', TEXT_DOMAIN ) }
+                    title={ __( 'Add New Category', 'bawbab-interactive-maps' ) }
                     onRequestClose={ () => setShowAddCatModal( false ) }
                     style={ { maxWidth: '500px', width: '100%' } }
                 >
@@ -388,7 +386,7 @@ export const CategoryMappingTable = ( {
                         } }
                     >
                         <TextControl
-                            label={ __( 'Category Label Name', TEXT_DOMAIN ) }
+                            label={ __( 'Category Label Name', 'bawbab-interactive-maps' ) }
                             placeholder="e.g. Electric Vehicle Charging"
                             value={ newCatLabel }
                             onChange={ setNewCatLabel }
@@ -397,7 +395,7 @@ export const CategoryMappingTable = ( {
                                     ? sprintf(
                                           __(
                                               'Database Slug: %s',
-                                              TEXT_DOMAIN
+                                              'bawbab-interactive-maps'
                                           ),
                                           derivedCatSlug
                                       )
@@ -406,23 +404,23 @@ export const CategoryMappingTable = ( {
                         />
 
                         <SelectControl
-                            label={ __( 'Target Layer Type', TEXT_DOMAIN ) }
+                            label={ __( 'Target Layer Type', 'bawbab-interactive-maps' ) }
                             value={ newCatLayerType }
                             options={ [
                                 {
-                                    label: __( 'Buildings', TEXT_DOMAIN ),
+                                    label: __( 'Buildings', 'bawbab-interactive-maps' ),
                                     value: 'buildings',
                                 },
                                 {
-                                    label: __( 'Land Use', TEXT_DOMAIN ),
+                                    label: __( 'Land Use', 'bawbab-interactive-maps' ),
                                     value: 'land_use',
                                 },
                                 {
-                                    label: __( 'Pathways', TEXT_DOMAIN ),
+                                    label: __( 'Pathways', 'bawbab-interactive-maps' ),
                                     value: 'paths',
                                 },
                                 {
-                                    label: __( 'Parcels', TEXT_DOMAIN ),
+                                    label: __( 'Parcels', 'bawbab-interactive-maps' ),
                                     value: 'parcels',
                                 },
                             ] }
@@ -432,7 +430,7 @@ export const CategoryMappingTable = ( {
                         <SelectControl
                             label={ __(
                                 'Assigned Navigation Group',
-                                TEXT_DOMAIN
+                                'bawbab-interactive-maps'
                             ) }
                             value={ newCatGroupId }
                             options={ groupOptions }
@@ -450,7 +448,7 @@ export const CategoryMappingTable = ( {
                                     marginBottom: '8px',
                                 } }
                             >
-                                { __( 'Category Fill Color', TEXT_DOMAIN ) }
+                                { __( 'Category Fill Color', 'bawbab-interactive-maps' ) }
                             </label>
                             <Flex align="center" gap={ 3 }>
                                 <div
@@ -484,14 +482,14 @@ export const CategoryMappingTable = ( {
                                 variant="tertiary"
                                 onClick={ () => setShowAddCatModal( false ) }
                             >
-                                { __( 'Cancel', TEXT_DOMAIN ) }
+                                { __( 'Cancel', 'bawbab-interactive-maps' ) }
                             </Button>
                             <Button
                                 variant="primary"
                                 onClick={ handleConfirmAddCategory }
                                 disabled={ ! newCatLabel.trim() }
                             >
-                                { __( 'Add Category', TEXT_DOMAIN ) }
+                                { __( 'Add Category', 'bawbab-interactive-maps' ) }
                             </Button>
                         </Flex>
                     </div>

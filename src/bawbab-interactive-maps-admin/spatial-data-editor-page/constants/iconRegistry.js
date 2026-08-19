@@ -1,16 +1,14 @@
 import { __ } from '@wordpress/i18n';
 import * as LucideIcons from 'lucide-react';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const ICON_CATEGORIES = [
-    { id: 'all', label: __('All Map Icons', TEXT_DOMAIN) },
-    { id: 'property', label: __('Property & Real Estate', TEXT_DOMAIN) },
-    { id: 'campus', label: __('Campus & Facilities', TEXT_DOMAIN) },
-    { id: 'amenities', label: __('Amenities & POIs', TEXT_DOMAIN) },
-    { id: 'transport', label: __('Transport & Access', TEXT_DOMAIN) },
-    { id: 'utilities', label: __('Utilities & Tech', TEXT_DOMAIN) },
-    { id: 'general', label: __('General Icons', TEXT_DOMAIN) },
+    { id: 'all', label: __('All Map Icons', 'bawbab-interactive-maps') },
+    { id: 'property', label: __('Property & Real Estate', 'bawbab-interactive-maps') },
+    { id: 'campus', label: __('Campus & Facilities', 'bawbab-interactive-maps') },
+    { id: 'amenities', label: __('Amenities & POIs', 'bawbab-interactive-maps') },
+    { id: 'transport', label: __('Transport & Access', 'bawbab-interactive-maps') },
+    { id: 'utilities', label: __('Utilities & Tech', 'bawbab-interactive-maps') },
+    { id: 'general', label: __('General Icons', 'bawbab-interactive-maps') },
 ];
 
 // Preserved & minified legacy custom SVGs

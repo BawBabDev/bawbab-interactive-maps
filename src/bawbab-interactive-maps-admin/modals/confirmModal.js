@@ -8,20 +8,18 @@
 import { Modal, Button, Flex } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 /**
  * Generic Confirmation Modal
  */
 export const ConfirmModal = ( {
     isOpen = false,
-    title = __( 'Confirm Changes', TEXT_DOMAIN ),
+    title = __( 'Confirm Changes', 'bawbab-interactive-maps' ),
     message = __(
         'Are you sure you want to save and apply these changes?',
-        TEXT_DOMAIN
+        'bawbab-interactive-maps'
     ),
-    confirmLabel = __( 'Save & Apply', TEXT_DOMAIN ),
-    cancelLabel = __( 'Continue Editing', TEXT_DOMAIN ),
+    confirmLabel = __( 'Save & Apply', 'bawbab-interactive-maps' ),
+    cancelLabel = __( 'Continue Editing', 'bawbab-interactive-maps' ),
     onConfirm,
     onCancel,
     isBusy = false,
@@ -65,13 +63,13 @@ export const ConfirmModal = ( {
  */
 export const CancelModal = ( {
     isOpen = false,
-    title = __( 'Discard Unsaved Changes?', TEXT_DOMAIN ),
+    title = __( 'Discard Unsaved Changes?', 'bawbab-interactive-maps' ),
     message = __(
         'Are you sure you want to discard your changes? All unsaved modifications will be reverted to the previous saved version.',
-        TEXT_DOMAIN
+        'bawbab-interactive-maps'
     ),
-    confirmLabel = __( 'Discard Changes', TEXT_DOMAIN ),
-    cancelLabel = __( 'Keep Editing', TEXT_DOMAIN ),
+    confirmLabel = __( 'Discard Changes', 'bawbab-interactive-maps' ),
+    cancelLabel = __( 'Keep Editing', 'bawbab-interactive-maps' ),
     onConfirm,
     onCancel,
     isBusy = false,

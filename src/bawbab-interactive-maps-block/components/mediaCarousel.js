@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const MediaCarousel = ( {
 	currentImage,
 	allImages = [],
@@ -154,7 +152,7 @@ export const MediaCarousel = ( {
 									fontWeight: '600',
 								} }
 							>
-								{ __( 'Maximize', TEXT_DOMAIN ) }
+								{ __( 'Maximize', 'bawbab-interactive-maps' ) }
 							</button>
 						</div>
 					) : isVimeoVideo( currentImage ) ? (
@@ -181,7 +179,7 @@ export const MediaCarousel = ( {
 								} }
 								title={ __(
 									'Residence Video Walkthrough',
-									TEXT_DOMAIN
+									'bawbab-interactive-maps'
 								) }
 							/>
 							<button
@@ -207,7 +205,7 @@ export const MediaCarousel = ( {
 									fontWeight: '600',
 								} }
 							>
-								{ __( 'Maximize', TEXT_DOMAIN ) }
+								{ __( 'Maximize', 'bawbab-interactive-maps' ) }
 							</button>
 						</div>
 					) : (
@@ -257,7 +255,7 @@ export const MediaCarousel = ( {
 									/>
 								) : isAnyVideo( url ) ? (
 									<div className="carousel-thumb-video-fallback">
-										{ __( 'Video', TEXT_DOMAIN ) }
+										{ __( 'Video', 'bawbab-interactive-maps' ) }
 									</div>
 								) : (
 									<img

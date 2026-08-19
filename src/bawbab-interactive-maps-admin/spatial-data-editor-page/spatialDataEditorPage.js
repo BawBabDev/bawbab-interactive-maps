@@ -21,7 +21,6 @@ import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 import { BatchUpdateModal } from './components/batchUpdateModal';
 import { UnitSidebarList } from './components/unitSidebarList';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
 const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 const PROTECTED_FIELDS = ['fid', 'layer_type', 'code', 'name', 'category'];
 
@@ -261,7 +260,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
         if ( unassignedFeatures.length > 0 ) {
             mainCategories.push( {
                 id: 'group-unassigned',
-                title: __( 'Unassigned / Other Features', TEXT_DOMAIN ),
+                title: __( 'Unassigned / Other Features', 'bawbab-interactive-maps' ),
                 displayType: 'flat',
                 subGroups: [],
                 flatItems: unassignedFeatures.sort( naturalSort ),
@@ -512,12 +511,12 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
             setResetCounter( ( prev ) => prev + 1 );
             await fetchFeatures();
             createSuccessNotice(
-                __( 'Feature changes saved successfully!', TEXT_DOMAIN ),
+                __( 'Feature changes saved successfully!', 'bawbab-interactive-maps' ),
                 { type: 'snackbar' }
             );
         } catch ( err ) {
             console.error( 'Global Save Exception:', err );
-            createErrorNotice( __( 'Error saving feature changes.', TEXT_DOMAIN ) );
+            createErrorNotice( __( 'Error saving feature changes.', 'bawbab-interactive-maps' ) );
         } finally {
             setIsSaving( false );
         }
@@ -584,7 +583,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
             features.map( ( f ) => f.properties.category ).filter( Boolean )
         );
         return [
-            { label: __( 'All Categories', TEXT_DOMAIN ), value: 'all' },
+            { label: __( 'All Categories', 'bawbab-interactive-maps' ), value: 'all' },
             ...Array.from( cats ).map( ( cat ) => ( {
                 label: formatLabel( cat ),
                 value: cat,
@@ -595,12 +594,12 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
     const navTabs = [
         {
             id: 'editor',
-            label: __( 'Feature Editor', TEXT_DOMAIN ),
+            label: __( 'Feature Editor', 'bawbab-interactive-maps' ),
             icon: 'edit',
         },
         {
             id: 'schema',
-            label: __( 'Attributes Editor', TEXT_DOMAIN ),
+            label: __( 'Attributes Editor', 'bawbab-interactive-maps' ),
             icon: 'category',
         },
     ];
@@ -639,7 +638,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                     className="wp-heading-inline"
                     style={ { marginBottom: '8px' } }
                 >
-                    { __( 'Edit Map Features', TEXT_DOMAIN ) }
+                    { __( 'Edit Map Features', 'bawbab-interactive-maps' ) }
                 </h1>
                 <hr className="wp-header-end" />
             </div>
@@ -826,7 +825,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                                             <Dashicon icon="location-alt" />
                                             { __(
                                                 'Location Preview',
-                                                TEXT_DOMAIN
+                                                'bawbab-interactive-maps'
                                             ) }
                                         </h2>
                                         <div
@@ -899,7 +898,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                                     >
                                         { __(
                                             'No Feature Selected',
-                                            TEXT_DOMAIN
+                                            'bawbab-interactive-maps'
                                         ) }
                                     </h2>
                                     <p
@@ -912,7 +911,7 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
                                     >
                                         { __(
                                             'Select a unit or amenity from the left sidebar or directly on the map to begin editing its details.',
-                                            TEXT_DOMAIN
+                                            'bawbab-interactive-maps'
                                         ) }
                                     </p>
                                 </div>
@@ -959,12 +958,12 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
             { /* GENERIC CONFIRMATION MODAL */ }
             <ConfirmModal
                 isOpen={ showConfirmModal }
-                title={ __( 'Save Feature Changes', TEXT_DOMAIN ) }
+                title={ __( 'Save Feature Changes', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to save all modified feature details to the database?',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Save Changes', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Save Changes', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmSave }
                 onCancel={ () => setShowConfirmModal( false ) }
                 isBusy={ isSaving }
@@ -973,12 +972,12 @@ const SpatialDataEditorPage = ( { onDirtyStateChange } ) => {
             { /* GENERIC CANCELLATION MODAL */ }
             <CancelModal
                 isOpen={ showCancelModal }
-                title={ __( 'Discard Draft Modifications', TEXT_DOMAIN ) }
+                title={ __( 'Discard Draft Modifications', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to discard your unsaved modifications? All pending edits for this feature will be reset.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Discard Edits', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Discard Edits', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleCancel }
                 onCancel={ () => setShowCancelModal( false ) }
             />

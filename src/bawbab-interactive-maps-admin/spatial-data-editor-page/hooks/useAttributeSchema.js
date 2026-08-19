@@ -6,8 +6,6 @@
 import { useState, useEffect, useCallback } from '@wordpress/element';
 import { sprintf, __ } from '@wordpress/i18n';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const useAttributeSchema = () => {
     const [ schema, setSchema ] = useState( [] );
     const [ isLoadingSchema, setIsLoadingSchema ] = useState( true );
@@ -117,7 +115,7 @@ export const useAttributeSchema = () => {
         const confirmPhrase = sprintf(
             __(
                 'Are you sure you want to PERMANENTLY delete "%s" from ALL features in the database?',
-                TEXT_DOMAIN
+                'bawbab-interactive-maps'
             ),
             key
         );

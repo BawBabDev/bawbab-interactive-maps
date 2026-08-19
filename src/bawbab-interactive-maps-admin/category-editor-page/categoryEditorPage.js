@@ -18,8 +18,6 @@ import { CategoryMappingTable } from './components/categoryMappingTable';
 import { MapLegendManager } from './components/mapLegendManager';
 import { ConfirmModal, CancelModal } from '../modals/confirmModal';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
     const {
         groups,
@@ -136,17 +134,17 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
     const navTabs = [
         {
             id: 'categories',
-            label: __( 'Category Editor', TEXT_DOMAIN ),
+            label: __( 'Category Editor', 'bawbab-interactive-maps' ),
             icon: 'filter',
         },
         {
             id: 'legend',
-            label: __( 'Legend Editor', TEXT_DOMAIN ),
+            label: __( 'Legend Editor', 'bawbab-interactive-maps' ),
             icon: 'list-view',
         },
         {
             id: 'groups',
-            label: __( 'Group Editor', TEXT_DOMAIN ),
+            label: __( 'Group Editor', 'bawbab-interactive-maps' ),
             icon: 'category',
         },
     ];
@@ -185,7 +183,7 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                     className="wp-heading-inline"
                     style={ { marginBottom: '8px' } }
                 >
-                    { __( 'Edit Categories & Navigation', TEXT_DOMAIN ) }
+                    { __( 'Edit Categories & Navigation', 'bawbab-interactive-maps' ) }
                 </h1>
                 <hr className="wp-header-end" />
             </div>
@@ -338,7 +336,7 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                                     whiteSpace: 'nowrap',
                                 } }
                             >
-                                { __( 'Cleanup Unused Categories', TEXT_DOMAIN ) }
+                                { __( 'Cleanup Unused Categories', 'bawbab-interactive-maps' ) }
                             </Button>
                         </div>
 
@@ -366,7 +364,7 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                                     pointerEvents: isDirty ? 'auto' : 'none',
                                 } }
                             >
-                                { __( 'Discard Changes', TEXT_DOMAIN ) }
+                                { __( 'Discard Changes', 'bawbab-interactive-maps' ) }
                             </Button>
 
                             <Button
@@ -387,8 +385,8 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
                                 } }
                             >
                                 { isSaving
-                                    ? __( 'Saving...', TEXT_DOMAIN )
-                                    : __( 'Save Category Settings', TEXT_DOMAIN ) }
+                                    ? __( 'Saving...', 'bawbab-interactive-maps' )
+                                    : __( 'Save Category Settings', 'bawbab-interactive-maps' ) }
                             </Button>
                         </div>
                     </div>
@@ -398,12 +396,12 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
             { /* MODAL: CONFIRM SAVE */ }
             <ConfirmModal
                 isOpen={ showSaveModal }
-                title={ __( 'Save Category Settings', TEXT_DOMAIN ) }
+                title={ __( 'Save Category Settings', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to save all navigation group, category mapping, and map legend modifications?',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Save Changes', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Save Changes', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmSave }
                 onCancel={ () => setShowSaveModal( false ) }
                 isBusy={ isSaving }
@@ -412,12 +410,12 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
             { /* MODAL: DISCARD CHANGES */ }
             <CancelModal
                 isOpen={ showCancelModal }
-                title={ __( 'Discard Category Modifications?', TEXT_DOMAIN ) }
+                title={ __( 'Discard Category Modifications?', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Are you sure you want to discard your changes? All unsaved edits will be reverted back to the last saved configuration.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Discard Changes', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Discard Changes', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmDiscard }
                 onCancel={ () => setShowCancelModal( false ) }
             />
@@ -425,12 +423,12 @@ export const CategoryEditorPage = ( { onDirtyStateChange } ) => {
             { /* MODAL: CONFIRM CLEANUP */ }
             <ConfirmModal
                 isOpen={ showCleanupModal }
-                title={ __( 'Cleanup Unused Categories', TEXT_DOMAIN ) }
+                title={ __( 'Cleanup Unused Categories', 'bawbab-interactive-maps' ) }
                 message={ __(
                     'Warning: Running schema cleanup will prune all category mappings and legend configurations associated with spatial data that no longer exists in MySQL. Proceed?',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
-                confirmLabel={ __( 'Run Cleanup', TEXT_DOMAIN ) }
+                confirmLabel={ __( 'Run Cleanup', 'bawbab-interactive-maps' ) }
                 onConfirm={ handleConfirmCleanup }
                 onCancel={ () => setShowCleanupModal( false ) }
                 isBusy={ isSaving }

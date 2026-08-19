@@ -16,8 +16,6 @@ import { useSpatialDataImporter } from '../../hooks/useSpatialDataImporter';
 import { useSpatialDataExporter } from '../../hooks/useSpatialDataExporter';
 import { GeoJSONImportWizardModal } from '../importWizard';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 /**
  * SpatialDataUploader Component
  *
@@ -61,7 +59,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
         const result = await exportGeoJSON( importType );
         if ( result.success ) {
             createSuccessNotice(
-                sprintf( __( 'Exported "%s" layer successfully.', TEXT_DOMAIN ), importType )
+                sprintf( __( 'Exported "%s" layer successfully.', 'bawbab-interactive-maps' ), importType )
             );
         } else if ( result.error ) {
             createErrorNotice( result.error );
@@ -111,7 +109,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                 display="block"
                 style={ { fontWeight: '700', marginBottom: '4px' } }
             >
-                { __( 'GIS Layer Manager', TEXT_DOMAIN ) }
+                { __( 'GIS Layer Manager', 'bawbab-interactive-maps' ) }
             </Text>
             <Text
                 variant="caption"
@@ -120,7 +118,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
             >
                 { __(
                     'Sync spatial geometries, export database layers to GeoJSON, and configure custom column attributes.',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ) }
             </Text>
 
@@ -141,7 +139,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                             expanded={ false }
                             height="12px"
                         >
-                            { __( 'Target Layer', TEXT_DOMAIN ) }
+                            { __( 'Target Layer', 'bawbab-interactive-maps' ) }
                             <span className="pulsating-dot-inline" />
                         </Flex>
                     }
@@ -189,7 +187,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                                     onClick={ clearFile }
                                     icon="no-alt"
                                     showTooltip
-                                    label={ __( 'Remove file', TEXT_DOMAIN ) }
+                                    label={ __( 'Remove file', 'bawbab-interactive-maps' ) }
                                 />
                             </Flex>
                         </div>
@@ -215,8 +213,8 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                                     } }
                                 >
                                     { pendingFile
-                                        ? __( 'Change File', TEXT_DOMAIN )
-                                        : __( 'Select GeoJSON', TEXT_DOMAIN ) }
+                                        ? __( 'Change File', 'bawbab-interactive-maps' )
+                                        : __( 'Select GeoJSON', 'bawbab-interactive-maps' ) }
                                 </Button>
                             </FlexItem>
 
@@ -232,7 +230,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                                         height: '36px',
                                     } }
                                 >
-                                    { __( 'Configure & Import', TEXT_DOMAIN ) }
+                                    { __( 'Configure & Import', 'bawbab-interactive-maps' ) }
                                 </Button>
                             </FlexItem>
                         </Flex>
@@ -249,7 +247,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                                 height: '36px',
                             } }
                         >
-                            { sprintf( __( 'Export "%s" Layer to GeoJSON', TEXT_DOMAIN ), importType ) }
+                            { sprintf( __( 'Export "%s" Layer to GeoJSON', 'bawbab-interactive-maps' ), importType ) }
                         </Button>
 
                         <Flex
@@ -264,7 +262,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                                 href="https://drive.google.com/file/d/10MCwKA_8h_gtj9pKiG1m6G4Z7nryRLxY/view?usp=sharing"
                                 style={ { color: '#2271b1' } }
                             >
-                                { __( 'Sample Import Data', TEXT_DOMAIN ) }
+                                { __( 'Sample Import Data', 'bawbab-interactive-maps' ) }
                             </ExternalLink>
                         </Flex>
                     </div>
@@ -304,7 +302,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                             variant="title.small"
                             style={ { color: '#d63638', fontWeight: '600' } }
                         >
-                            { __( 'Danger Zone', TEXT_DOMAIN ) }
+                            { __( 'Danger Zone', 'bawbab-interactive-maps' ) }
                         </Text>
                     </Flex>
 
@@ -317,7 +315,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                             { sprintf(
                                 __(
                                     'This will permanently delete all features and properties associated with the "%s" layer.',
-                                    TEXT_DOMAIN
+                                    'bawbab-interactive-maps'
                                 ),
                                 importType
                             ) }
@@ -333,7 +331,7 @@ export const SpatialDataUploader = ( { onUploadSuccess } ) => {
                     >
                         <Dashicon icon="trash" />
                         { sprintf(
-                            __( 'Wipe "%s" Layer', TEXT_DOMAIN ),
+                            __( 'Wipe "%s" Layer', 'bawbab-interactive-maps' ),
                             importType
                         ) }
                     </Button>

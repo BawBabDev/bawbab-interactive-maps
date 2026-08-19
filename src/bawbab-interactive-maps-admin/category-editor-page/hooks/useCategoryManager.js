@@ -15,8 +15,6 @@ import {
     DEFAULT_LEGEND_CONFIG,
 } from '../constants/defaultCategories';
 
-const TEXT_DOMAIN = 'bawbab-interactive-maps';
-
 const ENDPOINT_GET_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/get-map-settings';
 const ENDPOINT_UPDATE_SETTINGS = '/wp-json/bawbin-maps-federated-api/v1/update-map-settings';
 
@@ -278,7 +276,7 @@ export const useCategoryManager = () => {
             createSuccessNotice(
                 __(
                     'Category & Navigation settings saved successfully!',
-                    TEXT_DOMAIN
+                    'bawbab-interactive-maps'
                 ),
                 { type: 'snackbar' }
             );
@@ -286,7 +284,7 @@ export const useCategoryManager = () => {
         } catch ( err ) {
             console.error( '[useCategoryManager] REST Save Error:', err );
             createErrorNotice(
-                __( 'Error saving settings: ', TEXT_DOMAIN ) + err.message
+                __( 'Error saving settings: ', 'bawbab-interactive-maps' ) + err.message
             );
             return false;
         } finally {
@@ -409,7 +407,7 @@ export const useCategoryManager = () => {
                     result.message ||
                         __(
                             'Unused categories and stale legend items pruned successfully.',
-                            TEXT_DOMAIN
+                            'bawbab-interactive-maps'
                         ),
                     { type: 'snackbar' }
                 );
@@ -417,14 +415,14 @@ export const useCategoryManager = () => {
             } else {
                 createErrorNotice(
                     result.message ||
-                        __( 'Category cleanup failed.', TEXT_DOMAIN )
+                        __( 'Category cleanup failed.', 'bawbab-interactive-maps' )
                 );
                 return false;
             }
         } catch ( err ) {
             console.error( '[useCategoryManager] Cleanup Error:', err );
             createErrorNotice(
-                __( 'Error during category cleanup: ', TEXT_DOMAIN ) +
+                __( 'Error during category cleanup: ', 'bawbab-interactive-maps' ) +
                     err.message
             );
             return false;
