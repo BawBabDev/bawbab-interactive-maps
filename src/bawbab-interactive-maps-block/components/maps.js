@@ -52,12 +52,14 @@ const TEXT_DOMAIN = 'bawbab-interactive-maps';
 export default function BawBabIMaps( {
     colorThemeProp,
     mapLogoProp,
+    mapTitleProp,
+    mapDescriptionProp,
     navBackgroundProp,
     apiKeyProp,
     mapIdProp,
     mapTypeProp,
     locations: propsLocations = [],
-    zoom = 16,
+    zoom = null, // Default to null so component can scale dynamically
     tilt = 0,
     width = '100%',
     height = 'stretch',
@@ -70,7 +72,7 @@ export default function BawBabIMaps( {
     const [ dimensions, containerRef ] = useMapDimensions();
     const isLayoutReady = dimensions.width > 0;
 
-    // Direct Prop Resolution (Prioritizes Admin state props, then view.js props, then default)
+    // Direct Prop Resolution
     const API_KEY = apiKeyProp || '';
     const MAP_ID = mapIdProp || '';
     const MAP_TYPE = mapTypeProp || 'roadmap';
@@ -78,7 +80,6 @@ export default function BawBabIMaps( {
     const MAP_LOGO = mapLogoProp || '';
     const NAV_BACKGROUND = navBackgroundProp || '';
 
-    // Pass live feature draft typography in editMode, or fall back to database API settings
     const activeTypographyInput = useMemo( () => {
         return (
             selectedLocationProp?.properties?.typography ||
@@ -169,9 +170,33 @@ export default function BawBabIMaps( {
     const defaultCenter = spatialBounds.center;
     const floorBounds = spatialBounds.bounds;
 
-    const initialZoom = Number.isNaN( Number.parseInt( zoom, 10 ) )
-        ? MIN_MAP_ZOOM
-        : Math.max( MIN_MAP_ZOOM, Number.parseInt( zoom, 10 ) );
+    /**
+     * DYNAMIC MINIMUM & DEFAULT ZOOM CALCULATION
+     * Evaluates geographic span of bounding box.
+     * High span (e.g. US to Belgium) scales zoom down so whole world/region is visible immediately.
+     */
+    const dynamicMinZoom = useMemo( () => {
+        if ( ! floorBounds ) return MIN_MAP_ZOOM;
+
+        const latSpan = Math.abs( floorBounds.north - floorBounds.south );
+        const lngSpan = Math.abs( floorBounds.east - floorBounds.west );
+        const maxSpan = Math.max( latSpan, lngSpan );
+
+        if ( maxSpan > 40 ) return 2;   // Intercontinental (e.g., US to Europe)
+        if ( maxSpan > 15 ) return 3;   // Country-wide
+        if ( maxSpan > 5 )  return 6;   // Regional
+        if ( maxSpan > 1 )  return 9;   // City-wide
+        if ( maxSpan > 0.1 ) return 12; // District
+
+        return MIN_MAP_ZOOM; // Local campus zoom (15 or 16)
+    }, [ floorBounds ] );
+
+    // If explicit zoom prop is passed, use it; otherwise use dynamic bounds scale
+    const parsedZoom = zoom !== null ? Number.parseInt( zoom, 10 ) : NaN;
+    const initialZoom = ! Number.isNaN( parsedZoom ) && parsedZoom > 0
+        ? parsedZoom
+        : dynamicMinZoom;
+
     const initialTilt = Number.isNaN( Number.parseInt( tilt, 10 ) )
         ? 0
         : Math.min( Math.max( 0, Number.parseInt( tilt, 10 ) ), MAX_MAP_TILT );
@@ -314,6 +339,8 @@ export default function BawBabIMaps( {
                         setManualOriginNode( null );
                     } }
                     logoProp={ MAP_LOGO }
+                    mapTitleProp={ mapTitleProp }
+                    mapDescriptionProp={ mapDescriptionProp }
                     navBackgroundProp={ NAV_BACKGROUND }
                 />
             ) }
@@ -434,11 +461,11 @@ export default function BawBabIMaps( {
                                 />
 
                                 <Map
-                                    key={ `${ locations.length }-${ initialZoom }-${ initialTilt }` }
+                                    key={ `map-${ locations.length }-${ spatialFeatures.length }-${ dynamicMinZoom }` }
                                     mapTypeId={ MAP_TYPE }
                                     defaultCenter={ defaultCenter }
                                     defaultZoom={ initialZoom }
-                                    minZoom={ MIN_MAP_ZOOM }
+                                    minZoom={ dynamicMinZoom }
                                     defaultTilt={ initialTilt }
                                     mapId={ MAP_ID }
                                     fullscreenControl={ false }
