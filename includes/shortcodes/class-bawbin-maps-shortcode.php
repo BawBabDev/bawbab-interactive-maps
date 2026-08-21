@@ -14,11 +14,10 @@ class BAWBIN_Maps_Shortcode {
      * Initializes and binds shortcode hooks to WordPress core
      */
     public static function init() {
-        add_shortcode( 'map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
-        add_shortcode( 'interactive_map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
-        add_shortcode( 'bawbab_map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
-        add_shortcode( 'map_include', array( __CLASS__, 'bawbin_maps_map_include_shortcode' ) );
-        add_shortcode( 'map_exclude', array( __CLASS__, 'bawbin_maps_map_exclude_shortcode' ) );
+        // Single, clean, unique shortcodes using the standard bawbin_maps_ prefix
+        add_shortcode( 'bawbin_maps_interactive_map', array( __CLASS__, 'bawbin_maps_render_map_shortcode' ) );
+        add_shortcode( 'bawbin_maps_include', array( __CLASS__, 'bawbin_maps_map_include_shortcode' ) );
+        add_shortcode( 'bawbin_maps_exclude', array( __CLASS__, 'bawbin_maps_map_exclude_shortcode' ) );
 
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'bawbin_maps_register_frontend_assets' ) );
     }
@@ -76,7 +75,7 @@ class BAWBIN_Maps_Shortcode {
     public static function bawbin_maps_render_map_shortcode( $atts ) {
         $atts = shortcode_atts( array(
             'height' => '650px',
-        ), $atts, 'map' );
+        ), $atts, 'bawbin_maps_interactive_map' );
 
         // Ensure scripts and styles are enqueued
         wp_enqueue_script( 'bawbin-maps-map-frontend-view' );
