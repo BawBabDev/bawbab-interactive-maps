@@ -2,7 +2,7 @@
 
 Contributors:       bawbabgroup, marcellus89, corentinsanchez    
 Tags:               estate-map, campus-map, interactive-map, facility-map, gis 
-Tested up to:       7.0  
+Tested up to:       7.1  
 Stable tag:         0.1.0  
 License:            GPL-2.0-or-later  
 License URI:        https://gnu.org
