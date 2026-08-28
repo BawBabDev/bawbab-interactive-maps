@@ -77,6 +77,7 @@ export const LayerToggler = ( {
                 gap: '12px',
                 width: isOpen ? ( isSmallUI ? '150px' : '180px' ) : '40px',
                 height: isOpen ? 'auto' : '40px',
+                maxHeight: isOpen ? ( height > 0 ? `${ height * 0.4 }px` : '40%' ) : '40px',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 overflow: 'hidden',
                 cursor: isOpen ? 'default' : 'pointer',
@@ -120,47 +121,57 @@ export const LayerToggler = ( {
                 ) }
             </div>
 
-            { isOpen &&
-                Object.keys( visibleLayers ).map( ( layer ) => (
-                    <div
-                        key={ layer }
-                        style={ { display: 'flex', flexDirection: 'column' } }
-                    >
+            { isOpen && (
+                <div
+                    style={ {
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                    } }
+                >
+                    { Object.keys( visibleLayers ).map( ( layer ) => (
                         <div
-                            className="map-layer-toggler-item"
-                            onClick={ () => onToggle( layer ) }
+                            key={ layer }
+                            style={ { display: 'flex', flexDirection: 'column' } }
                         >
                             <div
-                                className={ `cb-wrapper ${
-                                    visibleLayers[ layer ] ? 'is-checked' : ''
-                                }` }
+                                className="map-layer-toggler-item"
+                                onClick={ () => onToggle( layer ) }
                             >
-                                <svg className="cb-tick" viewBox="0 0 24 24">
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                                </svg>
+                                <div
+                                    className={ `cb-wrapper ${
+                                        visibleLayers[ layer ] ? 'is-checked' : ''
+                                    }` }
+                                >
+                                    <svg className="cb-tick" viewBox="0 0 24 24">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                    </svg>
+                                </div>
+                                <span>{ layer.replace( '_', ' ' ) }</span>
                             </div>
-                            <span>{ layer.replace( '_', ' ' ) }</span>
-                        </div>
 
-                        { visibleLayers[ layer ] &&
-                            ! noOpacityLayers.includes( layer ) && (
-                                <input
-                                    type="range"
-                                    className="subtle-slider"
-                                    min="0"
-                                    max="1"
-                                    step="0.1"
-                                    value={ layerOpacity[ layer ] ?? 0.5 }
-                                    onChange={ ( e ) =>
-                                        onOpacityChange(
-                                            layer,
-                                            parseFloat( e.target.value )
-                                        )
-                                    }
-                                />
-                            ) }
-                    </div>
-                ) ) }
+                            { visibleLayers[ layer ] &&
+                                ! noOpacityLayers.includes( layer ) && (
+                                    <input
+                                        type="range"
+                                        className="subtle-slider"
+                                        min="0"
+                                        max="1"
+                                        step="0.1"
+                                        value={ layerOpacity[ layer ] ?? 0.5 }
+                                        onChange={ ( e ) =>
+                                            onOpacityChange(
+                                                layer,
+                                                parseFloat( e.target.value )
+                                            )
+                                        }
+                                    />
+                                ) }
+                        </div>
+                    ) ) }
+                </div>
+            ) }
         </div>
     );
 };
@@ -238,7 +249,7 @@ export const FloorSwitcher = ( {
                 display: 'flex',
                 flexDirection: 'column',
                 width: isOpen ? '52px' : '40px',
-                maxHeight: isOpen ? '320px' : '40px',
+                maxHeight: isOpen ? ( height > 0 ? `${ height * 0.35 }px` : '35%' ) : '40px',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                 overflow: 'hidden',
                 cursor: isOpen ? 'default' : 'pointer',

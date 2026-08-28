@@ -89,9 +89,19 @@ export const MapLegend = ( { mapDimensions } ) => {
         return <div style={ { display: 'none' } } className="map-legend-hidden" />;
     }
 
+    // Dynamic style object to enforce 70% maximum height constraint relative to parent container
+    const containerStyle = isOpen
+        ? {
+              maxHeight: height > 0 ? `${ height * 0.7 }px` : '70%',
+              display: 'flex',
+              flexDirection: 'column',
+          }
+        : {};
+
     return (
         <div
             className={ `map-legend-container ${ isOpen ? 'is-open' : 'is-collapsed' }` }
+            style={ containerStyle }
             onClick={ () => ! isOpen && setIsOpen( true ) }
         >
             <div className="map-legend-header">
@@ -119,55 +129,64 @@ export const MapLegend = ( { mapDimensions } ) => {
                 ) }
             </div>
 
-            <div className="map-legend-body">
-                <div className="map-legend-sections-wrapper">
-                    { showHeaders
-                        ? activeSections.map( ( section ) => (
-                                <div key={ section.id } className="map-legend-section">
-                                    <div className="map-legend-section-title">
-                                        { section.title }
-                                    </div>
-                                    <div className="map-legend-items-list">
-                                        { section.items.map( ( item ) => (
-                                            <div
-                                                key={ item.id }
-                                                className="map-legend-item-row"
-                                            >
-                                                <div className="map-legend-swatches-group">
-                                                    { item.swatches.map( ( color, idx ) => (
-                                                        <div
-                                                            key={ `${ item.id }-swatch-${ idx }` }
-                                                            className="map-legend-swatch"
-                                                            style={ { background: color } }
-                                                        />
-                                                    ) ) }
+            { isOpen && (
+                <div
+                    className="map-legend-body"
+                    style={ {
+                        overflowY: 'auto',
+                        flex: '1 1 auto',
+                        minHeight: 0,
+                    } }
+                >
+                    <div className="map-legend-sections-wrapper">
+                        { showHeaders
+                            ? activeSections.map( ( section ) => (
+                                    <div key={ section.id } className="map-legend-section">
+                                        <div className="map-legend-section-title">
+                                            { section.title }
+                                        </div>
+                                        <div className="map-legend-items-list">
+                                            { section.items.map( ( item ) => (
+                                                <div
+                                                    key={ item.id }
+                                                    className="map-legend-item-row"
+                                                >
+                                                    <div className="map-legend-swatches-group">
+                                                        { item.swatches.map( ( color, idx ) => (
+                                                            <div
+                                                                key={ `${ item.id }-swatch-${ idx }` }
+                                                                className="map-legend-swatch"
+                                                                style={ { background: color } }
+                                                            />
+                                                        ) ) }
+                                                    </div>
+                                                    <span className="map-legend-item-label">
+                                                        { item.label }
+                                                    </span>
                                                 </div>
-                                                <span className="map-legend-item-label">
-                                                    { item.label }
-                                                </span>
-                                            </div>
-                                        ) ) }
+                                            ) ) }
+                                        </div>
                                     </div>
-                                </div>
-                          ) )
-                        : flatItems.map( ( item ) => (
-                                <div key={ item.id } className="map-legend-item-row">
-                                    <div className="map-legend-swatches-group">
-                                        { item.swatches.map( ( color, idx ) => (
-                                            <div
-                                                key={ `${ item.id }-swatch-${ idx }` }
-                                                className="map-legend-swatch"
-                                                style={ { background: color } }
-                                            />
-                                        ) ) }
+                              ) )
+                            : flatItems.map( ( item ) => (
+                                    <div key={ item.id } className="map-legend-item-row">
+                                        <div className="map-legend-swatches-group">
+                                            { item.swatches.map( ( color, idx ) => (
+                                                <div
+                                                    key={ `${ item.id }-swatch-${ idx }` }
+                                                    className="map-legend-swatch"
+                                                    style={ { background: color } }
+                                                />
+                                            ) ) }
+                                        </div>
+                                        <span className="map-legend-item-label">
+                                            { item.label }
+                                        </span>
                                     </div>
-                                    <span className="map-legend-item-label">
-                                        { item.label }
-                                    </span>
-                                </div>
-                          ) ) }
+                              ) ) }
+                    </div>
                 </div>
-            </div>
+            ) }
         </div>
     );
 };
