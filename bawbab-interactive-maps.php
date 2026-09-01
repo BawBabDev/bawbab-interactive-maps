@@ -98,3 +98,10 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/core/bawbin-maps-hook-admin
 
 // Load bundled frontend assets
 require_once plugin_dir_path( __FILE__ ) . 'includes/core/bawbin-maps-hook-block-assets.php';
+
+
+// ==========================================
+// ADDONS HELPER
+// ==========================================
+// Include the addons core verification file
+require_once plugin_dir_path( __FILE__ ) . 'includes/integrations/class-bawbin-maps-addons-helper.php';

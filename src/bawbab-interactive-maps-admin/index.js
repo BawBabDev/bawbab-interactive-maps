@@ -7,6 +7,13 @@ import CategoryEditorPage from './category-editor-page/categoryEditorPage';
 import { NavigationWarningModal } from './modals/navigationWarningModal';
 import './admin-styles.css';
 
+
+// =========================================================================
+// public global registry for modular extensions
+// =========================================================================
+window.BawbabMapsAddons = window.BawbabMapsAddons || {};
+window.BawbabMapsAddons.routes = window.BawbabMapsAddons.routes || {};
+
 const App = () => {
     // 1. Centralized Dirty State Signal
     const [ isAppDirty, setIsAppDirty ] = useState( false );
@@ -97,6 +104,13 @@ const App = () => {
 
     // Route logic with top-level dirty reporting callback
     const renderActivePage = () => {
+        // Addon route interceptor
+        if ( window.BawbabMapsAddons.routes[ currentPage ] ) {
+            const CustomAddonComponent = window.BawbabMapsAddons.routes[ currentPage ];
+            // Renders the addon UI while giving it full power to flag changes back up to Core
+            return <CustomAddonComponent onDirtyStateChange={ setIsAppDirty } />;
+        }
+
         if ( currentPage === 'bawbab-interactive-maps-edit-spatial-data' ) {
             return <SpatialDataEditorPage onDirtyStateChange={ setIsAppDirty } />;
         }
