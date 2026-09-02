@@ -41,17 +41,18 @@ class BAWBIN_Maps_REST_Spatial {
             $table_spatial = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             $table_entries = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
 
+            // Fixed: Direct table variable interpolation instead of unsupported %i placeholders
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $spatial_results = $wpdb->get_results( 
-                $wpdb->prepare( "
-                    SELECT *, CASE 
-                        WHEN layer_type = 'land_use'  THEN 1 
-                        WHEN layer_type = 'paths'     THEN 2 
-                        WHEN layer_type = 'buildings' THEN 3 
-                        WHEN layer_type = 'parcels'   THEN 4 
-                        ELSE 0 
-                    END as render_order FROM %i ORDER BY render_order ASC
-                ", $table_spatial ), ARRAY_A );
+                "SELECT *, CASE 
+                    WHEN layer_type = 'land_use'  THEN 1 
+                    WHEN layer_type = 'paths'     THEN 2 
+                    WHEN layer_type = 'buildings' THEN 3 
+                    WHEN layer_type = 'parcels'   THEN 4 
+                    ELSE 0 
+                END as render_order FROM {$table_spatial} ORDER BY render_order ASC", 
+                ARRAY_A 
+            );
 
             if ( is_null( $spatial_results ) ) {
                 return new WP_Error( 'db_error', 'Failed to retrieve spatial data layers.', array( 'status' => 500 ) );
@@ -94,39 +95,41 @@ class BAWBIN_Maps_REST_Spatial {
 
                 $features[] = array(
                     'type'       => 'Feature',
+                    'id'         => $row['fid'],
                     'properties' => $merged_properties,
                     'geometry'   => ! empty( $row['geom'] ) ? json_decode( $row['geom'] ) : null,
                 );
             }
 
+            // Fixed: Direct table variable interpolation for entries table
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $entries_results = $wpdb->get_results( 
-                $wpdb->prepare( "SELECT * FROM %i", $table_entries ), ARRAY_A );
+            $entries_results = $wpdb->get_results( "SELECT * FROM {$table_entries}", ARRAY_A );
 
-            if ( is_null( $entries_results ) ) {
-                return new WP_Error( 'db_error', 'Failed to retrieve navigation entry points.', array( 'status' => 500 ) );
-            }
-
-            foreach ( $entries_results as $row ) {
-                $features[] = array(
-                    'type'       => 'Feature',
-                    'properties' => array(
-                        'fid'        => isset( $row['fid'] ) ? (string) $row['fid'] : '',
-                        'layer_type' => 'entries',
-                        'name'       => $row['name'] ?? '',
-                        'type'       => $row['type'] ?? '',
-                        'floor'      => isset( $row['floor'] ) ? (int) $row['floor'] : 0,
-                    ),
-                    'geometry'   => ! empty( $row['geom'] ) ? json_decode( $row['geom'] ) : null,
-                );
+            if ( ! empty( $entries_results ) && is_array( $entries_results ) ) {
+                foreach ( $entries_results as $row ) {
+                    $features[] = array(
+                        'type'       => 'Feature',
+                        'id'         => $row['fid'],
+                        'properties' => array(
+                            'fid'        => isset( $row['fid'] ) ? (string) $row['fid'] : '',
+                            'layer_type' => 'entries',
+                            'name'       => $row['name'] ?? '',
+                            'type'       => $row['type'] ?? '',
+                            'floor'      => isset( $row['floor'] ) ? (int) $row['floor'] : 0,
+                        ),
+                        'geometry'   => ! empty( $row['geom'] ) ? json_decode( $row['geom'] ) : null,
+                    );
+                }
             }
 
             $geojson_collection = array(
                 'type'     => 'FeatureCollection',
                 'features' => $features,
             );
+
             wp_cache_set( $cache_key, $geojson_collection, $cache_group, 86400 );
         }
+
         return new WP_REST_Response( $geojson_collection, 200 );
     }
 
@@ -137,8 +140,8 @@ class BAWBIN_Maps_REST_Spatial {
         $fid        = sanitize_text_field( $request->get_param( 'fid' ) );
         $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) );
 
-        if ( empty( $fid ) || empty( $layer_type ) ) {
-            return new WP_Error( 'missing_params', 'Missing fid or layer_type parameters.', array( 'status' => 400 ) );
+        if ( empty( $fid ) ) {
+            return new WP_Error( 'missing_params', 'Missing required fid parameter.', array( 'status' => 400 ) );
         }
 
         $update_data = array();
@@ -231,7 +234,7 @@ class BAWBIN_Maps_REST_Spatial {
             $custom_attrs = $request->get_param( 'custom_attributes' );
             $parsed_attrs = is_string( $custom_attrs ) ? json_decode( $custom_attrs, true ) : $custom_attrs;
             
-            if ( is_array( $parsed_attrs ) ) {
+            if ( is_array( $parsed_attrs ) && class_exists( 'BAWBIN_Maps_REST_Attributes' ) ) {
                 BAWBIN_Maps_REST_Attributes::bawbin_maps_sync_custom_keys_to_schema( array_keys( $parsed_attrs ) );
             }
 
@@ -243,13 +246,14 @@ class BAWBIN_Maps_REST_Spatial {
             return new WP_REST_Response( array( 'success' => true, 'message' => 'No fields provided for update.' ), 200 );
         }
 
+        // Updated to target single-column fid primary key
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
         $result = $wpdb->update(
             $table_name,
             $update_data,
-            array( 'fid' => $fid, 'layer_type' => $layer_type ),
+            array( 'fid' => $fid ),
             $format,
-            array( '%s', '%s' )
+            array( '%s' )
         );
 
         if ( false === $result ) {
@@ -270,11 +274,13 @@ class BAWBIN_Maps_REST_Spatial {
         }
 
         if ( 'entries' === $layer_type ) {
+            $table_name = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bawbin_maps_nav_entries_data' ) );
+            $result = $wpdb->query( "TRUNCATE TABLE {$table_name}" );
         } elseif ( 'network' === $layer_type ) {
+            $table_name = $wpdb->prefix . 'bawbin_maps_nav_network_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $result = $wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $wpdb->prefix . 'bawbin_maps_nav_network_data' ) );
+            $result = $wpdb->query( "TRUNCATE TABLE {$table_name}" );
         } else {
             $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

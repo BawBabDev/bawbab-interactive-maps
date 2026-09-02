@@ -76,8 +76,8 @@ class BAWBIN_Maps_REST_Importer {
             return 'text';
         }
 
-        $is_bool    = true;
-        $is_numeric = true;
+        $is_bool            = true;
+        $is_numeric         = true;
         $has_half_increment = false;
 
         foreach ( $values as $v ) {
@@ -111,6 +111,36 @@ class BAWBIN_Maps_REST_Importer {
         return 'text';
     }
 
+    /**
+     * Helper method to enforce known prefixes on feature IDs
+     */
+    private static function bawbin_maps_ensure_fid_prefix( $raw_fid, $layer_type ) {
+        $raw_fid = trim( (string) $raw_fid );
+        if ( empty( $raw_fid ) ) {
+            $raw_fid = uniqid();
+        }
+
+        $known_prefixes = array( 'build-', 'path-', 'land-', 'parcel-', 'entry-', 'net-' );
+        foreach ( $known_prefixes as $prefix ) {
+            if ( 0 === strpos( $raw_fid, $prefix ) ) {
+                return $raw_fid; // Already has a recognized prefix
+            }
+        }
+
+        // Map layer types to default prefixes if missing
+        $prefix_map = array(
+            'buildings' => 'build-',
+            'paths'     => 'path-',
+            'lands'     => 'land-',
+            'parcels'   => 'parcel-',
+            'entries'   => 'entry-',
+            'network'   => 'net-',
+        );
+
+        $default_prefix = $prefix_map[$layer_type] ?? 'build-';
+        return $default_prefix . $raw_fid;
+    }
+
     public static function bawbin_maps_handle_spatial_geojson_import( $request ) {
         global $wpdb;
 
@@ -132,7 +162,9 @@ class BAWBIN_Maps_REST_Importer {
         $imported_custom_keys = is_string( $custom_keys_param ) ? ( json_decode( stripslashes( $custom_keys_param ), true ) ?: array() ) : ( is_array( $custom_keys_param ) ? $custom_keys_param : array() );
 
         // Register custom keys along with their user-assigned or inferred data types in global schema
-        BAWBIN_Maps_REST_Attributes::bawbin_maps_sync_custom_keys_to_schema( $imported_custom_keys );
+        if ( class_exists( 'BAWBIN_Maps_REST_Attributes' ) && method_exists( 'BAWBIN_Maps_REST_Attributes', 'bawbin_maps_sync_custom_keys_to_schema' ) ) {
+            BAWBIN_Maps_REST_Attributes::bawbin_maps_sync_custom_keys_to_schema( $imported_custom_keys );
+        }
 
         $raw_key_names = array();
         foreach ( $imported_custom_keys as $k => $v ) {
@@ -169,8 +201,9 @@ class BAWBIN_Maps_REST_Importer {
                 foreach ( $data['features'] as $feature ) {
                     $props   = $feature['properties'] ?? array();
                     $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
-                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
-                    if ( empty( $fid ) ) continue;
+                    $raw_fid = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
+                    
+                    $fid = self::bawbin_maps_ensure_fid_prefix( $raw_fid, 'entries' );
                     $imported_fids[] = $fid;
 
                     $name_key = ! empty( $field_mapping['name'] ) ? $field_mapping['name'] : 'name';
@@ -179,9 +212,8 @@ class BAWBIN_Maps_REST_Importer {
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query(
                         $wpdb->prepare(
-                            "INSERT INTO %i (fid, type, floor, name, geom) VALUES (%s, %s, %d, %s, %s)
+                            "INSERT INTO {$table_name} (fid, type, floor, name, geom) VALUES (%s, %s, %d, %s, %s)
                             ON DUPLICATE KEY UPDATE type = VALUES(type), floor = VALUES(floor), name = VALUES(name), geom = VALUES(geom)",
-                            $table_name,
                             $fid,
                             sanitize_text_field( $props[$type_key] ?? $props['type'] ?? '' ),
                             isset($props['floor']) ? (int)$props['floor'] : 0,
@@ -197,8 +229,9 @@ class BAWBIN_Maps_REST_Importer {
                 foreach ( $data['features'] as $feature ) {
                     $props   = $feature['properties'] ?? array();
                     $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
-                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
-                    if ( empty( $fid ) ) continue;
+                    $raw_fid = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? '' );
+                    
+                    $fid = self::bawbin_maps_ensure_fid_prefix( $raw_fid, 'network' );
                     $imported_fids[] = $fid;
 
                     $name_key = ! empty( $field_mapping['name'] ) ? $field_mapping['name'] : 'name';
@@ -207,9 +240,8 @@ class BAWBIN_Maps_REST_Importer {
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query(
                         $wpdb->prepare(
-                            "INSERT INTO %i (fid, name, type, floor, length_m, geom) VALUES (%s, %s, %s, %d, %f, %s)
+                            "INSERT INTO {$table_name} (fid, name, type, floor, length_m, geom) VALUES (%s, %s, %s, %d, %f, %s)
                             ON DUPLICATE KEY UPDATE name = VALUES(name), type = VALUES(type), floor = VALUES(floor), length_m = VALUES(length_m), geom = VALUES(geom)",
-                            $table_name,
                             $fid,
                             sanitize_text_field( $props[$name_key] ?? $props['name'] ?? '' ),
                             sanitize_text_field( $props[$type_key] ?? $props['type'] ?? '' ),
@@ -229,9 +261,9 @@ class BAWBIN_Maps_REST_Importer {
                     $props = $feature['properties'] ?? array();
                     
                     $fid_key = ! empty( $field_mapping['fid'] ) ? $field_mapping['fid'] : 'fid';
-                    $fid     = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? $props['OBJECTID'] ?? '' );
+                    $raw_fid = sanitize_text_field( $props[$fid_key] ?? $props['fid'] ?? $props['id'] ?? $props['OBJECTID'] ?? '' );
                     
-                    if ( empty( $fid ) ) continue;
+                    $fid = self::bawbin_maps_ensure_fid_prefix( $raw_fid, $layer_type );
                     $imported_fids[] = $fid;
 
                     $get_mapped_val = function( $std_col ) use ( $field_mapping, $props ) {
@@ -303,9 +335,10 @@ class BAWBIN_Maps_REST_Importer {
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     if ( false !== $wpdb->query( 
                         $wpdb->prepare(
-                            "INSERT INTO %i (fid, layer_type, name, category, fill_color, code, lat, lng, floor, is_interactive, show_label, title, description, wp_page_id, custom_attributes, geom)
+                            "INSERT INTO {$table_name} (fid, layer_type, name, category, fill_color, code, lat, lng, floor, is_interactive, show_label, title, description, wp_page_id, custom_attributes, geom)
                             VALUES (%s, %s, %s, %s, %s, %s, %f, %f, %d, %d, %d, %s, %s, %d, %s, %s) 
                             ON DUPLICATE KEY UPDATE
+                            layer_type = VALUES(layer_type),
                             name = CASE WHEN VALUES(name) != '' THEN VALUES(name) ELSE name END, 
                             category = CASE WHEN VALUES(category) != '' THEN VALUES(category) ELSE category END, 
                             fill_color = CASE WHEN VALUES(fill_color) != '' THEN VALUES(fill_color) ELSE fill_color END, 
@@ -318,7 +351,6 @@ class BAWBIN_Maps_REST_Importer {
                             wp_page_id = CASE WHEN VALUES(wp_page_id) IS NOT NULL THEN VALUES(wp_page_id) ELSE wp_page_id END,
                             custom_attributes = VALUES(custom_attributes),
                             geom = VALUES(geom)", 
-                            $table_name,
                             $fid, $layer_type, $v_name, $v_category, $v_color, $v_code,
                             $v_lat, $v_lng, $v_floor, $v_interactive, $v_show_label,
                             $v_title, $v_desc, $v_wp_page_id, $custom_json, json_encode( $feature['geometry'] )
@@ -328,7 +360,7 @@ class BAWBIN_Maps_REST_Importer {
                 break;
         }
 
-        if ( ! empty( $discovered_category_colors ) ) {
+        if ( ! empty( $discovered_category_colors ) && class_exists( 'BAWBIN_Maps_REST_Categories' ) ) {
             BAWBIN_Maps_REST_Categories::sync_imported_categories_to_config( $discovered_category_colors );
         }
 
@@ -336,14 +368,14 @@ class BAWBIN_Maps_REST_Importer {
             $fids_placeholders = implode( ',', array_fill( 0, count( $imported_fids ), '%s' ) );
 
             if ( 'entries' === $layer_type || 'network' === $layer_type ) {
-                $sql        = "DELETE FROM %i WHERE fid NOT IN ($fids_placeholders)";
-                $query_args = array_merge( array( $table_name ), $imported_fids );
+                $sql        = "DELETE FROM {$table_name} WHERE fid NOT IN ($fids_placeholders)";
+                $query_args = $imported_fids;
 
                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $wpdb->query( $wpdb->prepare( $sql, $query_args ) );
             } else {
-                $sql        = "DELETE FROM %i WHERE layer_type = %s AND fid NOT IN ($fids_placeholders)";
-                $query_args = array_merge( array( $table_name, $layer_type ), $imported_fids );
+                $sql        = "DELETE FROM {$table_name} WHERE layer_type = %s AND fid NOT IN ($fids_placeholders)";
+                $query_args = array_merge( array( $layer_type ), $imported_fids );
 
                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 $wpdb->query( $wpdb->prepare( $sql, $query_args ) );

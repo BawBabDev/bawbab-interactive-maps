@@ -23,18 +23,19 @@ class BAWBIN_Maps_REST_Exporter {
 
         $layer_type = sanitize_text_field( $request->get_param( 'layer_type' ) ?: 'buildings' );
 
+        // Interpolate $table_name directly to avoid %i placeholder errors on WP < 6.2
         if ( 'entries' === $layer_type ) {
             $table_name = $wpdb->prefix . 'bawbin_maps_nav_entries_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i", $table_name ), ARRAY_A );
+            $rows = $wpdb->get_results( "SELECT * FROM {$table_name}", ARRAY_A );
         } elseif ( 'network' === $layer_type ) {
             $table_name = $wpdb->prefix . 'bawbin_maps_nav_network_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i", $table_name ), ARRAY_A );
+            $rows = $wpdb->get_results( "SELECT * FROM {$table_name}", ARRAY_A );
         } else {
             $table_name = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE layer_type = %s", $table_name, $layer_type ), ARRAY_A );
+            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE layer_type = %s", $layer_type ), ARRAY_A );
         }
 
         $features = array();
@@ -85,11 +86,18 @@ class BAWBIN_Maps_REST_Exporter {
                     }
                 }
 
-                $features[] = array(
+                $feature_data = array(
                     'type'       => 'Feature',
                     'geometry'   => $geometry,
                     'properties' => $properties,
                 );
+
+                // Attach standard top-level GeoJSON Feature ID for GIS software compatibility
+                if ( ! empty( $row['fid'] ) ) {
+                    $feature_data['id'] = $row['fid'];
+                }
+
+                $features[] = $feature_data;
             }
         }
 

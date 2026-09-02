@@ -1,7 +1,7 @@
 <?php
 /**
  * Database tables Setup Handler
- * File: includes/class-bawbin-maps-general-spatial-dbtable.php
+ * File: includes/db/dbtables/bawbin-maps-general-spatial-dbtable.php
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,6 +17,11 @@ function bawbin_maps_create_general_spatial_dbtable() {
     $table_spatial   = $wpdb->prefix . 'bawbin_maps_general_spatial_data';
     $charset_collate = $wpdb->get_charset_collate();
 
+    // Strict dbDelta Rules Applied:
+    // 1. fid (with prefix build-, path-, etc.) is the single PRIMARY KEY (191 length cap for strict MySQL/MariaDB hosts).
+    // 2. 2 spaces between PRIMARY KEY and the opening parenthesis.
+    // 3. geom set to longtext DEFAULT NULL to comply with MySQL Strict Mode.
+    // 4. layer_type indexed separately for fast filtered spatial queries.
     $sql_spatial = "CREATE TABLE $table_spatial (
         fid varchar(255) NOT NULL,
         layer_type varchar(50) NOT NULL,
@@ -40,8 +45,9 @@ function bawbin_maps_create_general_spatial_dbtable() {
         hide_page_floorplan tinyint(1) DEFAULT 0,
         gallery longtext DEFAULT NULL,
         custom_attributes longtext DEFAULT NULL,
-        geom longtext NOT NULL,
-        PRIMARY KEY  (fid, layer_type)
+        geom longtext DEFAULT NULL,
+        PRIMARY KEY  (fid(191)),
+        KEY layer_type_idx (layer_type)
     ) $charset_collate;";
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';

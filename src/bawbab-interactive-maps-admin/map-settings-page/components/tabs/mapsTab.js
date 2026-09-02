@@ -31,6 +31,14 @@ export const MapsTab = ( {
 
     return (
         <div className="tab-content">
+            {/* Inline CSS trick to visually mask key text without using type="password" */}
+            <style>{`
+                .bawbin-maps-masked-input input {
+                    -webkit-text-security: disc !important;
+                    text-security: disc !important;
+                }
+            `}</style>
+
             <Text
                 variant="title.small"
                 display="block"
@@ -136,6 +144,10 @@ export const MapsTab = ( {
                 ) }
                 style={ { marginTop: '20px' } }
             >
+                { /* Hidden dummy inputs to trap aggressive browser credential autofill */ }
+                <input type="text" style={ { display: 'none' } } tabIndex="-1" aria-hidden="true" />
+                <input type="password" style={ { display: 'none' } } tabIndex="-1" aria-hidden="true" />
+
                 { /* API KEY INPUT */ }
                 <div style={ { marginBottom: '15px' } }>
                     <Flex align="center" gap={ 0 }>
@@ -145,9 +157,17 @@ export const MapsTab = ( {
                                     'Google Maps API Key',
                                     'bawbab-interactive-maps'
                                 ) }
-                                type={ showApiKey ? 'text' : 'password' }
+                                type="text"
+                                name="bawbin_maps_google_api_key_field"
+                                className={ ! showApiKey ? 'bawbin-maps-masked-input' : '' }
                                 value={ googleApiKey }
                                 onChange={ setGoogleApiKey }
+                                autoComplete="new-password"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck="false"
+                                data-lpignore="true"
+                                data-1p-ignore
                                 __nextHasNoMarginBottom
                             />
                         </FlexItem>
@@ -189,9 +209,17 @@ export const MapsTab = ( {
                                     'Google Map ID',
                                     'bawbab-interactive-maps'
                                 ) }
-                                type={ showMapId ? 'text' : 'password' }
+                                type="text"
+                                name="bawbin_maps_google_map_id_field"
+                                className={ ! showMapId ? 'bawbin-maps-masked-input' : '' }
                                 value={ googleMapId }
                                 onChange={ setGoogleMapId }
+                                autoComplete="new-password"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck="false"
+                                data-lpignore="true"
+                                data-1p-ignore
                                 __nextHasNoMarginBottom
                             />
                         </FlexItem>
